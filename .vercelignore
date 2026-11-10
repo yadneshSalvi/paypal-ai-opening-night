@@ -20,4 +20,4 @@ playwright-report/
 *.tsbuildinfo
 paypal-plan.md
 vendor/*
-!vendor/fracture-paypal-core-0.2.2.tgz
+!vendor/fracture-paypal-core-0.2.4.tgz

@@ -28,7 +28,7 @@
     "@bryntum/grid-enterprise": "8.0.0",
     "@bryntum/scheduler-enterprise": "8.0.0",
     "@bryntum/scheduler-react-enterprise": "8.0.0",
-    "@fracture/paypal-core": "file:vendor/fracture-paypal-core-0.2.2.tgz",
+    "@fracture/paypal-core": "file:vendor/fracture-paypal-core-0.2.4.tgz",
     "@js-temporal/polyfill": "0.5.1",
     "dotenv": "17.2.3",
     "lucide-react": "0.468.0",
