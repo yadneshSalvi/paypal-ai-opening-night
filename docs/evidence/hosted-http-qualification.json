@@ -1,0 +1,44 @@
+{
+  "observedAt": "2026-11-10T22:07:13.036Z",
+  "url": "https://paypal-ai-opening-night.vercel.app",
+  "checks": [
+    {
+      "name": "anonymous_and_origin_guards",
+      "anonymous": 401,
+      "missingOrigin": 403,
+      "foreignOrigin": 403
+    },
+    {
+      "name": "isolated_secure_sessions",
+      "count": 2,
+      "initialRevision": 1,
+      "secureHttpOnly": true
+    },
+    {
+      "name": "existing_session_reused",
+      "replacementCookie": false
+    },
+    {
+      "name": "durable_real_engine_candidates",
+      "incidents": 2,
+      "candidates": 12,
+      "revision": 3,
+      "elapsedMs": 5741,
+      "replayDidNotDuplicate": true
+    },
+    {
+      "name": "proposal_ownership_and_payment_schema",
+      "foreignProposalStatus": 409,
+      "injectedPaymentStatus": 400
+    },
+    {
+      "name": "no_financial_dispatch",
+      "paymentIntents": 0
+    }
+  ],
+  "financialWrites": 0,
+  "limits": [
+    "Hosted deterministic scheduling and HTTP integration qualification only; no model-authored plan claimed.",
+    "Actual supplier lifecycle was independently tested locally; full production journey and remaining plan scope are open."
+  ]
+}

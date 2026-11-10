@@ -1,0 +1,33 @@
+{
+  "observedAt": "2026-11-10T22:09:17.663Z",
+  "url": "https://paypal-ai-opening-night.vercel.app",
+  "deploymentId": "dpl_DPJje49GDrSnSud4nW29tebCNP8E",
+  "sourceCommit": "94fa7d0d308ee87384a8fd3fa4266264a5d1be92",
+  "client": "Codex in-app browser",
+  "checks": {
+    "isolatedSession": true,
+    "controlledIncidentIntake": true,
+    "twelveRealEngineAlternatives": true,
+    "exactDecisionReview": true,
+    "approvedRevision": 4,
+    "persistedAfterReload": true,
+    "readiness": "STANDBY 0/8",
+    "venueTimezone": "America/Chicago",
+    "nativeGanttAccessibleRange": "2026-11-14 14:30–23:45 CST",
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "bodyWidth": 390
+    },
+    "browserWarnings": 0,
+    "browserErrors": 0,
+    "tenMinuteRuntimeErrorRecords": 0
+  },
+  "financialWrites": 0,
+  "limitations": [
+    "Scheduling alternatives are deterministic engine runs; native AI and voice remain unimplemented.",
+    "Hosted rehearsal is a controlled software fixture; local supplier financial qualification is recorded separately.",
+    "Full ticket, crew, settlement, webhook, evaluation and film scope remains open."
+  ]
+}
