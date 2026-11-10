@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-11-10T22:07:13.036Z",
+  "observedAt": "2026-11-10T22:25:56.571Z",
   "url": "https://paypal-ai-opening-night.vercel.app",
   "checks": [
     {
@@ -23,7 +23,7 @@
       "incidents": 2,
       "candidates": 12,
       "revision": 3,
-      "elapsedMs": 5741,
+      "elapsedMs": 5185,
       "replayDidNotDuplicate": true
     },
     {
