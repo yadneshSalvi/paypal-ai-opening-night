@@ -1,0 +1,54 @@
+{
+  "source": "local_http_qualification",
+  "observedAt": "2026-11-10T22:02:14.507Z",
+  "missingOrigin": [
+    {
+      "route": "/api/session",
+      "status": 403
+    },
+    {
+      "route": "/api/show",
+      "status": 403
+    },
+    {
+      "route": "/api/payments",
+      "status": 403
+    },
+    {
+      "route": "/api/supplier",
+      "status": 403
+    },
+    {
+      "route": "/api/supplier/invite",
+      "status": 403
+    },
+    {
+      "route": "/api/crew/invite",
+      "status": 403
+    }
+  ],
+  "freshSession": 200,
+  "reusedSessionStatuses": [
+    200,
+    200,
+    200,
+    200,
+    200
+  ],
+  "reusePreservedTenantAndRevision": true,
+  "reuseIssuedNewCookie": false,
+  "existingRead": 200,
+  "crossOriginRejection": 403,
+  "financialWrites": 0,
+  "databaseChecks": {
+    "concurrentHourlyAdmissions": 30,
+    "excessConcurrentRequestsRejected": 6,
+    "rollingDailyLimit": 200,
+    "rollbackReleasesAdmission": true,
+    "existingSessionReusedAtFullCapacity": true,
+    "expiredCookieCannotBypass": true,
+    "freshProcessSkipsAppliedSchemaDdl": true
+  },
+  "testCommand": "npm run test:integration",
+  "passingIntegrationTests": 27
+}

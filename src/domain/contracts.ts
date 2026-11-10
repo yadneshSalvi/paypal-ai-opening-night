@@ -1,0 +1,93 @@
+/** Canonical Opening Night contract v1. Browser views are projections, never authority. */
+export type Provenance = "sample" | "modelled" | "live_sandbox" | "replay";
+export type Role = "producer" | "stage_manager" | "department_lead" | "foh" | "crew" | "supplier";
+export type Lane = "lighting" | "audio" | "stage" | "people" | "commercial" | "house";
+export type CueScope = "DOORS" | "SUPPORT_START" | "HEADLINER_START";
+export type TaskState = "planned" | "blocked" | "complete";
+export interface EvidenceRef { id: string; title: string; source: Provenance; detail: string; recordedAt: string }
+export interface Task {
+  id: string; name: string; lane: Lane; start: string; end: string; durationMinutes: number;
+  baselineStart: string; baselineEnd: string; resources: string[]; requiredSkill: string | null;
+  state: TaskState; critical: boolean; affected: boolean; milestone: string | null; sourceId: string;
+}
+export interface Dependency { id: string; from: string; to: string; lagMinutes: number; financial: boolean }
+export interface Resource {
+  id: string; name: string; role: string; initials: string; kind: "person" | "equipment" | "space";
+  department: Lane; skills: string[]; critical: boolean; reserve: boolean; color: string;
+  availableFrom: string; availableUntil: string; rateMinor: number;
+}
+export interface Incident {
+  id: string; kind: "flight" | "console" | "supplier_delay"; title: string; summary: string;
+  receivedAt: string; sourceZone: string; sourceText: string; earliestAvailable: string;
+  resourceIds: string[]; affectedTaskIds: string[]; confirmed: boolean; source: Provenance;
+}
+export interface SupplierOffer {
+  id: string; supplierId: string; supplier: string; initials: string; unitId: string; revision: number;
+  feeMinor: number; depositMinor: number; deliveryAt: string; expiresAt: string;
+  compatible: boolean; qualifiedDriver: boolean | null; conditionVerified: boolean | null;
+  terms: string; source: Provenance; status: "quoted" | "provisional" | "confirmed" | "expired";
+}
+export type ConstraintStage = "schema" | "graph" | "temporal" | "semantic" | "evidence" | "authority";
+export interface ConstraintIssue {
+  code: string; stage: ConstraintStage; severity: "hard" | "unknown" | "approval";
+  message: string; resourceId: string | null; taskId: string | null; sourceId: string;
+}
+export interface ApprovalRequirement { id: string; label: string; role: Role | "artist_representative"; grantedBy: string | null }
+export interface EngineReport {
+  engine: "bryntum-gantt-enterprise"; version: "8.0.0"; status: "passed" | "rejected" | "unavailable";
+  computedAt: string; durationMs: number; inputDigest: string; reason: string | null;
+  dates: { id: string; start: string; end: string }[];
+}
+export interface ConstraintReport {
+  status: "feasible" | "feasible_with_approval" | "infeasible" | "unknown_pending_evidence";
+  issues: ConstraintIssue[]; rulesChecked: string[]; engine: EngineReport | null;
+}
+export interface PlanPatch {
+  baseRevision: number; offerId: string; offerRevision: number; policyVersion: number;
+  tasks: Task[]; dependencies: Dependency[]; doorsAt: string; supportAt: string; headlinerAt: string;
+  crewFinishAt: string; overtimeMinor: number; canceledPerk: boolean; changedPeople: string[];
+}
+export interface Candidate {
+  id: string; family: "doors" | "budget" | "artist" | "direct"; name: string; summary: string;
+  digest: string; sourceDigest: string; generatedAt: string; patch: PlanPatch; approvals: ApprovalRequirement[];
+  report: ConstraintReport; cost: { rentalMinor: number; overtimeMinor: number; remedyMinor: number; totalMinor: number };
+}
+export interface RescueRun { id: string; baseRevision: number; createdAt: string; completedAt: string; candidates: Candidate[]; source: "modelled"; strategySource: "deterministic_enumerator" }
+export interface PublishedRunSheet {
+  id: string; version: number; planRevision: number; candidateId: string | null; digest: string;
+  publishedAt: string; tasks: Task[]; changes: { taskId: string; name: string; before: string; after: string; reason: string; resourceIds: string[] }[];
+}
+export interface Acknowledgment { id: string; personId: string; sheetVersion: number; sheetDigest: string; receivedAt: string; source: "controlled_client"; offline: boolean }
+export interface FinancialEvidence {
+  id: string; operationId: string; kind: "authorization" | "capture" | "refund" | "void" | "payout";
+  purpose: "rental" | "ticket" | "vip_remedy" | "deposit" | "crew"; status: "pending" | "completed" | "failed";
+  amountMinor: number; currency: "USD"; source: Provenance; verified: boolean; planVersion: number;
+  providerResourceId: string; parentId: string | null; ticketId: string | null; recordedAt: string;
+}
+export interface Ticket {
+  id: string; tier: "standard" | "vip"; admissionMinor: number; perkMinor: number; captureId: string | null;
+  source: Provenance; refundedMinor: number; status: "reserved" | "captured" | "partially_refunded";
+}
+export interface OperationalFact {
+  id: string; kind: "supplier_confirmed" | "delivery_accepted" | "return_accepted" | "focus_signed_off" | "cue_signed_off" | "foh_contingency" | "support_checkin" | "support_ready" | "headliner_checkin" | "quiet_prep" | "changeover";
+  planVersion: number; actorId: string; role: Role; recordedAt: string; fixtureAt: string; source: Provenance; detail: string;
+}
+export interface ReadinessGate { id: string; label: string; complete: boolean; value: string; reason: string; evidenceIds: string[]; href: string }
+export interface ReadinessReport { id: string; revision: number; sheetVersion: number; scope: CueScope; ready: boolean; gates: ReadinessGate[]; blockers: string[]; computedAt: string }
+export interface DomainEvent { id: string; type: string; message: string; at: string; fixtureAt: string; actorId: string; source: Provenance; revision: number }
+export interface ApprovedPlan { candidateId: string; digest: string; approvedAt: string; actorId: string; commercialCapMinor: number; roles: string[]; baseRevision: number }
+export interface ShowSnapshot {
+  schemaVersion: 1; id: string; tenantId: string; revision: number; planVersion: number; title: string; support: string; venue: string;
+  zone: "America/Chicago"; showDate: string; clock: string; createdAt: string; updatedAt: string;
+  doorsAt: string; curfewAt: string; accessUntil: string; nextCallAt: string;
+  state: "standby" | "go" | "house_open"; policy: { version: number; minimumRestMinutes: number; maxShiftMinutes: number; refundCount: 38; criticalCrewCount: 11 };
+  tasks: Task[]; dependencies: Dependency[]; resources: Resource[]; offers: SupplierOffer[]; incidents: Incident[];
+  runs: RescueRun[]; approvedPlan: ApprovedPlan | null; sheets: PublishedRunSheet[]; acknowledgments: Acknowledgment[];
+  financialEvidence: FinancialEvidence[]; tickets: Ticket[]; facts: OperationalFact[]; sources: EvidenceRef[]; events: DomainEvent[];
+  goReportId: string | null;
+}
+export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null }
+export interface ConsoleData { show: ShowSnapshot; readiness: ReadinessReport[]; currentActor: Actor; serverAt: string }
+export class DomainError extends Error {
+  constructor(public code: string, message: string, public status = 409) { super(message); this.name = "DomainError"; }
+}

@@ -1,0 +1,58 @@
+{
+  "observedAt": "2026-11-11",
+  "environment": "local production build, localhost:4105",
+  "client": "Codex in-app browser",
+  "rehearsalRevision": 19,
+  "planVersion": 5,
+  "checks": [
+    {
+      "name": "settlement_authority",
+      "passed": true,
+      "observed": "Released deposit $300; verified void after controlled return; equipment rows RECORDED, VERIFIED and RELEASED; fee capture remains $480."
+    },
+    {
+      "name": "execution_chain_projection",
+      "passed": true,
+      "observed": "Steps 2 and 4 show original $780 authorization, $480 captured fee and $300 released remainder."
+    },
+    {
+      "name": "evidence_receipt_boundary",
+      "passed": true,
+      "observed": "ACTUAL RECEIPTS reports three completed provider receipts, excluding initial order creation."
+    },
+    {
+      "name": "readiness_remains_blocked",
+      "passed": true,
+      "observed": "STANDBY 4/8; DOORS GO and HOUSE OPEN disabled; no crew acknowledgments or ticket refunds inferred."
+    },
+    {
+      "name": "mobile_closed_navigation",
+      "passed": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "observed": "Document and body width 390; closed aside has inert, aria-hidden=true and visibility:hidden; navigation links absent from accessibility tree."
+    },
+    {
+      "name": "mobile_navigation_focus",
+      "passed": true,
+      "observed": "Open focuses Close navigation; Escape closes drawer and returns focus to Open navigation."
+    },
+    {
+      "name": "recovery_chicago_day_headers",
+      "passed": true,
+      "observed": "Visible recovery timeline day headers show Saturday 11/14 CST."
+    },
+    {
+      "name": "plan_exact_chicago_range",
+      "passed": true,
+      "observed": "After the final restarted build with automatic axis rounding disabled, the full plan has one Saturday 11/14 CST day header, hourly labels 2:30 PM through 11 PM, and no phantom Sunday or midnight header."
+    }
+  ],
+  "financialWritesDuringRegression": 0,
+  "limits": [
+    "Controlled fictional rental facts are not physical delivery or inspection evidence.",
+    "Full 320px accessibility, all native timeline interactions and the full hero journey remain open."
+  ]
+}

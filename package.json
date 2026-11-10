@@ -1,0 +1,49 @@
+{
+  "name": "opening-night",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": "22.x"
+  },
+  "packageManager": "npm@10.9.8",
+  "scripts": {
+    "dev": "next dev --port 4105",
+    "build": "next build",
+    "start": "next start --port 4105",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/domain.test.ts tests/scheduling.test.ts tests/finance.test.ts tests/payments.test.ts",
+    "test:integration": "tsx --test tests/store.test.ts tests/bryntum.test.ts tests/payment-wire.test.ts tests/session-admission.test.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "verify:packages": "tsx scripts/verify-packages.ts"
+  },
+  "dependencies": {
+    "@bryntum/calendar-enterprise": "8.0.0",
+    "@bryntum/calendar-react-enterprise": "8.0.0",
+    "@bryntum/core-enterprise": "8.0.0",
+    "@bryntum/gantt-enterprise": "8.0.0",
+    "@bryntum/gantt-node-enterprise": "8.0.0",
+    "@bryntum/gantt-react-enterprise": "8.0.0",
+    "@bryntum/grid-enterprise": "8.0.0",
+    "@bryntum/scheduler-enterprise": "8.0.0",
+    "@bryntum/scheduler-react-enterprise": "8.0.0",
+    "@fracture/paypal-core": "file:vendor/fracture-paypal-core-0.2.2.tgz",
+    "@js-temporal/polyfill": "0.5.1",
+    "dotenv": "17.2.3",
+    "lucide-react": "0.468.0",
+    "next": "16.4.6",
+    "pg": "8.16.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.10",
+    "@types/pg": "8.15.6",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

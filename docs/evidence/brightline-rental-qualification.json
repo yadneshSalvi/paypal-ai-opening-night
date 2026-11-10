@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "title": "Opening Night / Brightline rental sandbox qualification",
+  "source": "live_sandbox",
+  "observedAt": "2026-11-10T21:39:49.277Z",
+  "environment": "PayPal sandbox",
+  "merchantBoundary": "Brightline supplier uses a distinct sandbox merchant app from the venue ticket seller.",
+  "buyerApproval": "Completed by the isolated Opening Night sandbox buyer in the official PayPal browser flow.",
+  "transport": {
+    "sharedCore": "@fracture/paypal-core@0.2.2",
+    "archiveSha256": "eb23321fafb98dbf85d3eafdddd249b4c8d50010c5c44f91dd80bc817392d660",
+    "sdk": "paypal@2.29.0",
+    "sdkCommit": "5d0df8a8817e5fdf2e2cd48e68f790ea4730aab2"
+  },
+  "authorization": {
+    "originalMinor": 78000,
+    "currency": "USD",
+    "latestStatus": "VOIDED",
+    "resourceIdSha256": "ff786d68b5cbb3533425bf52bf84ff889506fd18d8b57ab35cf8dbff25ed9247"
+  },
+  "feeCapture": {
+    "minor": 48000,
+    "currency": "USD",
+    "status": "COMPLETED",
+    "finalCapture": false,
+    "resourceIdSha256": "9ae47a05efd3b082773bb9c36fa0b94948fb17e3a6cd6a335260f26592f0443b"
+  },
+  "residualHoldClosure": {
+    "minor": 30000,
+    "currency": "USD",
+    "status": "verified",
+    "basis": "Original 78000 authorization minus the verified 48000 fee capture, followed by authorization status VOIDED. This is a released hold, not a cash refund."
+  },
+  "corroboration": {
+    "mode": "read_only",
+    "operations": [
+      "orders.getOrder",
+      "payments.getAuthorizedPayment",
+      "payments.getCapturedPayment"
+    ],
+    "privateArtifactFileSha256": "8139d2519c5469ce3f8760165a64bb90b20dc0c19a8c084da5feddd0816d7f21",
+    "resourceIdentifiers": "redacted; hashes preserve association without publishing provider identifiers"
+  },
+  "productionBoundary": {
+    "reservationDeliveryAndReturn": "Explicitly controlled fixture records from separate authorized operator and supplier clients. No claim of physical rental, concert or equipment inspection.",
+    "fixtureDate": "2026-11-14",
+    "fixtureTimeZone": "America/Chicago",
+    "finalFixtureTime": "23:30"
+  },
+  "counts": {
+    "completedRentalFeeCaptures": 1,
+    "verifiedResidualHoldClosures": 1,
+    "actualTicketCaptures": 0,
+    "actualVipRefunds": 0
+  },
+  "remaining": [
+    "80 actual sandbox ticket captures",
+    "38 original-capture VIP refunds",
+    "11 current controlled crew acknowledgments",
+    "signed supplier handoff and hold compensation",
+    "durable workers and deployed verified webhooks",
+    "full hero and broader product qualification"
+  ]
+}

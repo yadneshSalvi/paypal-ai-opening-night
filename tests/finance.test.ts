@@ -1,0 +1,15 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { assertPerkRefund, financialSummary } from "../src/domain/finance";
+import { base, evidence } from "./helpers";
+import type { Ticket } from "../src/domain/contracts";
+const ticket: Ticket = { id: "vip-1", tier: "vip", admissionMinor: 3500, perkMinor: 1500, captureId: "CAPTURE-1", source: "live_sandbox", refundedMinor: 0, status: "captured" };
+test("fixture seeding creates no captures, refunds, or commercial exposure", () => { const { show } = base(); assert.equal(show.tickets.length, 0); assert.equal(show.financialEvidence.length, 0); assert.equal(financialSummary(show).grossCapturedMinor, 0); assert.equal(financialSummary(show).refundedVipCount, 0); });
+test("sample or pending financial records cannot become live evidence", () => { const { show } = base(); show.financialEvidence.push(evidence(show, { source: "sample" }), evidence(show, { status: "pending" }), evidence(show, { verified: false })); assert.equal(financialSummary(show).grossCapturedMinor, 0); assert.equal(financialSummary(show).pendingCount, 1); });
+test("duplicate provider receipts count once", () => { const { show } = base(); const receipt = evidence(show, { ticketId: "vip-1" }); show.financialEvidence.push(receipt, { ...receipt, id: "duplicate" }); assert.equal(financialSummary(show).grossCapturedMinor, 5000); assert.equal(financialSummary(show).capturedTickets, 1); });
+test("a remedy requires its own ticket and original capture", () => { const { show } = base(); show.tickets.push(ticket); show.financialEvidence.push(evidence(show, { providerResourceId: "CAPTURE-1", ticketId: ticket.id }), evidence(show, { kind: "refund", purpose: "vip_remedy", amountMinor: 1500, ticketId: ticket.id, parentId: "OTHER-CAPTURE" })); assert.equal(financialSummary(show).refundedVipCount, 0); show.financialEvidence[1].parentId = "CAPTURE-1"; assert.equal(financialSummary(show).refundedVipCount, 1); });
+test("authorized $15 perk refund preserves the $35 admission allocation", () => { assert.doesNotThrow(() => assertPerkRefund(ticket, 1500, 5000)); assert.throws(() => assertPerkRefund(ticket, 5000, 5000), /exceed/); });
+test("existing refunds and concurrent reservations consume authority", () => { assert.throws(() => assertPerkRefund({ ...ticket, refundedMinor: 1000 }, 1000, 4000), /exceed/); assert.throws(() => assertPerkRefund(ticket, 1000, 5000, 1000), /exceed/); });
+test("provider refundable balance is a separate bound", () => { assert.throws(() => assertPerkRefund(ticket, 1500, 1400), /provider/); });
+test("fractional, negative, and unsafe amounts fail closed", () => { for (const amount of [-1, 0, 1.5, Number.MAX_SAFE_INTEGER + 1]) assert.throws(() => assertPerkRefund(ticket, amount, 5000)); });
+test("unpaid sample and standard tickets are ineligible", () => { assert.throws(() => assertPerkRefund({ ...ticket, source: "sample" }, 1500, 5000), /capture/); assert.throws(() => assertPerkRefund({ ...ticket, tier: "standard", perkMinor: 0 }, 1500, 5000), /perk/); });

@@ -1,0 +1,110 @@
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { Pool, type PoolClient } from "pg";
+import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
+import { createFixture } from "@/domain/fixture";
+import { digest } from "@/domain/hash";
+import { env } from "./env";
+import { claimSessionAdmission, SESSION_ADMISSION_SCOPE } from "./session-admission";
+
+const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
+export const pool = shared.openingNightPool ??= new Pool({ connectionString: env.databaseUrl, max: 6, connectionTimeoutMillis: 6000, idleTimeoutMillis: 30000 });
+export async function migrate() {
+  if (!shared.openingNightMigration) shared.openingNightMigration = (async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(4105001)");
+      await client.query("CREATE TABLE IF NOT EXISTS on_schema_migrations (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");
+      const applied = await client.query("SELECT version FROM on_schema_migrations WHERE version=1");
+      if (applied.rowCount) { await client.query("COMMIT"); return; }
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS on_shows (tenant_id uuid PRIMARY KEY, snapshot jsonb NOT NULL, revision integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+        CREATE TABLE IF NOT EXISTS on_sessions (token_hash text PRIMARY KEY, tenant_id uuid NOT NULL REFERENCES on_shows(tenant_id) ON DELETE CASCADE, actor jsonb NOT NULL, expires_at timestamptz NOT NULL);
+        CREATE TABLE IF NOT EXISTS on_commands (tenant_id uuid NOT NULL REFERENCES on_shows(tenant_id) ON DELETE CASCADE, command_id uuid NOT NULL, payload_hash text NOT NULL, result_revision integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (tenant_id, command_id));
+        CREATE TABLE IF NOT EXISTS on_events (id uuid PRIMARY KEY, tenant_id uuid NOT NULL REFERENCES on_shows(tenant_id) ON DELETE CASCADE, revision integer NOT NULL, event jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+        CREATE INDEX IF NOT EXISTS on_events_tenant_revision ON on_events(tenant_id, revision);
+        CREATE INDEX IF NOT EXISTS on_sessions_expiry ON on_sessions(expires_at);
+        CREATE TABLE IF NOT EXISTS on_session_admissions (id uuid PRIMARY KEY, scope text NOT NULL, created_at timestamptz NOT NULL);
+        CREATE INDEX IF NOT EXISTS on_session_admissions_scope_created ON on_session_admissions(scope, created_at);
+      `);
+      await client.query("INSERT INTO on_schema_migrations(version) VALUES(1)");
+      await client.query("COMMIT");
+    } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
+    finally { client.release(); }
+  })();
+  return shared.openingNightMigration;
+}
+function tokenHash(token: string) { return createHash("sha256").update(`${env.sessionSecret}:${token}`).digest("hex"); }
+// HTTP always uses the fixed deployment scope. A server-only scope isolates database tests.
+export async function createSession(existingToken?: string, admissionScope = SESSION_ADMISSION_SCOPE) {
+  const existingActor = await getActor(existingToken);
+  if (existingActor && existingToken) return { token: existingToken, show: await getShow(existingActor.tenantId), actor: existingActor, reused: true };
+  await migrate(); const tenantId = randomUUID(); const token = randomBytes(32).toString("base64url");
+  const actor: Actor = { id: `producer:${randomUUID()}`, tenantId, roles: ["producer", "stage_manager", "department_lead", "foh"], personId: null };
+  const show = createFixture(tenantId);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await claimSessionAdmission(client, admissionScope);
+    await client.query("INSERT INTO on_shows(tenant_id, snapshot, revision) VALUES($1,$2,$3)", [tenantId, show, show.revision]);
+    await client.query("INSERT INTO on_sessions(token_hash, tenant_id, actor, expires_at) VALUES($1,$2,$3,now()+interval '7 days')", [tokenHash(token), tenantId, actor]);
+    await client.query("COMMIT");
+  } catch (e) { await client.query("ROLLBACK"); throw e; } finally { client.release(); }
+  return { token, show, actor, reused: false };
+}
+export async function getActor(token: string | undefined): Promise<Actor | null> {
+  if (!token || token.length > 150) return null; await migrate();
+  const result = await pool.query<{ actor: Actor }>("SELECT actor FROM on_sessions WHERE token_hash=$1 AND expires_at>now()", [tokenHash(token)]);
+  return result.rows[0]?.actor ?? null;
+}
+export async function getShow(tenantId: string): Promise<ShowSnapshot> {
+  await migrate(); const result = await pool.query<{ snapshot: ShowSnapshot }>("SELECT snapshot FROM on_shows WHERE tenant_id=$1", [tenantId]);
+  if (!result.rows[0]) throw new DomainError("SHOW_NOT_FOUND", "This rehearsal has expired. Start a new session.", 404);
+  return result.rows[0].snapshot;
+}
+export async function createCrewCapability(actor: Actor, personId: string) {
+  if (!actor.roles.includes("producer")) throw new DomainError("ROLE_REQUIRED", "Only the producer can invite a controlled crew client.", 403);
+  const show = await getShow(actor.tenantId);
+  if (!show.resources.some(r => r.id === personId && r.kind === "person")) throw new DomainError("PERSON_NOT_FOUND", "This person is not on the roster.", 404);
+  const token = randomBytes(32).toString("base64url");
+  const crewActor: Actor = { id: `crew:${personId}:${randomUUID()}`, tenantId: actor.tenantId, roles: ["crew"], personId };
+  await pool.query("INSERT INTO on_sessions(token_hash, tenant_id, actor, expires_at) VALUES($1,$2,$3,now()+interval '1 day')", [tokenHash(token), actor.tenantId, crewActor]);
+  return token;
+}
+export async function transactCommand(actor: Actor, id: string, expectedRevision: number, payload: unknown, transform: (show: ShowSnapshot) => ShowSnapshot): Promise<{ show: ShowSnapshot; replayed: boolean }> {
+  await migrate(); const payloadHash = digest({ actorId: actor.id, expectedRevision, payload }); const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const locked = await client.query<{ snapshot: ShowSnapshot }>("SELECT snapshot FROM on_shows WHERE tenant_id=$1 FOR UPDATE", [actor.tenantId]);
+    const show = locked.rows[0]?.snapshot;
+    if (!show) throw new DomainError("SHOW_NOT_FOUND", "This rehearsal no longer exists.", 404);
+    const previous = await client.query<{ payload_hash: string }>("SELECT payload_hash FROM on_commands WHERE tenant_id=$1 AND command_id=$2", [actor.tenantId, id]);
+    if (previous.rows[0]) {
+      if (previous.rows[0].payload_hash !== payloadHash) throw new DomainError("IDEMPOTENCY_CONFLICT", "This command key was already used for different instructions.");
+      await client.query("COMMIT"); return { show, replayed: true };
+    }
+    if (show.revision !== expectedRevision) throw new DomainError("STALE_REVISION", "Another action changed the production. Refresh and review the latest state.");
+    const next = transform(show);
+    if (next.tenantId !== actor.tenantId || next.revision !== show.revision + 1) throw new Error("Invalid transactional snapshot transition");
+    await client.query("UPDATE on_shows SET snapshot=$2, revision=$3, updated_at=now() WHERE tenant_id=$1", [actor.tenantId, next, next.revision]);
+    await client.query("INSERT INTO on_commands(tenant_id,command_id,payload_hash,result_revision) VALUES($1,$2,$3,$4)", [actor.tenantId, id, payloadHash, next.revision]);
+    const oldEvents = new Set(show.events.map(e => e.id));
+    for (const event of next.events.filter(e => !oldEvents.has(e.id))) await persistEvent(client, actor.tenantId, event);
+    await client.query("COMMIT"); return { show: next, replayed: false };
+  } catch (e) { await client.query("ROLLBACK"); throw e; } finally { client.release(); }
+}
+async function persistEvent(client: PoolClient, tenantId: string, event: ShowSnapshot["events"][number]) {
+  await client.query("INSERT INTO on_events(id,tenant_id,revision,event) VALUES($1,$2,$3,$4) ON CONFLICT(id) DO NOTHING", [event.id, tenantId, event.revision, event]);
+}
+
+export async function createSupplierCapability(actor: Actor) {
+  if (!actor.roles.includes("producer")) throw new DomainError("ROLE_REQUIRED", "Only the producer can open a controlled supplier client.", 403);
+  const show = await getShow(actor.tenantId);
+  const candidate = show.runs.flatMap(run => run.candidates).find(item => item.id === show.approvedPlan?.candidateId);
+  const offer = show.offers.find(item => item.id === candidate?.patch.offerId);
+  if (!show.approvedPlan || offer?.supplierId !== "brightline") throw new DomainError("SUPPLIER_NOT_SELECTED", "Approve the Brightline offer before opening its controlled supplier portal.");
+  const token = randomBytes(32).toString("base64url");
+  const supplier: Actor = { id: "supplier:brightline:" + randomUUID(), tenantId: actor.tenantId, roles: ["supplier"], personId: null };
+  await pool.query("INSERT INTO on_sessions(token_hash,tenant_id,actor,expires_at) VALUES($1,$2,$3,now()+interval '1 day')", [tokenHash(token), actor.tenantId, supplier]);
+  return token;
+}
