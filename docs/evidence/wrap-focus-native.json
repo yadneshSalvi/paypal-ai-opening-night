@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "qualifiedAt": "2026-11-11T22:26:08Z",
+  "sourceCommit": "23ffb5502928363210e521902c36dbe9a1edd4ef",
+  "integratedCommit": "e900d55",
+  "buildId": "pBSwxsuNrlEsRfCc_kEk7",
+  "scope": "Focused native browser qualification of wrap focus and loading repairs against an unchanged, read-only fictional account",
+  "nativeObservations": 17,
+  "verified": [
+    "Exact initiating button regains focus after four original PDF/JSON downloads, including keyboard activation",
+    "All four browser-downloaded files match their original immutable hashes",
+    "Inspect-edition and analysis source links select, focus and announce the correct destination",
+    "Pagination focuses its page status when the initiating boundary control becomes disabled",
+    "An actually paused metadata response exposes loading with actions disabled and no false unavailable state",
+    "Home, End and arrow keys keep all six top-level tabs selected and focused together",
+    "Evidence dialog Escape and Close restore the exact opener",
+    "390px pagination and 360px dialog and tab navigation stay within the page viewport"
+  ],
+  "postNativeReadOnlyChecks": {
+    "httpChecks": 10,
+    "httpRequests": 28,
+    "originalEditionFilesUnchanged": 10,
+    "databaseTablesUnchanged": 46,
+    "originalWireAndCredentialFilesUnchanged": 5,
+    "sourceFilesUnchanged": 418,
+    "buildFilesUnchanged": 417,
+    "dependencyFilesUnchanged": 46959
+  },
+  "separateComponentEvidence": {
+    "focusCases": 31,
+    "existingFocusedCases": 19,
+    "limitations": "Synthetic DOM tests stub layout and native dialogs; they cover asynchronous mutation paths that the read-only browser fixture deliberately does not invoke."
+  },
+  "limitations": [
+    "No actual provider or model qualification is claimed by this fixture",
+    "Viewport reflow was observed; actual browser zoom was not measured",
+    "Existing dependency advisories and broader product, deployment and submission work remain open"
+  ]
+}
