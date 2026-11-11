@@ -8,15 +8,18 @@ import { affectedSubgraph, planningDigest, validatePatch } from "./scheduling";
 import { atVenue, compareInstants, localTime } from "./time";
 import { currentActual } from "./finance";
 import { supplierIsConfirmed } from "./supplier-contracts";
+import { crewDutyKinds, type CrewVerifier } from "./crew/contracts";
+import { fixtureNextCalls, requireCrewPerson } from "./crew/policy";
 
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("load_incidents") }).strict(),
   z.object({ type: z.literal("generate") }).strict(),
   z.object({ type: z.literal("approve"), candidateId: z.string().max(100), candidateDigest: z.string().length(64), approvals: z.array(z.string().max(80)).max(12) }).strict(),
   z.object({ type: z.literal("publish") }).strict(),
+  z.object({ type: z.literal("adopt_crew") }).strict(),
   z.object({ type: z.literal("acknowledge"), sheetVersion: z.number().int().positive(), sheetDigest: z.string().length(64), seenTaskIds: z.array(z.string().max(100)).max(300), offline: z.boolean() }).strict(),
   z.object({ type: z.literal("fact"), kind: z.enum(["supplier_confirmed", "delivery_accepted", "return_accepted", "focus_signed_off", "cue_signed_off", "foh_contingency", "support_checkin", "support_ready", "headliner_checkin", "quiet_prep", "changeover"]), detail: z.string().trim().min(12).max(1200) }).strict(),
-  z.object({ type: z.literal("advance"), time: z.enum(["16:10", "17:15", "17:20", "18:15", "18:35", "18:45", "19:00", "19:35", "20:10", "20:40", "22:15", "23:30"]) }).strict(),
+  z.object({ type: z.literal("advance"), time: z.enum(["16:10", "17:15", "17:20", "18:15", "18:35", "18:45", "19:00", "19:35", "20:00", "20:10", "20:40", "20:45", "22:15", "23:30"]) }).strict(),
   z.object({ type: z.literal("go"), reportId: z.string().length(64) }).strict(),
   z.object({ type: z.literal("house_open") }).strict(),
 ]);
@@ -29,7 +32,7 @@ function requireRole(actor: Actor, ...roles: Actor["roles"]) {
 export function appendEvent(show: ShowSnapshot, actor: Actor, type: string, message: string, now: string) {
   show.events.push({ id: randomUUID(), type, message, at: now, fixtureAt: show.clock, actorId: actor.id, source: "sample", revision: show.revision + 1 });
 }
-export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command, now = new Date().toISOString()): ShowSnapshot {
+export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command, now = new Date().toISOString(), verifyCrew?: CrewVerifier, crewCommandId?: string): ShowSnapshot {
   if (input.tenantId !== actor.tenantId) throw new DomainError("TENANT_MISMATCH", "This show belongs to another session.", 403);
   const show = structuredClone(input);
   switch (command.type) {
@@ -43,6 +46,16 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       appendEvent(show, actor, "incident.confirmed", "Recorded the 15:10 flight revision and the 15:25 console report from the controlled scenario.", now); break;
     }
     case "generate": throw new DomainError("ENGINE_REQUIRED", "Candidate generation runs through the server scheduling service.");
+    case "adopt_crew": {
+      requireRole(actor, "producer");
+      if (show.crewProtocol === 1) throw new DomainError("CREW_PROTOCOL_CURRENT", "This rehearsal already uses person-scoped crew controls.");
+      show.crewProtocol = 1;
+      show.crewAdoption = { protocol: 1, actorId: actor.id, adoptedAt: now, previousState: show.state, previousGoReportId: show.goReportId };
+      show.crewAttestations ??= []; show.crewCues ??= []; show.crewNextCalls = fixtureNextCalls(show);
+      show.state = "standby"; show.goReportId = null;
+      appendEvent(show, actor, "crew.protocol_adopted", "Enabled person-scoped crew controls. Existing facts and cues remain historical; current readbacks and signed duties are required.", now);
+      break;
+    }
     case "approve": {
       requireRole(actor, "producer");
       const candidate = show.runs.at(-1)?.candidates.find(c => c.id === command.candidateId);
@@ -75,17 +88,17 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       appendEvent(show, actor, "run_sheet.published", `Published run sheet v${version}; ${changes.length} changes require current acknowledgments.`, now); break;
     }
     case "acknowledge": {
-      requireRole(actor, "crew");
-      if (!actor.personId) throw new DomainError("CREW_IDENTITY_REQUIRED", "A person-scoped crew session is required.", 403);
+      const crewPerson = requireCrewPerson(show, actor);
       const sheet = show.sheets.find(s => s.version === command.sheetVersion && s.digest === command.sheetDigest);
       if (!sheet) throw new DomainError("SHEET_NOT_FOUND", "This sheet version cannot be verified.");
       const relevant = sheet.changes.filter(c => c.resourceIds.includes(actor.personId!));
       if (relevant.some(c => !command.seenTaskIds.includes(c.taskId))) throw new DomainError("UNREAD_CHANGES", "Review every changed personal call before acknowledging.");
-      if (show.acknowledgments.some(a => a.personId === actor.personId && a.sheetDigest === sheet.digest)) throw new DomainError("ALREADY_ACKNOWLEDGED", "This person already acknowledged this exact sheet.");
-      show.acknowledgments.push({ id: randomUUID(), personId: actor.personId, sheetVersion: sheet.version, sheetDigest: sheet.digest, receivedAt: now, source: "controlled_client", offline: command.offline });
+      if (show.acknowledgments.some(a => a.personId === actor.personId && a.sheetDigest === sheet.digest && (!(show.crewProtocol === 1 || crewCommandId) || Boolean(a.commandId && a.actorId)))) throw new DomainError("ALREADY_ACKNOWLEDGED", "This person already acknowledged this exact sheet.");
+      show.acknowledgments.push({ id: randomUUID(), personId: crewPerson.id, sheetVersion: sheet.version, sheetDigest: sheet.digest, receivedAt: now, source: "controlled_client", offline: command.offline, ...(crewCommandId ? { actorId: actor.id, commandId: crewCommandId, seenTaskIds: [...new Set(command.seenTaskIds)].sort() } : {}) });
       appendEvent(show, actor, "crew.acknowledged", `${show.resources.find(r => r.id === actor.personId)?.name} acknowledged v${sheet.version}${sheet.version !== show.sheets.at(-1)!.version ? " (historical; current changes remain unread)" : ""}.`, now); break;
     }
     case "fact": {
+      if (show.crewProtocol === 1 && crewDutyKinds.includes(command.kind as typeof crewDutyKinds[number])) throw new DomainError("PERSON_SIGNOFF_REQUIRED", "Open the assigned person’s crew client to review and sign this duty.", 403);
       if (!show.approvedPlan) throw new DomainError("PLAN_APPROVAL_REQUIRED", "Approve a current plan before recording execution evidence.");
       if (show.commercialProtocol === 2 && ["supplier_confirmed", "delivery_accepted", "return_accepted"].includes(command.kind)) throw new DomainError("SIGNED_HANDOFF_REQUIRED", "Use the authenticated supplier reservation and signed delivery clients for this rental execution.");
       const role: Record<OperationalFact["kind"], Actor["roles"][number]> = { supplier_confirmed: "supplier", delivery_accepted: "department_lead", return_accepted: "supplier", focus_signed_off: "department_lead", cue_signed_off: "department_lead", foh_contingency: "foh", support_checkin: "stage_manager", support_ready: "department_lead", headliner_checkin: "stage_manager", quiet_prep: "department_lead", changeover: "stage_manager" };
@@ -105,6 +118,7 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       show.clock = to; appendEvent(show, actor, "fixture.clock_advanced", `Advanced the labeled scenario clock to ${command.time}. No execution evidence was created.`, now); break;
     }
     case "go": {
+      if (show.crewProtocol === 1) throw new DomainError("PERSON_CUE_REQUIRED", "The assigned stage manager issues GO from their personal crew client.", 403);
       requireRole(actor, "stage_manager");
       const report = readiness(show, "DOORS");
       if (command.reportId !== report.id) throw new DomainError("STALE_READINESS", "Readiness changed. Review the current report before issuing GO.");
@@ -112,13 +126,14 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       show.state = "go"; show.goReportId = report.id; appendEvent(show, actor, "cue.go_issued", "Stage manager issued DOORS GO against the current readiness report.", now); break;
     }
     case "house_open": {
+      if (show.crewProtocol === 1) throw new DomainError("PERSON_CUE_REQUIRED", "The assigned front-of-house manager confirms HOUSE OPEN from their crew client.", 403);
       requireRole(actor, "foh");
       if (show.state !== "go" || !show.goReportId || !readiness(show, "DOORS").ready) throw new DomainError("GO_REQUIRED", "A valid stage-manager GO is required before HOUSE OPEN.");
       show.state = "house_open"; appendEvent(show, actor, "cue.house_open", "Front of house confirmed HOUSE OPEN.", now); break;
     }
   }
   show.revision++; show.updatedAt = now;
-  if (show.state !== "standby" && !readiness(show, "DOORS").ready) { show.state = "standby"; show.goReportId = null; }
+  if (show.state !== "standby" && !readiness(show, "DOORS", now, verifyCrew).ready) { show.state = "standby"; show.goReportId = null; }
   return show;
 }
 export function recordRescueRun(input: ShowSnapshot, actor: Actor, candidates: Candidate[], now = new Date().toISOString()): ShowSnapshot {

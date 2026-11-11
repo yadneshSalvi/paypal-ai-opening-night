@@ -16,5 +16,18 @@
   "authorityExpiresAt": "2026-11-12T07:09:22.418Z",
   "limitations": [
     "Sandbox funds only. Admissions retained is financial allocation, not evidence of physical event attendance."
-  ]
+  ],
+  "nativeHosted": {
+    "observedAt": "2026-11-11T07:56:00Z",
+    "timePrecision": "minute",
+    "reviewer": "Root integration agent in the in-app browser",
+    "currentVerifiedRefunds": 38,
+    "currentVerifiedRefundMinor": 57000,
+    "originalGrossMinor": 337000,
+    "cohortNetMinor": 280000,
+    "pendingJobs": 0,
+    "signedDeliveriesReconciled": 118,
+    "privateScreenshotBasename": "opening-original-remedies-complete.png",
+    "financialActionsDuringFinalObservation": 0
+  }
 }

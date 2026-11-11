@@ -1,15 +1,17 @@
 import { cookies } from "next/headers";
 import { DomainError, type ConsoleData, type ShowSnapshot, type Actor } from "@/domain/contracts";
-import { allReadiness } from "@/domain/readiness";
+import { allReadiness } from "./crew/readiness";
+import { crewProductionOverview } from "./crew/projection";
 import { getActor } from "./store";
 import { PaymentError, ProviderError } from "@fracture/paypal-core";
 import { SessionCreationLimitError } from "./session-admission";
 import { PRODUCTION_SCOPE_HEADER } from "@/domain/rehearsal-contracts";
+import { env } from "./env";
 export const SESSION_COOKIE = "opening-night-session";
 export async function currentActor(request?: Request): Promise<Actor | null> {
   const authorization = request?.headers.get("authorization");
-  const bearer = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
-  return getActor(bearer ?? (await cookies()).get(SESSION_COOKIE)?.value);
+  if (authorization != null) return authorization.startsWith("Bearer ") ? getActor(authorization.slice(7)) : null;
+  return getActor((await cookies()).get(SESSION_COOKIE)?.value);
 }
 export function assertProductionScope(actor: Actor, request: Request) {
   const scope = request.headers.get(PRODUCTION_SCOPE_HEADER);
@@ -34,7 +36,11 @@ export function assertSameOrigin(request: Request) {
   if (!origin || origin !== expected) throw new DomainError("ORIGIN_DENIED", "Changes require this app’s exact request origin.", 403);
   return expected;
 }
-export function consoleData(show: ShowSnapshot, currentActor: Actor): ConsoleData { return { show, currentActor, readiness: allReadiness(show), serverAt: new Date().toISOString() }; }
+export function isProductionActor(actor: Actor) { return !actor.personId && !actor.executionId && !actor.supplierId && !actor.roles.includes("crew") && actor.roles.some(role => ["producer", "stage_manager", "foh"].includes(role)); }
+export function consoleData(show: ShowSnapshot, currentActor: Actor): ConsoleData {
+  if (!isProductionActor(currentActor)) throw new DomainError("SCOPED_CLIENT_REQUIRED", "Open this capability’s dedicated client.", 403);
+  return { show, currentActor, readiness: allReadiness(show), serverAt: new Date().toISOString(), crew: crewProductionOverview(show), controlledQa: env.controlledQa };
+}
 export function errorResponse(error: unknown) {
   if (error instanceof SessionCreationLimitError) return Response.json({ error: error.message, code: error.code }, { status: 429, headers: { "Retry-After": String(error.retryAfterSeconds), "Cache-Control": "no-store" } });
   if (error instanceof PaymentError) return Response.json({ error: error.message, code: error.code }, { status: error.httpStatus });

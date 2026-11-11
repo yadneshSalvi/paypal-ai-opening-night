@@ -2,8 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import type { ShowSnapshot } from "@/domain/contracts";
 import type { PaymentSeller } from "@/domain/payment-authority";
-import { projectExecutionMilestones } from "@/domain/milestones";
-import { readiness } from "@/domain/readiness";
+import { projectExecutionMilestones, readiness } from "./crew/readiness";
 import type { DeliveryTransport, PaymentWebhook } from "./payment-webhooks";
 
 const adverseEvents = new Set(["PAYMENT.AUTHORIZATION.VOIDED", "PAYMENT.CAPTURE.PENDING", "PAYMENT.CAPTURE.DECLINED", "PAYMENT.CAPTURE.REFUNDED", "PAYMENT.CAPTURE.REVERSED", "PAYMENT.REFUND.PENDING", "PAYMENT.REFUND.FAILED", "CHECKOUT.PAYMENT-APPROVAL.REVERSED"]);

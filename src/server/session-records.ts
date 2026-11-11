@@ -4,6 +4,7 @@ import type { Actor } from "@/domain/contracts";
 import { createFixture } from "@/domain/fixture";
 import { env } from "./env";
 import { claimSessionAdmission, SESSION_ADMISSION_SCOPE } from "./session-admission";
+import { fixtureNextCalls } from "@/domain/crew/policy";
 
 export function sessionTokenHash(token: string) { return createHash("sha256").update(`${env.sessionSecret}:${token}`).digest("hex"); }
 
@@ -13,6 +14,7 @@ export async function insertProducerRehearsal(client: PoolClient, token: string,
   const tenantId = randomUUID();
   const actor: Actor = { id: `producer:${randomUUID()}`, tenantId, roles: ["producer", "stage_manager", "department_lead", "foh"], personId: null };
   const show = createFixture(tenantId); show.commercialProtocol = 2; show.rentalExecutions = []; show.events[0]!.id = randomUUID();
+  show.crewProtocol = 1; show.crewAttestations = []; show.crewCues = []; show.crewNextCalls = fixtureNextCalls(show);
   await client.query("INSERT INTO on_shows(tenant_id,snapshot,revision) VALUES($1,$2,$3)", [tenantId, show, show.revision]);
   const event = show.events[0]!;
   await client.query("INSERT INTO on_events(id,tenant_id,revision,event) VALUES($1,$2,$3,$4)", [event.id, tenantId, event.revision, event]);

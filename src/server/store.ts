@@ -5,7 +5,7 @@ import { digest } from "@/domain/hash";
 import { env } from "./env";
 import { SESSION_ADMISSION_SCOPE } from "./session-admission";
 import { insertProducerRehearsal, sessionTokenHash as tokenHash } from "./session-records";
-import { projectExecutionMilestones } from "@/domain/milestones";
+import { projectExecutionMilestones } from "./crew/readiness";
 import { supplierMigration } from "./migrations/suppliers-v3";
 import { commerceMigration } from "./migrations/commerce-v4";
 import { rehearsalsMigration } from "./migrations/rehearsals-v5";
@@ -87,7 +87,7 @@ export async function migrate() {
 // HTTP always uses the fixed deployment scope. A server-only scope isolates database tests.
 export async function createSession(existingToken?: string, admissionScope = SESSION_ADMISSION_SCOPE) {
   const existingActor = await getActor(existingToken);
-  if (existingActor && existingToken) return { token: existingToken, show: await getShow(existingActor.tenantId), actor: existingActor, reused: true };
+  if (existingActor?.roles.includes("producer") && !existingActor.personId && !existingActor.executionId && existingToken) return { token: existingToken, show: await getShow(existingActor.tenantId), actor: existingActor, reused: true };
   await migrate(); const token = randomBytes(32).toString("base64url");
   const client = await pool.connect();
   try {
@@ -108,7 +108,7 @@ export async function getShow(tenantId: string): Promise<ShowSnapshot> {
   return projectExecutionMilestones(result.rows[0].snapshot);
 }
 export async function createCrewCapability(actor: Actor, personId: string) {
-  if (!actor.roles.includes("producer")) throw new DomainError("ROLE_REQUIRED", "Only the producer can invite a controlled crew client.", 403);
+  if (!actor.roles.includes("producer") || actor.personId || actor.executionId || actor.supplierId) throw new DomainError("ROLE_REQUIRED", "Only the producer can invite a controlled crew client.", 403);
   const show = await getShow(actor.tenantId);
   if (!show.resources.some(r => r.id === personId && r.kind === "person")) throw new DomainError("PERSON_NOT_FOUND", "This person is not on the roster.", 404);
   const token = randomBytes(32).toString("base64url");
@@ -116,13 +116,14 @@ export async function createCrewCapability(actor: Actor, personId: string) {
   await pool.query("INSERT INTO on_sessions(token_hash, tenant_id, actor, expires_at) VALUES($1,$2,$3,now()+interval '1 day')", [tokenHash(token), actor.tenantId, crewActor]);
   return token;
 }
-export async function transactCommand(actor: Actor, id: string, expectedRevision: number, payload: unknown, transform: (show: ShowSnapshot) => ShowSnapshot): Promise<{ show: ShowSnapshot; replayed: boolean }> {
+export async function transactCommand(actor: Actor, id: string, expectedRevision: number, payload: unknown, transform: (show: ShowSnapshot) => ShowSnapshot, authorize?: (client: PoolClient) => Promise<void>, effects?: (client: PoolClient) => Promise<void>): Promise<{ show: ShowSnapshot; replayed: boolean }> {
   await migrate(); const payloadHash = digest({ actorId: actor.id, expectedRevision, payload }); const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const locked = await client.query<{ snapshot: ShowSnapshot }>("SELECT snapshot FROM on_shows WHERE tenant_id=$1 FOR UPDATE", [actor.tenantId]);
     const show = locked.rows[0]?.snapshot;
     if (!show) throw new DomainError("SHOW_NOT_FOUND", "This rehearsal no longer exists.", 404);
+    if (authorize) await authorize(client);
     const previous = await client.query<{ payload_hash: string }>("SELECT payload_hash FROM on_commands WHERE tenant_id=$1 AND command_id=$2", [actor.tenantId, id]);
     if (previous.rows[0]) {
       if (previous.rows[0].payload_hash !== payloadHash) throw new DomainError("IDEMPOTENCY_CONFLICT", "This command key was already used for different instructions.");
@@ -131,6 +132,9 @@ export async function transactCommand(actor: Actor, id: string, expectedRevision
     if (show.revision !== expectedRevision) throw new DomainError("STALE_REVISION", "Another action changed the production. Refresh and review the latest state.");
     const next = projectExecutionMilestones(transform(projectExecutionMilestones(show)));
     if (next.tenantId !== actor.tenantId || next.revision !== show.revision + 1) throw new Error("Invalid transactional snapshot transition");
+    // Transactional effects run only for a new, current command. Replays and
+    // rejected revisions can never revoke access or repeat another side effect.
+    if (effects) await effects(client);
     await client.query("UPDATE on_shows SET snapshot=$2, revision=$3, updated_at=now() WHERE tenant_id=$1", [actor.tenantId, next, next.revision]);
     await client.query("INSERT INTO on_commands(tenant_id,command_id,payload_hash,result_revision) VALUES($1,$2,$3,$4)", [actor.tenantId, id, payloadHash, next.revision]);
     const oldEvents = new Set(show.events.map(e => e.id));

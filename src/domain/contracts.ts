@@ -1,5 +1,6 @@
 /** Canonical Opening Night contract v1. Browser views are projections, never authority. */
 import type { RentalExecution, SupplierId, SupplierQuoteRef } from "./supplier-contracts";
+import type { CrewAdoption, CrewAttestation, CrewCueExecution, CrewNextCall, CrewProductionOverview } from "./crew/contracts";
 export type Provenance = "sample" | "modelled" | "live_sandbox" | "replay";
 export type Role = "producer" | "stage_manager" | "department_lead" | "foh" | "crew" | "supplier" | "driver";
 export type Lane = "lighting" | "audio" | "stage" | "people" | "commercial" | "house";
@@ -59,7 +60,7 @@ export interface PublishedRunSheet {
   id: string; version: number; planRevision: number; candidateId: string | null; digest: string;
   publishedAt: string; tasks: Task[]; changes: { taskId: string; name: string; before: string; after: string; reason: string; resourceIds: string[] }[];
 }
-export interface Acknowledgment { id: string; personId: string; sheetVersion: number; sheetDigest: string; receivedAt: string; source: "controlled_client"; offline: boolean }
+export interface Acknowledgment { id: string; personId: string; sheetVersion: number; sheetDigest: string; receivedAt: string; source: "controlled_client"; offline: boolean; actorId?: string; commandId?: string; seenTaskIds?: string[] }
 export interface FinancialEvidence {
   id: string; operationId: string; kind: "authorization" | "capture" | "refund" | "void" | "payout";
   purpose: "rental" | "ticket" | "vip_remedy" | "deposit" | "rental_cancel" | "crew"; status: "pending" | "completed" | "failed";
@@ -100,10 +101,15 @@ export interface ShowSnapshot {
   financialChecks?: FinancialCheck[];
   commercialProtocol?: 2;
   rentalExecutions?: RentalExecution[];
+  crewProtocol?: 1;
+  crewAdoption?: CrewAdoption;
+  crewAttestations?: CrewAttestation[];
+  crewCues?: CrewCueExecution[];
+  crewNextCalls?: CrewNextCall[];
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }
-export interface ConsoleData { show: ShowSnapshot; readiness: ReadinessReport[]; currentActor: Actor; serverAt: string }
+export interface ConsoleData { show: ShowSnapshot; readiness: ReadinessReport[]; currentActor: Actor; serverAt: string; crew?: CrewProductionOverview; controlledQa?: boolean }
 export class DomainError extends Error {
   constructor(public code: string, message: string, public status = 409) { super(message); this.name = "DomainError"; }
 }

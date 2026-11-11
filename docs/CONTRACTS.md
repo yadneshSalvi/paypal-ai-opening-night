@@ -16,7 +16,7 @@ The immutable shared core owns provider dispatch, durable execution claims, exac
 
 The rental order authorizes 78000 USD cents. Fee capture is 48000 with `finalCapture:false`; matching acceptance and current supplier confirmation are required. Release closes the original authorization only after a verified 48000 capture, exact remaining 30000 and attributed return record. Its projection reports 30000 released, not 78000 of new cash flow.
 
-Tickets allocate 3500 admission plus optional 1500 soundcheck perk. A remedy belongs to the ticket’s original capture. Repeated semantic intents reuse their existing operation, and ambiguous writes stay pending. A saved-wallet create may already include a completed capture: the importer recognizes that shape and never schedules a second capture. Wallet setup and bounded-cohort consent are not yet enabled in the live UI.
+Tickets allocate 3500 admission plus optional 1500 soundcheck perk. A remedy belongs to the ticket’s original capture. Repeated semantic intents reuse their existing operation, and ambiguous writes stay pending. A saved-wallet create may already include a completed capture: the importer recognizes that shape and never schedules a second capture. Save-only wallet setup and separately reviewed, expiring/revocable bounded-cohort consent are implemented; their exact authority and recovery are described in TICKET_COMMERCE.md.
 
 ## Evidence and readiness
 
@@ -26,7 +26,7 @@ Historical receipts are immutable. Separate current-resource observations can wi
 
 Core0.2.4 direct child reconciliation can omit a parent relationship. The app obtains a fresh read of the exact owned order, checks child identity/amount and refund custom ID plus its sole original capture, and persists that corroboration beside the import. It projects the proven parent without modifying the core receipt. An absent or ambiguous relationship stays unresolved and cannot count toward readiness.
 
-DOORS requires eight explicit gates, including supplier authorization and confirmation, accepted delivery, fee capture, technical checks, 38 confirmed refunds and 11 current-sheet acknowledgments. Performer readiness is independently scoped. The stage manager issues GO against a current report; FOH separately records HOUSE OPEN. The fixture clock creates none of those facts.
+DOORS requires eight explicit gates, including supplier authorization and confirmation, accepted delivery, fee capture, technical checks, 38 confirmed refunds and 11 current-sheet acknowledgments. Performer readiness is independently scoped. The assigned stage manager issues DOORS GO against a current report; assigned FOH separately records HOUSE OPEN. Support and headliner starts each require their own current readiness and signed cue. The fixture clock creates none of those facts.
 
 ## HTTP and browser boundaries
 
@@ -52,3 +52,7 @@ Durable work and signature verification are described in [DURABLE_WORK.md](DURAB
 New rehearsals bind an authenticated immutable supplier quote to a real-time exclusive hold and exact plan version. Driver handoff, qualified condition acceptance and provider fee confirmation are independent events. Acceptance and the original-authorization fee intent commit atomically; a rejected delivery creates no fee and has a distinct supplier-return record before explicit uncaptured cancellation. Six additive migration-3 tables preserve existing snapshots and legacy financial executions. See [SUPPLIER_EXECUTION.md](SUPPLIER_EXECUTION.md).
 
 Dedicated supplier and delivery capabilities cannot read or mutate the general production API. HTTP origin checks retain the actual same-port loopback Host locally because NextURL normalizes 127.0.0.1 to localhost; cross-host, cross-port and foreign origins remain rejected. Hosted exact-origin behavior is unchanged. Camera permission is limited to the delivery page.
+
+## Crew protocol 1
+
+The dedicated `/api/crew` allowlist excludes production-wide data and requires an explicit personal capability. Current skills and assignments authorize signed duties and cues. The producer API cannot impersonate crew. Exact readback identities survive offline retry and historical synchronization; the crew-only service worker caches an anonymous shell and static assets, never API responses or capabilities. New rehearsals enable the protocol; old rehearsals adopt it explicitly while retaining all money and legacy history. There is no SQL migration or automatic original-record rewrite. See [personal authority, compatibility and offline recovery](CREW_OPERATIONS.md).

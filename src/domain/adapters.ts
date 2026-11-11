@@ -11,10 +11,12 @@ export function timelineProjection(tasks: Task[], dependencies: Dependency[], re
   };
 }
 /** Calendar owns an independent model. IDs and UTC instants are projections of canonical tasks. */
-export function calendarProjection(tasks: Task[], resources: Resource[], personId?: string) {
+export type CalendarTask = Pick<Task, "id" | "name" | "lane" | "start" | "end" | "durationMinutes" | "resources" | "critical">;
+export type CalendarResource = Pick<Resource, "id" | "name" | "color">;
+export function calendarProjection(tasks: CalendarTask[], resources: CalendarResource[], personId?: string) {
   const visible = tasks.filter(t => t.critical && (!personId || t.resources.includes(personId)));
   return {
     resources: (personId ? resources.filter(r => r.id === personId) : Object.entries(laneColors).map(([id, color]) => ({ id, name: id[0].toUpperCase() + id.slice(1), color }))).map(r => ({ id: r.id, name: r.name, eventColor: "color" in r ? r.color : "#e6aa57" })),
-    events: visible.map(t => ({ id: t.id, name: t.name, startDate: t.start, endDate: t.durationMinutes ? t.end : new Date(Date.parse(t.start) + 5 * 60000).toISOString(), resourceId: personId ?? t.lane, eventColor: laneColors[t.lane], readOnly: true })),
+    events: visible.map(t => ({ id: t.id, name: t.name, startDate: t.start, endDate: t.end, resourceId: personId ?? t.lane, eventColor: laneColors[t.lane], readOnly: true })),
   };
 }

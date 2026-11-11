@@ -9,7 +9,7 @@ const config: NextConfig = {
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "X-Frame-Options", value: "DENY" },
       { key: "Permissions-Policy", value: "camera=(), geolocation=()" },
-    ] }, { source: "/delivery/access", headers: [{ key: "Permissions-Policy", value: "camera=(self), geolocation=()" }] }];
+    ] }, { source: "/delivery/access", headers: [{ key: "Permissions-Policy", value: "camera=(self), geolocation=()" }] }, { source: "/crew/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }, { key: "Service-Worker-Allowed", value: "/crew/" }] }];
   },
 };
 export default config;

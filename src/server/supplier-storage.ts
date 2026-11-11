@@ -2,8 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
 import type { RentalExecution, SupplierId } from "@/domain/supplier-contracts";
-import { projectExecutionMilestones } from "@/domain/milestones";
-import { readiness } from "@/domain/readiness";
+import { projectExecutionMilestones, readiness } from "./crew/readiness";
 import { migrate, pool } from "./store";
 
 export async function supplierTransaction<T>(work: (client: PoolClient) => Promise<T>) {

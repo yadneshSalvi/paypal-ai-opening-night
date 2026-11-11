@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "qualification": "Personal crew authority, offline recovery, Calendar, and separate cue execution",
+  "environment": "Local isolated PostgreSQL schema and immutable production-build preview; all merchant credentials blank",
+  "sourceBaseCommit": "93103c4b9d14ca7f495a09c2ec9bb0c4741a5153",
+  "applicationSnapshotSha256": "a43ebad94edf247ee6ad3deef0684e0fe338526b5d548c99a14c0d46351ea8f5",
+  "applicationFilesHashed": 132,
+  "snapshotCreatedAt": "2026-11-11T09:13:55.568Z",
+  "providerBoundary": {
+    "providerWrites": 0,
+    "physicalInspections": 0,
+    "actualCrewParticipants": 0,
+    "controlledPrerequisites": [
+      "supplier confirmation",
+      "delivery accepted",
+      "rental authorization",
+      "rental fee capture",
+      "38 fixture capture-specific refunds"
+    ],
+    "note": "Supplier, delivery and financial records are declared readiness test inputs. They are not PayPal qualification, physical work or real-worker participation. The original actual 80 captures and 38 refunds have separate evidence files."
+  },
+  "automatedChecks": {
+    "unitAndUi": 109,
+    "integration": 176,
+    "failed": 0,
+    "typecheck": "passed",
+    "packageProvenance": "passed",
+    "productionBuild": "passed",
+    "providerTransport": "blocked or controlled test seam; no live write"
+  },
+  "nativeReview": {
+    "operator": "Automated in-app browser, separate personal fictional crew clients",
+    "mainRun": {
+      "sheetVersion": 2,
+      "planVersion": 3,
+      "criticalCurrentPersonalReadbacks": 11,
+      "reserveExcluded": true,
+      "signedAttestations": 8,
+      "signedCues": [
+        "DOORS_GO",
+        "HOUSE_OPEN",
+        "SUPPORT_START",
+        "HEADLINER_START"
+      ],
+      "completedAt": "2026-11-11T08:49:00.862Z",
+      "screenshot": "opening-crew-cues-complete.png"
+    },
+    "calendarAndPermissions": [
+      "Priya personal native Saturday calls and Sunday 10:00 next call displayed; rest 10h30",
+      "Tom can review lighting focus and cannot review programming"
+    ],
+    "offlineRecovery": {
+      "person": "Rory, noncritical reserve",
+      "initialOnlineShell": "saved and explicitly marked ready",
+      "offlineHardReload": "passed",
+      "queuedReadbackReload": "passed",
+      "automaticPostOnReconnect": false,
+      "explicitSyncReceivedAt": "2026-11-11T09:03:36.912Z",
+      "screenshot": "opening-reserve-offline-synced.png"
+    },
+    "revocation": {
+      "activeReserveCapabilitiesAfterRevoke": 0,
+      "oldClient": "ACCESS ENDED; no personal calls, duties or history rendered",
+      "savedReadbackRetained": true,
+      "mainCriticalReadbacksRetained": 11,
+      "mainSignedRecordsRetained": 12,
+      "screenshot": "opening-reserve-link-revoked.png"
+    },
+    "staleReview": {
+      "environment": "Separate controlled rehearsal; completed main run preserved",
+      "staleSubmission": "rejected, no signoff committed",
+      "dialog": "remains open with changed-review explanation and disabled sign button",
+      "escapeAndFocusReturn": "passed",
+      "screenshot": "opening-stale-review-visible.png",
+      "finalReviewedTimeAndFreshReviewFeedbackRetest": "passed",
+      "reviewedScenarioTime": "19:00 CST, revision9",
+      "changedScenarioTime": "19:35 CST, revision10",
+      "reviewedTimeRemainsFixed": true,
+      "freshReviewClearsPriorRejection": true,
+      "finalScreenshot": "opening-stale-review-context-fixed.png",
+      "signedRecordsCreated": 0
+    },
+    "mobileAndKeyboard": {
+      "viewportWidth": 390,
+      "documentWidth": 390,
+      "client": "Priya",
+      "arrowNavigation": "Your calls \u2192 Calendar \u2192 Your duties",
+      "physicalPhone": false
+    },
+    "finalCopyRetest": {
+      "status": "passed",
+      "snapshot": "crew-qa-04f24c26",
+      "revokedAccessHasNoSuccessToast": true,
+      "offlineHardReloadHasNoGenericFetchError": true,
+      "onlineRefreshRestoresConnected": true,
+      "browserNetworkAndViewportOverridesCleared": true
+    }
+  },
+  "independentReadOnlyAudit": {
+    "observedAt": "2026-11-11T09:20:30.091Z",
+    "mainRevision": 38,
+    "criticalCurrentReadbacks": 11,
+    "reserveReadbacksRetained": 1,
+    "reserveActiveCapabilities": 0,
+    "signedAttestations": 8,
+    "signedCues": 4,
+    "allSignaturesValid": true,
+    "allCommandAndActorBindingsPresent": true,
+    "readiness": [
+      {
+        "scope": "DOORS",
+        "ready": true,
+        "clear": 8,
+        "total": 8
+      },
+      {
+        "scope": "SUPPORT_START",
+        "ready": true,
+        "clear": 5,
+        "total": 5
+      },
+      {
+        "scope": "HEADLINER_START",
+        "ready": true,
+        "clear": 5,
+        "total": 5
+      }
+    ],
+    "providerTables": {
+      "paycore_operations": "not_initialized",
+      "paycore_attempts": "not_initialized",
+      "on_payment_intents": "not_initialized",
+      "on_payment_imports": "not_initialized",
+      "on_wallet_operations": 0,
+      "on_jobs": 0,
+      "on_webhook_inbox": 0,
+      "on_resource_observations": 0
+    },
+    "networkCallsDuringAudit": 0,
+    "transaction": "REPEATABLE READ READ ONLY; direct PostgreSQL, no mutable application-store import",
+    "separateStaleReviewFixture": {
+      "separateTenant": true,
+      "revision": 10,
+      "averyReadbacks": 1,
+      "signedAttestations": 0,
+      "signedCues": 0,
+      "mainRunPreserved": true
+    }
+  },
+  "issuesFoundAndCorrected": [
+    "An initial stale submission closed the dialog; it now stays open with the actionable rejection.",
+    "Controlled financial prerequisites initially retained actual/verified display labels; isolated QA now labels controlled inputs across show, execution, plan, box office, wrap and evidence.",
+    "Review originally displayed the latest background-refreshed clock; it now preserves reviewed time/revision and separately shows changed context.",
+    "Fresh review inherited a previous rejection; starting an explicit review now clears prior action feedback.",
+    "Expected offline fetch exposed generic network text and revoked access retained a success toast; recovery copy is explicit and ended access clears success state."
+  ],
+  "limitations": [
+    "No physical-phone use, real crew attendance, physical inspection or real performance is established.",
+    "Native historical-publication sync, wider browser/screen-reader coverage, stress, performance and complete end-to-end product acceptance remain separate gates; historical identity semantics have automated domain/API/storage coverage.",
+    "The remaining full product scope is unchanged, including grounded AI/voice, hours/payables/Payouts/invoices, cancellation/tour/network depth, evaluations and film."
+  ],
+  "relatedEvidence": [
+    "original-ticket-cohort-hosted-qualification.json",
+    "original-remedies-hosted-qualification.json",
+    "supplier-hosted-protocol2-qualification.json"
+  ],
+  "sourceSafetyScan": {
+    "files": 243,
+    "archives": 2,
+    "archiveMembers": 105,
+    "privateValuesChecked": 27,
+    "findings": 0
+  }
+}

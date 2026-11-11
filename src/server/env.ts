@@ -11,4 +11,7 @@ export const env = {
   get sessionSecret() { return required("JUDGE_SESSION_SECRET"); },
   get bryntumLicense() { return process.env.BRYNTUM_LICENSE_KEY ?? ""; },
   get isProduction() { return Boolean(process.env.VERCEL); },
+  // Local qualification only. Hosted deployments cannot label actual records
+  // as fixtures through this flag.
+  get controlledQa() { return !process.env.VERCEL && process.env.OPENING_NIGHT_QA_FIXTURE === "1" && ["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_ID", "OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_SECRET"].every(key => !process.env[key]); },
 };

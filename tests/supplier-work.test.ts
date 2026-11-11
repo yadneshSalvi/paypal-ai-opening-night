@@ -18,6 +18,10 @@ import jsQR from "jsqr";
 // Entire suite uses a disposable local schema and controlled HTTP-handler transport.
 // Financial records below are explicit test fixtures, never provider qualification evidence.
 const database = await isolatedDatabase();
+// A test that has not explicitly installed wireFor's controlled transport must
+// never instantiate an ambient merchant client or fall back to the network.
+const blockedProvider = new Proxy({} as SandboxPayPalProvider, { get() { throw new Error("Install the controlled supplier wire before any provider access"); } });
+(globalThis as typeof globalThis & { openingNightProviders?: Record<"venue" | "brightline", SandboxPayPalProvider> }).openingNightProviders = { venue: blockedProvider, brightline: blockedProvider };
 const store = await import("../src/server/store");
 const payments = await import("../src/server/payment-store");
 const intents = await import("../src/server/payment-intents");
