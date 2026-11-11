@@ -1,2 +1,4 @@
 import { migrate, pool } from "../src/server/store";
-await migrate(); console.log("Opening Night PostgreSQL schema ready."); await pool.end();
+import { paymentStore } from "../src/server/payment-store";
+try { await migrate(); await paymentStore(); console.log("Opening Night production, durable-work and payment schemas ready."); }
+finally { await pool.end(); }

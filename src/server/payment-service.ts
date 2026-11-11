@@ -6,15 +6,14 @@ import { approvedRental, assertPaymentAuthority, safeApprovalUrl, type PaymentIn
 import { digest } from "@/domain/hash";
 import { getShow, pool } from "./store";
 import { env } from "./env";
-import { importPaymentOperation, listIntents, ownedResources, paymentStore, paymentTransaction, readIntent } from "./payment-store";
+import { importPaymentOperation, needsParentReadback, listIntents, ownedResources, paymentStore, paymentTransaction, readIntent } from "./payment-store";
+import { enqueueJob, wakePaymentJob, type JobResult } from "./jobs";
+import { merchantConfig } from "./payment-config";
 
-function required(key: string) { const value = process.env[key]; if (!value) throw new Error("Missing payment configuration: " + key); return value; }
-if (required("PAYPAL_ENVIRONMENT") !== "sandbox" || required("PAYPAL_API_BASE_URL") !== "https://api-m.sandbox.paypal.com" || !required("PAYPAL_PROJECT_ISOLATED")) throw new Error("Opening Night requires isolated PayPal sandbox configuration.");
-if (required("PAYPAL_CLIENT_ID") === required("OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_ID")) throw new Error("Opening Night and Brightline must use different merchant apps.");
 const shared = globalThis as typeof globalThis & { openingNightProviders?: Record<PaymentSeller, SandboxPayPalProvider> };
 export const providers = shared.openingNightProviders ??= {
-  venue: new SandboxPayPalProvider({ environment: "sandbox", baseUrl: "https://api-m.sandbox.paypal.com", isolatedProject: "opening-night:venue", clientId: required("PAYPAL_CLIENT_ID"), clientSecret: required("PAYPAL_CLIENT_SECRET") }),
-  brightline: new SandboxPayPalProvider({ environment: "sandbox", baseUrl: "https://api-m.sandbox.paypal.com", isolatedProject: "opening-night:brightline", clientId: required("OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_ID"), clientSecret: required("OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_SECRET") }),
+  venue: new SandboxPayPalProvider(merchantConfig("venue")),
+  brightline: new SandboxPayPalProvider(merchantConfig("brightline")),
 };
 const identifier = z.string().uuid();
 export const paymentRequest = z.discriminatedUnion("type", [
@@ -81,13 +80,21 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
   } catch (error) { if (error instanceof DomainError) throw new PaymentError(error.code, error.message, error.status); throw error; }
 }
 async function coreFor(intent: PaymentIntent, signal: AbortSignal) { return new PaymentCore({ store: await paymentStore(), provider: providers[intent.seller], policy: { authorize: command => authorizePayment(command, signal) } }); }
+async function importConfirmedOperation(intent: PaymentIntent, operation: PaymentOperation, signal: AbortSignal) {
+  if (!needsParentReadback(operation)) return importPaymentOperation(intent, operation);
+  const action = operation.command.action; const orderId = "orderId" in action ? action.orderId : undefined;
+  if (!orderId || !intent.resourceIds.includes(orderId)) throw new PaymentError("PARENT_READBACK_REQUIRED", "The exact owned order is required before importing this reconciled receipt.", 503);
+  const resources = await providers[intent.seller].read("order", orderId, signal);
+  return importPaymentOperation(intent, operation, { orderId, observedAt: new Date().toISOString(), resources });
+}
 async function executeIntent(intent: PaymentIntent, retry = false) {
   const signal = AbortSignal.timeout(55000); const store = await paymentStore();
   const previous = await store.get(intent.command.scope, intent.command.operationId);
-  if (previous && !retry) { await importPaymentOperation(intent, previous); return previous; }
+  if (previous && !retry) { await importConfirmedOperation(intent, previous, signal); return previous; }
+  if (retry) await wakePaymentJob(intent.tenantId, intent.id);
   const core = await coreFor(intent, signal);
   const operation = retry ? await core.retry(intent.command.scope, intent.command.operationId, signal) : await core.execute(intent.command, signal);
-  await importPaymentOperation(intent, operation); return operation;
+  await importConfirmedOperation(intent, operation, signal); return operation;
 }
 interface IntentSpec { purpose: PaymentPurpose; semanticKey: string; seller: PaymentSeller; parentId?: string; ticketId?: string; tier?: "standard" | "vip"; resourceIds?: string[]; expectedRevision?: number; build: (id: string, show: ShowSnapshot) => PaymentAction }
 async function prepare(actor: Actor, spec: IntentSpec): Promise<PaymentIntent> {
@@ -105,8 +112,39 @@ async function prepare(actor: Actor, spec: IntentSpec): Promise<PaymentIntent> {
     if (spec.parentId && spec.purpose.startsWith("rental_")) { const parent = await readIntent(actor.tenantId, spec.parentId, client); if (parent.planVersion !== show.planVersion || parent.planDigest !== show.approvedPlan?.digest) throw new DomainError("STALE_RENTAL", "The rental belongs to an earlier recovery approval.", 403); }
     if (spec.parentId) { const owned = await ownedResources(actor.tenantId, spec.seller, spec.parentId, client); if (intent.resourceIds.some(resource => !owned.some(item => item.id === resource))) throw new DomainError("PAYMENT_RESOURCE", "The referenced payment is not in this production’s owned set.", 403); }
     await client.query("INSERT INTO on_payment_intents(id,tenant_id,seller,semantic_key,document) VALUES($1,$2,$3,$4,$5)", [id, actor.tenantId, spec.seller, spec.semanticKey, intent]);
+    await enqueueJob(client, { tenantId: actor.tenantId, kind: "payment_reconcile", semanticKey: id, payload: { intentId: id }, runAfter: new Date(Date.now() + 65000) });
     return intent;
   });
+}
+
+/** A durable intent is the authority. An event is only a read-only wakeup. */
+export async function reconcilePaymentIntent(tenantId: string, intentId: string, signal: AbortSignal, allowUndispatched = false): Promise<JobResult> {
+  const intent = await readIntent(tenantId, intentId); const store = await paymentStore();
+  const core = await coreFor(intent, signal);
+  let operation = await store.get(intent.command.scope, intent.command.operationId);
+  if (!operation) {
+    if (!allowUndispatched) return { status: "needs_attention", code: "NOT_DISPATCHED" };
+    operation = await core.execute(intent.command, signal);
+  } else if (operation.status === "claimed") {
+    if (Date.parse(operation.leaseUntil) > Date.now()) return { status: "waiting", code: "OPERATION_LEASE_ACTIVE", delaySeconds: 65 };
+    if (!allowUndispatched) return { status: "waiting", code: "NOT_DISPATCHED", delaySeconds: 65 };
+    // Fencing prevents the dead request's old version from dispatching later.
+    try {
+      operation = await store.transition(intent.command.scope, intent.command.operationId, operation.version, "not_sent", null, { kind: "RECOVERED_BEFORE_DISPATCH", message: "Recovered an expired claim before provider dispatch.", httpStatus: 409 });
+      operation = await core.retry(intent.command.scope, intent.command.operationId, signal);
+    } catch (error) {
+      if (error instanceof PaymentError && error.code === "OPERATION_CHANGED") return { status: "waiting", code: "OPERATION_CHANGED", delaySeconds: 65 };
+      throw error;
+    }
+  } else if (operation.status === "dispatching" && Date.parse(operation.leaseUntil) > Date.now()) {
+    return { status: "waiting", code: "OPERATION_LEASE_ACTIVE", delaySeconds: 65 };
+  } else if (operation.status === "dispatching" || operation.status === "pending_reconciliation") {
+    operation = await core.reconcile(intent.command.scope, intent.command.operationId, signal);
+  }
+  await importConfirmedOperation(intent, operation, signal);
+  if (operation.status === "succeeded") return { status: "complete" };
+  if (operation.status === "refused" || operation.status === "not_sent") return { status: "needs_attention", code: "EXPLICIT_RETRY_REQUIRED" };
+  return { status: "waiting", code: "PROVIDER_OUTCOME_UNKNOWN" };
 }
 function returnExperience(id: string, tenantId: string, origin: string, authorization: boolean) {
   const route = origin + "/payments/return?intent=" + id + "&state=" + callbackState({ id, tenantId });
@@ -147,7 +185,7 @@ export async function handlePayment(actor: Actor, request: PaymentRequest, rawOr
     intent = await prepare(actor, { purpose: "vip_refund", semanticKey: "ticket:" + request.ticketId + ":vip-remedy", seller: "venue", parentId: root.id, ticketId: request.ticketId, tier: "vip", resourceIds: [capture.id, order.id], expectedRevision: request.expectedRevision, build: () => ({ kind: "refund_capture", money: { currency: "USD", minor: 1500 }, captureId: capture.id, orderId: order.id }) });
   } else {
     intent = await readIntent(actor.tenantId, request.intentId); currentRole(actor, intent.purpose);
-    if (request.type === "reconcile") { const core = await coreFor(intent, AbortSignal.timeout(55000)); const operation = await core.reconcile(intent.command.scope, intent.command.operationId); await importPaymentOperation(intent, operation); return operation; }
+    if (request.type === "reconcile") { const signal = AbortSignal.timeout(55000); const core = await coreFor(intent, signal); const operation = await core.reconcile(intent.command.scope, intent.command.operationId, signal); await importConfirmedOperation(intent, operation, signal); return operation; }
     return executeIntent(intent, true);
   }
   return executeIntent(intent);

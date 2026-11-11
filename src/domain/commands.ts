@@ -6,7 +6,7 @@ import { digest } from "./hash";
 import { readiness } from "./readiness";
 import { affectedSubgraph, planningDigest, validatePatch } from "./scheduling";
 import { atVenue, compareInstants, localTime } from "./time";
-import { uniqueActual } from "./finance";
+import { currentActual } from "./finance";
 
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("load_incidents") }).strict(),
@@ -62,7 +62,7 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
     case "publish": {
       requireRole(actor, "producer", "stage_manager");
       if (!show.approvedPlan) throw new DomainError("PLAN_APPROVAL_REQUIRED", "Approve a current recovery plan before publishing.");
-      const secured = uniqueActual(show).some(e => e.planVersion === show.planVersion && e.kind === "authorization" && e.purpose === "rental" && e.amountMinor === show.approvedPlan!.commercialCapMinor);
+      const secured = currentActual(show).some(e => e.planVersion === show.planVersion && e.kind === "authorization" && e.purpose === "rental" && e.amountMinor === show.approvedPlan!.commercialCapMinor);
       const confirmed = show.facts.some(f => f.kind === "supplier_confirmed" && f.planVersion === show.planVersion);
       if (!secured || !confirmed) throw new DomainError("COMMERCIAL_PENDING", "Publication waits for verified rental authorization and supplier confirmation.");
       if (show.sheets.at(-1)?.candidateId === show.approvedPlan.candidateId) throw new DomainError("ALREADY_PUBLISHED", "This approved plan is already published.");
@@ -91,7 +91,7 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       const earliest: Partial<Record<OperationalFact["kind"], string>> = { delivery_accepted: "17:15", return_accepted: "23:30", focus_signed_off: "18:15", cue_signed_off: "18:35", headliner_checkin: "19:35", quiet_prep: "20:10", changeover: "20:40" };
       if (earliest[command.kind] && compareInstants(show.clock, atVenue(earliest[command.kind]!)) < 0) throw new DomainError("FACT_TOO_EARLY", `This event cannot be recorded before ${earliest[command.kind]} fixture time.`);
       if (show.facts.some(f => f.kind === command.kind && f.planVersion === show.planVersion)) throw new DomainError("FACT_ALREADY_RECORDED", "This plan already has that fact.");
-      if (["focus_signed_off", "cue_signed_off"].includes(command.kind) && !uniqueActual(show).some(e => e.planVersion === show.planVersion && e.kind === "capture" && e.purpose === "rental" && e.amountMinor === 48000)) throw new DomainError("FEE_CAPTURE_REQUIRED", "The rental fee capture must be verified before technical sign-off.");
+      if (["focus_signed_off", "cue_signed_off"].includes(command.kind) && !currentActual(show).some(e => e.planVersion === show.planVersion && e.kind === "capture" && e.purpose === "rental" && e.amountMinor === 48000)) throw new DomainError("FEE_CAPTURE_REQUIRED", "The rental fee capture must be verified before technical sign-off.");
       if (command.kind === "quiet_prep" && !show.facts.some(f => f.planVersion === show.planVersion && f.kind === "headliner_checkin")) throw new DomainError("ARTIST_NOT_CHECKED_IN", "Record the artist’s actual fixture check-in first.");
       show.facts.push({ id: randomUUID(), kind: command.kind, planVersion: show.planVersion, actorId: actor.id, role: role[command.kind], recordedAt: now, fixtureAt: show.clock, source: "sample", detail: command.detail });
       appendEvent(show, actor, `execution.${command.kind}`, `Recorded controlled fixture evidence: ${command.detail}`, now); break;

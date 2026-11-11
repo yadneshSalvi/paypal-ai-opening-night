@@ -64,6 +64,16 @@ export interface FinancialEvidence {
   amountMinor: number; currency: "USD"; source: Provenance; verified: boolean; planVersion: number;
   providerResourceId: string; parentId: string | null; ticketId: string | null; recordedAt: string;
 }
+export interface FinancialObservation {
+  id: string; seller: "venue" | "brightline"; kind: "order" | "authorization" | "capture" | "refund";
+  providerResourceId: string; status: string; amountMinor: number | null; currency: string | null;
+  parentId: string | null; observedAt: string; transport: "paypal_https" | "local_fixture"; refundedMinor?: number | null; readRevision?: number;
+}
+export interface FinancialCheck {
+  id: string; seller: "venue" | "brightline"; eventType: string; resources: { kind: string; id: string }[];
+  status: "pending" | "resolved"; receivedAt: string; revision: number; resolvedAt: string | null;
+  transport: "paypal_https" | "local_fixture";
+}
 export interface Ticket {
   id: string; tier: "standard" | "vip"; admissionMinor: number; perkMinor: number; captureId: string | null;
   source: Provenance; refundedMinor: number; status: "reserved" | "captured" | "partially_refunded";
@@ -84,6 +94,8 @@ export interface ShowSnapshot {
   tasks: Task[]; dependencies: Dependency[]; resources: Resource[]; offers: SupplierOffer[]; incidents: Incident[];
   runs: RescueRun[]; approvedPlan: ApprovedPlan | null; sheets: PublishedRunSheet[]; acknowledgments: Acknowledgment[];
   financialEvidence: FinancialEvidence[]; tickets: Ticket[]; facts: OperationalFact[]; sources: EvidenceRef[]; events: DomainEvent[];
+  financialObservations?: FinancialObservation[];
+  financialChecks?: FinancialCheck[];
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null }

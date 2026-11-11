@@ -1,5 +1,5 @@
 import type { CueScope, ReadinessGate, ReadinessReport, ShowSnapshot } from "./contracts";
-import { financialSummary, uniqueActual } from "./finance";
+import { financialSummary, currentActual } from "./finance";
 import { digest } from "./hash";
 import { atVenue, compareInstants } from "./time";
 
@@ -11,7 +11,7 @@ export function currentAcknowledgments(show: ShowSnapshot) {
 export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().toISOString()): ReadinessReport {
   const sheet = show.sheets.at(-1)!;
   const facts = show.facts.filter(f => f.planVersion === show.planVersion);
-  const actual = uniqueActual(show).filter(e => e.planVersion === show.planVersion);
+  const actual = currentActual(show).filter(e => e.planVersion === show.planVersion);
   const finance = financialSummary(show);
   const fact = (kind: typeof facts[number]["kind"]) => facts.find(f => f.kind === kind);
   const gates: ReadinessGate[] = [];

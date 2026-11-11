@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-11T02:34:08.664Z",
+  "source": "local_integration",
+  "tests": {
+    "domain": 68,
+    "postgresBryntumSdk": 52,
+    "durableIsolatedSchema": 25
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "packageProvenance": "core0.2.4 SHA256 verified",
+  "httpChecks": [
+    "health200",
+    "anonymousJobs401",
+    "ownedEmptyJobs200",
+    "manualResumeMissingOrigin403",
+    "ownedEmptyResume200",
+    "workerRejectsMissingCapability",
+    "unsignedWebhookRejected"
+  ],
+  "protectedPaidRehearsalsUnchanged": 1,
+  "providerFinancialWrites": 0,
+  "authenticSignedDeliveryQualified": false,
+  "hostedWorkerQualified": false,
+  "notes": [
+    "SDK and signature postback responses used controlled fetch fixtures in disposable local database schemas.",
+    "The existing Brightline authorization, fee capture and residual release were neither re-created nor refunded.",
+    "Root owns deployment, production migration, merchant registration and authenticated scheduler qualification."
+  ]
+}

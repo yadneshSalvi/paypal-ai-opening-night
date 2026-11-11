@@ -5,6 +5,7 @@ import { createFixture } from "@/domain/fixture";
 import { digest } from "@/domain/hash";
 import { env } from "./env";
 import { claimSessionAdmission, SESSION_ADMISSION_SCOPE } from "./session-admission";
+import { projectExecutionMilestones } from "@/domain/milestones";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
 export const pool = shared.openingNightPool ??= new Pool({ connectionString: env.databaseUrl, max: 6, connectionTimeoutMillis: 6000, idleTimeoutMillis: 30000 });
@@ -16,8 +17,7 @@ export async function migrate() {
       await client.query("SELECT pg_advisory_xact_lock(4105001)");
       await client.query("CREATE TABLE IF NOT EXISTS on_schema_migrations (version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())");
       const applied = await client.query("SELECT version FROM on_schema_migrations WHERE version=1");
-      if (applied.rowCount) { await client.query("COMMIT"); return; }
-      await client.query(`
+      if (!applied.rowCount) { await client.query(`
         CREATE TABLE IF NOT EXISTS on_shows (tenant_id uuid PRIMARY KEY, snapshot jsonb NOT NULL, revision integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
         CREATE TABLE IF NOT EXISTS on_sessions (token_hash text PRIMARY KEY, tenant_id uuid NOT NULL REFERENCES on_shows(tenant_id) ON DELETE CASCADE, actor jsonb NOT NULL, expires_at timestamptz NOT NULL);
         CREATE TABLE IF NOT EXISTS on_commands (tenant_id uuid NOT NULL REFERENCES on_shows(tenant_id) ON DELETE CASCADE, command_id uuid NOT NULL, payload_hash text NOT NULL, result_revision integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (tenant_id, command_id));
@@ -27,7 +27,47 @@ export async function migrate() {
         CREATE TABLE IF NOT EXISTS on_session_admissions (id uuid PRIMARY KEY, scope text NOT NULL, created_at timestamptz NOT NULL);
         CREATE INDEX IF NOT EXISTS on_session_admissions_scope_created ON on_session_admissions(scope, created_at);
       `);
-      await client.query("INSERT INTO on_schema_migrations(version) VALUES(1)");
+      await client.query("INSERT INTO on_schema_migrations(version) VALUES(1)"); }
+      const durable = await client.query("SELECT version FROM on_schema_migrations WHERE version=2");
+      if (!durable.rowCount) {
+        await client.query(`
+          CREATE TABLE on_jobs (
+            id uuid PRIMARY KEY, tenant_id uuid NOT NULL REFERENCES on_shows(tenant_id) ON DELETE CASCADE,
+            kind text NOT NULL, semantic_key text NOT NULL, payload jsonb NOT NULL, payload_hash text NOT NULL,
+            status text NOT NULL CHECK(status IN ('queued','running','waiting','complete','needs_attention')),
+            run_after timestamptz NOT NULL DEFAULT now(), attempts integer NOT NULL DEFAULT 0,
+            max_attempts integer NOT NULL DEFAULT 12 CHECK(max_attempts BETWEEN 1 AND 30),
+            lease_id uuid, lease_until timestamptz, last_code text, created_at timestamptz NOT NULL DEFAULT now(),
+            updated_at timestamptz NOT NULL DEFAULT now(), UNIQUE(tenant_id,kind,semantic_key)
+          );
+          CREATE INDEX on_jobs_ready ON on_jobs(run_after,created_at) WHERE status IN ('queued','waiting','running');
+          CREATE INDEX on_jobs_tenant ON on_jobs(tenant_id,created_at);
+          CREATE TABLE on_webhook_inbox (
+            seller text NOT NULL CHECK(seller IN ('venue','brightline')), event_id text NOT NULL, body_hash text NOT NULL,
+            event_type text NOT NULL, resource_kind text, resource_id text NOT NULL, hints jsonb NOT NULL,
+            tenant_id uuid REFERENCES on_shows(tenant_id) ON DELETE CASCADE, root_intent_id uuid,
+            status text NOT NULL CHECK(status IN ('queued','unmatched','conflict','processed','needs_attention')),
+            transport text NOT NULL CHECK(transport IN ('paypal_https','local_fixture')),
+            received_at timestamptz NOT NULL DEFAULT now(), processed_at timestamptz, last_code text,
+            PRIMARY KEY(seller,event_id)
+          );
+          CREATE INDEX on_webhook_inbox_tenant ON on_webhook_inbox(tenant_id,received_at);
+          CREATE TABLE on_resource_observations (
+            id uuid PRIMARY KEY, tenant_id uuid NOT NULL REFERENCES on_shows(tenant_id) ON DELETE CASCADE,
+            seller text NOT NULL, root_intent_id uuid NOT NULL, kind text NOT NULL, provider_id text NOT NULL,
+            status text NOT NULL, amount_minor bigint, currency text, parent_id text, refunded_minor bigint, observed_at timestamptz NOT NULL,
+            transport text NOT NULL CHECK(transport IN ('paypal_https','local_fixture')),
+            UNIQUE(tenant_id,seller,kind,provider_id,observed_at)
+          );
+          CREATE INDEX on_resource_observations_latest ON on_resource_observations(tenant_id,seller,kind,provider_id,observed_at DESC);
+          INSERT INTO on_events(id,tenant_id,revision,event)
+            SELECT CASE WHEN value->>'id' ~ '^[a-fA-F0-9-]{36}$' THEN (value->>'id')::uuid ELSE md5(value->>'id')::uuid END,
+              tenant_id,(value->>'revision')::integer,value
+            FROM on_shows CROSS JOIN LATERAL jsonb_array_elements(snapshot->'events')
+            WHERE value->>'type'='show.created' ON CONFLICT DO NOTHING;
+        `);
+        await client.query("INSERT INTO on_schema_migrations(version) VALUES(2)");
+      }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }
@@ -42,11 +82,13 @@ export async function createSession(existingToken?: string, admissionScope = SES
   await migrate(); const tenantId = randomUUID(); const token = randomBytes(32).toString("base64url");
   const actor: Actor = { id: `producer:${randomUUID()}`, tenantId, roles: ["producer", "stage_manager", "department_lead", "foh"], personId: null };
   const show = createFixture(tenantId);
+  show.events[0]!.id = randomUUID();
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     await claimSessionAdmission(client, admissionScope);
     await client.query("INSERT INTO on_shows(tenant_id, snapshot, revision) VALUES($1,$2,$3)", [tenantId, show, show.revision]);
+    await persistEvent(client, tenantId, show.events[0]!);
     await client.query("INSERT INTO on_sessions(token_hash, tenant_id, actor, expires_at) VALUES($1,$2,$3,now()+interval '7 days')", [tokenHash(token), tenantId, actor]);
     await client.query("COMMIT");
   } catch (e) { await client.query("ROLLBACK"); throw e; } finally { client.release(); }
@@ -60,7 +102,7 @@ export async function getActor(token: string | undefined): Promise<Actor | null>
 export async function getShow(tenantId: string): Promise<ShowSnapshot> {
   await migrate(); const result = await pool.query<{ snapshot: ShowSnapshot }>("SELECT snapshot FROM on_shows WHERE tenant_id=$1", [tenantId]);
   if (!result.rows[0]) throw new DomainError("SHOW_NOT_FOUND", "This rehearsal has expired. Start a new session.", 404);
-  return result.rows[0].snapshot;
+  return projectExecutionMilestones(result.rows[0].snapshot);
 }
 export async function createCrewCapability(actor: Actor, personId: string) {
   if (!actor.roles.includes("producer")) throw new DomainError("ROLE_REQUIRED", "Only the producer can invite a controlled crew client.", 403);
@@ -84,7 +126,7 @@ export async function transactCommand(actor: Actor, id: string, expectedRevision
       await client.query("COMMIT"); return { show, replayed: true };
     }
     if (show.revision !== expectedRevision) throw new DomainError("STALE_REVISION", "Another action changed the production. Refresh and review the latest state.");
-    const next = transform(show);
+    const next = projectExecutionMilestones(transform(projectExecutionMilestones(show)));
     if (next.tenantId !== actor.tenantId || next.revision !== show.revision + 1) throw new Error("Invalid transactional snapshot transition");
     await client.query("UPDATE on_shows SET snapshot=$2, revision=$3, updated_at=now() WHERE tenant_id=$1", [actor.tenantId, next, next.revision]);
     await client.query("INSERT INTO on_commands(tenant_id,command_id,payload_hash,result_revision) VALUES($1,$2,$3,$4)", [actor.tenantId, id, payloadHash, next.revision]);

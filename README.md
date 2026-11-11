@@ -28,7 +28,7 @@ npm run build
 npm run start
 ```
 
-The integration suite uses the configured PostgreSQL database in isolated temporary tenants and cleans them afterward. Its SDK transport tests use controlled wire fixtures; they do not make sandbox purchases. Actual provider qualification is a separate browser workflow.
+The integration suite requires local PostgreSQL. Most cases use temporary tenants; the durable worker suite creates and drops a separate schema and kills its own worker process to verify recovery. SDK and signature-postback tests use controlled wire fixtures; they do not make sandbox purchases or establish authentic signed delivery. Actual provider qualification is a separate workflow.
 
 ## Working milestone
 
@@ -39,6 +39,8 @@ The integration suite uses the configured PostgreSQL database in isolated tempor
 - Revision-checked plan approval; distinct publication, crew acknowledgment, DOORS, SUPPORT_START and HEADLINER_START gates. A fixture clock change creates no execution evidence.
 - Separate controlled crew and supplier clients. Each acknowledgment binds the exact personal sheet version and digest; historical acknowledgments cannot clear the current gate.
 - Guarded sandbox rental checkout/callback, $480 nonfinal fee capture, $300 residual authorization closure, itemized ticket checkout and a capture-specific $15 remedy adapter. Operations use current domain authority, durable PostgreSQL identities, provider ownership, fresh budgets and safe reconciliation.
+- Payment intents and webhook inbox entries commit their wakeup jobs atomically. Leased PostgreSQL work survives request/process loss; bounded retries expose unresolved outcomes for review. The payment panel shows saved work and authentic-delivery counts separately from configuration.
+- Merchant-specific signature verification, duplicate/conflict handling and owned-resource readback are implemented and locally tested. Current adverse reads withdraw readiness while preserving historical receipts. Money milestones and native dependency styles follow that evidence.
 
 A created PayPal order is **not** an authorization or capture. The rental flow requests a $780 authorization from the distinct supplier merchant, captures $480 only after supplier confirmation and attributed delivery acceptance, and retains the $300 hold for a recorded undamaged return. PayPal buyer approval occurs in the official sandbox. An actual browser qualification completed the supplier authorization, nonfinal fee capture and residual hold closure; subsequent provider reads confirm the $480 capture remains completed and the authorization is voided. See the [redacted qualification record](docs/evidence/brightline-rental-qualification.json). Saved-wallet setup and the full bounded cohort remain an upcoming milestone.
 
@@ -56,15 +58,23 @@ Physical production facts are explicitly controlled rehearsal records. They do n
 
 ## Capability boundaries
 
-This is an implementation milestone, not a completed submission. Full required scope remains: rider compilation, model-grounded recovery agents, native Bryntum AI and voice, supplier RFQs/holds/compensation and signed handoff, all 80 actual sandbox captures and 38 original-capture refunds, the 11 controlled client acknowledgments, actual-hour approvals and Payouts/invoices, deployed verified webhooks and crash recovery, the second-incident/cancellation branch, tour/network coordination, broader evaluation, real-phone evidence and the filmed demonstration. No participant study or physical proof is fabricated. Planned cohorts and SDK wire fixtures do not satisfy actual provider requirements.
+This is an implementation milestone, not a completed submission. Full required scope remains: rider compilation, model-grounded recovery agents, native Bryntum AI and voice, supplier RFQs/holds/compensation and signed handoff, all 80 actual sandbox captures and 38 original-capture refunds, the 11 controlled client acknowledgments, actual-hour approvals and Payouts/invoices, hosted worker and authentic signed-webhook qualification, the second-incident/cancellation branch, tour/network coordination, broader evaluation, real-phone evidence and the filmed demonstration. No participant study or physical proof is fabricated. Planned cohorts and SDK wire fixtures do not satisfy actual provider requirements.
 
 See [architecture and authority](docs/CONTRACTS.md) and [the capability register](docs/CAPABILITIES.md). The private implementation ledger is intentionally not in Git; public documents keep a fresh checkout understandable without it.
 
 ## PayPal and APIMatic
 
-The app consumes immutable `@fracture/paypal-core` 0.2.2 and verifies its archive SHA-256. The core uses the real APIMatic-generated **paypal 2.29.0** SDK pinned to `5d0df8a8817e5fdf2e2cd48e68f790ea4730aab2`; it is not `@paypal/paypal-server-sdk`. Installed operation maps and declaring models inform the integration contract. See [APIMatic setup and usage](APIMATIC_SETUP.md).
+The app consumes immutable `@fracture/paypal-core` 0.2.4 and verifies its archive SHA-256. The core uses the real APIMatic-generated **paypal 2.29.0** SDK pinned to `5d0df8a8817e5fdf2e2cd48e68f790ea4730aab2`; it is not `@paypal/paypal-server-sdk`. Installed operation maps and declaring models inform the integration contract. See [APIMatic setup and usage](APIMATIC_SETUP.md).
 
-Secrets, local plans, private account state and recordings are ignored. The app is currently private and local; publication, deployment, webhook registration and demo submission are separately verified release actions.
+Secrets, local plans, private account state and recordings are ignored. Source remains private, with the hosted checkpoint linked above. Each later deployment, webhook registration and demo submission needs its own recorded verification.
+
+## Durable worker and webhook setup
+
+Register each sandbox merchant's stable endpoint separately: `/api/webhooks/paypal/venue` and `/api/webhooks/paypal/brightline`. Store their returned IDs in `PAYPAL_WEBHOOK_ID` and `OPENING_NIGHT_SUPPLIER_PAYPAL_WEBHOOK_ID`. The receiver uses the existing core verifier and the explicit current v2 event catalog in `src/server/payment-webhooks.ts`. It never executes a financial action from a webhook payload.
+
+After reviewing the deployed migration and pending work, configure a secret of at least 32 characters in `CRON_SECRET` and have the deployment scheduler call `/api/jobs/tick` with its Bearer capability. Scheduling is deliberately separate from compiling this route. `npm run worker:once` runs one bounded batch locally and can resume previously approved, proved-undispatched work; use it only against the intended sandbox database. Producer clients may resume due work for their own rehearsal. Neither mechanism resends an ambiguous provider write or creates new approval.
+
+The first durable checkpoint passed 68 domain tests, 52 PostgreSQL/Bryntum/SDK integration tests, TypeScript and the production build. The preserved paid local rehearsal's snapshot hash was unchanged after integration testing. Hosted scheduling and authentic signed delivery are still separate qualification gates. See [durability and webhook boundaries](docs/DURABLE_WORK.md).
 
 ## License
 
