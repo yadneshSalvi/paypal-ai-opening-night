@@ -34,9 +34,12 @@ DOORS requires eight explicit gates, including supplier authorization and confir
 - PostgreSQL serializes new-session admission across app instances: at most 30 creations per rolling hour and 200 per rolling day. Reservations commit with the new show; rejected attempts return 429 and Retry-After. Existing reads and operations are unaffected. The HTTP route uses a fixed deployment scope; database tests isolate their own scopes.
 - Crew and supplier tokens arrive in URL fragments, move to tab session storage, and are removed from the address bar. Invitation creation sends no external message.
 - Browser mutations require an exact Origin header and use strict schemas. Missing, opaque and mismatched origins are rejected. Signed provider webhooks use a separate merchant-specific signature-verification boundary. The server rejects caller-supplied payment amounts.
+- Cookie-authenticated actions also require `X-Opening-Night-Production` to match the rehearsal shown in the requesting tab. A changed browser selection returns `PRODUCTION_CHANGED`; the tab blocks further actions until explicitly reloaded. A person- or supplier-scoped Bearer capability keeps its original fixed rehearsal.
 - Provider errors use bounded reasons. Credentials, wallet IDs and raw response bodies never enter public payment DTOs.
 - Payment callbacks require an allowed app origin. Set `APP_BASE_URL` for the stable deployed hostname.
 - SDK logging stays off. Unknown payment results never invite blind retry.
+
+`/api/rehearsals` lists a producer's saved workspace and accepts explicit create, rename and switch requests. Reads neither create workspace membership nor renew access. Requests carry the displayed tenant and a stable idempotency key; replays return the original result, while changed payloads and foreign workspaces are rejected. Additive migration 5 creates workspace, membership and request records without rewriting original production snapshots. Selecting a rehearsal preserves its original actor and access expiry. Approved background work and financial history remain attached to their original production.
 
 ## Verification
 

@@ -1,0 +1,19 @@
+{
+  "baseCommit": "1e099c562338ab5144b511cb095498a03ea2aa62",
+  "qualifiedAt": "2026-11-11T06:01:13.382825+00:00",
+  "scope": "resume review affordance; payment authority unchanged",
+  "domainAndRenderedUiTestsPassed": 74,
+  "focusedRenderedUiTestsPassed": 4,
+  "productionBuild": "passed",
+  "typecheck": "passed",
+  "sourcePrivateValueScan": "passed",
+  "checks": [
+    "A paused ticket without a capture can open review.",
+    "Busy controls are disabled; non-paused cohorts have no Resume review action.",
+    "Review shows the existing ceiling, expiry, recorded captures, unconfirmed count and unchecked continuation choice.",
+    "Changed approval, pause target, expiry or revocation invalidates the displayed review."
+  ],
+  "nativeQualification": "pending root on deployed source",
+  "providerCalls": 0,
+  "financialWrites": 0
+}

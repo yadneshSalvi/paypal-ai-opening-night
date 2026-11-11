@@ -250,5 +250,18 @@
       "code": "PRODUCTION_CHANGED",
       "hasCookie": false
     }
-  ]
+  ],
+  "combinedRuntimeQualification": {
+    "includedHotfixes": [
+      "1e099c562338ab5144b511cb095498a03ea2aa62",
+      "1176fb0bba73660dd1146ac271f56d5e7332ed28"
+    ],
+    "domainAndRenderedUiTestsPassed": 74,
+    "integrationTestsPassed": 160,
+    "typecheck": "passed",
+    "isolatedProductionBuild": "passed",
+    "builtSourceTreeBeforeEvidenceUpdate": "646b5e0b7f2f12c6fac28d1975a40bb7bf04fc05",
+    "providerTransport": "blocked",
+    "hostedSchema5Migration": "not performed by this qualification"
+  }
 }
