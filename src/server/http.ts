@@ -4,13 +4,21 @@ import { allReadiness } from "@/domain/readiness";
 import { getActor } from "./store";
 import { PaymentError, ProviderError } from "@fracture/paypal-core";
 import { SessionCreationLimitError } from "./session-admission";
+import { PRODUCTION_SCOPE_HEADER } from "@/domain/rehearsal-contracts";
 export const SESSION_COOKIE = "opening-night-session";
 export async function currentActor(request?: Request): Promise<Actor | null> {
   const authorization = request?.headers.get("authorization");
   const bearer = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
   return getActor(bearer ?? (await cookies()).get(SESSION_COOKIE)?.value);
 }
-export async function requireActor(request?: Request) { const actor = await currentActor(request); if (!actor) throw new DomainError("SESSION_REQUIRED", "Open a rehearsal session to continue.", 401); return actor; }
+export function assertProductionScope(actor: Actor, request: Request) {
+  const scope = request.headers.get(PRODUCTION_SCOPE_HEADER);
+  if (scope && scope !== actor.tenantId) throw new DomainError("PRODUCTION_CHANGED", "This tab belongs to another rehearsal. Reload to see the currently selected production before acting.", 409);
+  // A bearer capability carries its own immutable tenant. Cookie-based mutations
+  // must also name the production the person is actually viewing in this tab.
+  if (!scope && !["GET", "HEAD"].includes(request.method) && !request.headers.get("authorization")?.startsWith("Bearer ")) throw new DomainError("PRODUCTION_SCOPE_REQUIRED", "Refresh this page before changing the production. Its displayed rehearsal must match the current session.", 409);
+}
+export async function requireActor(request?: Request) { const actor = await currentActor(request); if (!actor) throw new DomainError("SESSION_REQUIRED", "Open a rehearsal session to continue.", 401); if (request) assertProductionScope(actor, request); return actor; }
 export function assertSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   const url = new URL(request.url); const host = request.headers.get("host");

@@ -1,4 +1,5 @@
 "use client";
+import { productionFetch } from "./production-fetch";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUpRight, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed, Clock3, Fingerprint, LockKeyhole, Pause, RefreshCw, ShieldCheck, Ticket, TriangleAlert, WalletCards } from "lucide-react";
 import type { ConsoleData } from "@/domain/contracts";
@@ -62,7 +63,7 @@ export function CommerceDesk({ data, onChange }: { data: ConsoleData; onChange: 
   }, []);
   const load = useCallback(async (signal?: AbortSignal) => {
     const number = ++sequence.current;
-    const response = await fetch("/api/commerce", { cache: "no-store", ...(signal ? { signal } : {}) }); const body = await response.json();
+    const response = await productionFetch(current.current.data.show.tenantId, "/api/commerce", { cache: "no-store", ...(signal ? { signal } : {}) }); const body = await response.json();
     if (!response.ok || !body.commerce) throw new Error(body.error ?? "The saved ticket run could not be loaded.");
     if (number === sequence.current && !pending.current) receive(body);
   }, [receive]);
@@ -78,7 +79,7 @@ export function CommerceDesk({ data, onChange }: { data: ConsoleData; onChange: 
     if (pending.current) return null; pending.current = true; ++sequence.current;
     setBusy(String(request.type)); setError(null); setNotice("");
     try {
-      const response = await fetch("/api/commerce", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request) }); const body = await response.json();
+      const response = await productionFetch(current.current.data.show.tenantId, "/api/commerce", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request) }); const body = await response.json();
       if (!response.ok || !body.commerce) throw new Error(body.error ?? "The original instruction could not be checked.");
       receive(body); setNotice(body.work?.status === "needs_attention" ? explanation(body.work.code) : message); return body;
     } catch (error) { setError(error instanceof Error ? error.message : "The instruction could not finish."); return null; }
@@ -87,7 +88,7 @@ export function CommerceDesk({ data, onChange }: { data: ConsoleData; onChange: 
   const resumeWork = async () => {
     if (pending.current) return; pending.current = true; ++sequence.current; setBusy("work"); setError(null); setNotice("");
     try {
-      const response = await fetch("/api/jobs", { method: "POST" }); const body = await response.json();
+      const response = await productionFetch(current.current.data.show.tenantId, "/api/jobs", { method: "POST" }); const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "The saved work could not be resumed.");
       if (body.show.revision > current.current.data.show.revision) current.current.onChange(body);
       setNotice(body.tick.processed ? "Due instructions checked. Each result remains attached to its original ticket or capture." : "No instruction is due yet. Saved work retains its scheduled check.");

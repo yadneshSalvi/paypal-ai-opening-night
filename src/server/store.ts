@@ -1,13 +1,14 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { Pool, type PoolClient } from "pg";
 import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
-import { createFixture } from "@/domain/fixture";
 import { digest } from "@/domain/hash";
 import { env } from "./env";
-import { claimSessionAdmission, SESSION_ADMISSION_SCOPE } from "./session-admission";
+import { SESSION_ADMISSION_SCOPE } from "./session-admission";
+import { insertProducerRehearsal, sessionTokenHash as tokenHash } from "./session-records";
 import { projectExecutionMilestones } from "@/domain/milestones";
 import { supplierMigration } from "./migrations/suppliers-v3";
 import { commerceMigration } from "./migrations/commerce-v4";
+import { rehearsalsMigration } from "./migrations/rehearsals-v5";
 import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -75,33 +76,26 @@ export async function migrate() {
       if (!suppliers.rowCount) { await client.query(supplierMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(3)"); }
       const commerce = await client.query("SELECT version FROM on_schema_migrations WHERE version=4");
       if (!commerce.rowCount) { await client.query(commerceMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(4)"); }
+      const rehearsals = await client.query("SELECT version FROM on_schema_migrations WHERE version=5");
+      if (!rehearsals.rowCount) { await client.query(rehearsalsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(5)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }
   })();
   return shared.openingNightMigration;
 }
-function tokenHash(token: string) { return createHash("sha256").update(`${env.sessionSecret}:${token}`).digest("hex"); }
 // HTTP always uses the fixed deployment scope. A server-only scope isolates database tests.
 export async function createSession(existingToken?: string, admissionScope = SESSION_ADMISSION_SCOPE) {
   const existingActor = await getActor(existingToken);
   if (existingActor && existingToken) return { token: existingToken, show: await getShow(existingActor.tenantId), actor: existingActor, reused: true };
-  await migrate(); const tenantId = randomUUID(); const token = randomBytes(32).toString("base64url");
-  const actor: Actor = { id: `producer:${randomUUID()}`, tenantId, roles: ["producer", "stage_manager", "department_lead", "foh"], personId: null };
-  const show = createFixture(tenantId);
-  show.commercialProtocol = 2;
-  show.rentalExecutions = [];
-  show.events[0]!.id = randomUUID();
+  await migrate(); const token = randomBytes(32).toString("base64url");
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await claimSessionAdmission(client, admissionScope);
-    await client.query("INSERT INTO on_shows(tenant_id, snapshot, revision) VALUES($1,$2,$3)", [tenantId, show, show.revision]);
-    await persistEvent(client, tenantId, show.events[0]!);
-    await client.query("INSERT INTO on_sessions(token_hash, tenant_id, actor, expires_at) VALUES($1,$2,$3,now()+interval '7 days')", [tokenHash(token), tenantId, actor]);
+    const created = await insertProducerRehearsal(client, token, admissionScope);
     await client.query("COMMIT");
+    return { token, show: created.show, actor: created.actor, reused: false };
   } catch (e) { await client.query("ROLLBACK"); throw e; } finally { client.release(); }
-  return { token, show, actor, reused: false };
 }
 export async function getActor(token: string | undefined): Promise<Actor | null> {
   if (!token || token.length > 150) return null; await migrate();

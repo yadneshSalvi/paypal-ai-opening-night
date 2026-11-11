@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react";
 import type { PublicWallet } from "@/domain/commerce-contracts";
 import { Badge, Button } from "./ui";
+import { productionFetch } from "./production-fetch";
 
-export function WalletReturn() {
+export function WalletReturn({ tenantId }: { tenantId: string | null }) {
   const [wallet, setWallet] = useState<PublicWallet | null>(null), [busy, setBusy] = useState(true), [error, setError] = useState<string | null>(null);
   const once = useRef(false);
   const check = async () => {
@@ -13,7 +14,8 @@ export function WalletReturn() {
     try {
       const params = new URLSearchParams(location.search), setupId = params.get("setup"), state = params.get("state");
       if (!setupId) throw new Error("This wallet return is missing its original request identity. Open the saved request in the box office.");
-      const response = await fetch("/api/commerce", state ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "wallet_return", setupId, state, cancel: params.get("cancel") === "1" }) } : { cache: "no-store" });
+      if (!tenantId) throw new Error("Reopen the original rehearsal before checking this saved method. The original request remains recorded.");
+      const response = await productionFetch(tenantId, "/api/commerce", state ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "wallet_return", setupId, state, cancel: params.get("cancel") === "1" }) } : { cache: "no-store" });
       const result = await response.json();
       if (!response.ok || !result.commerce?.wallet || result.commerce.wallet.id !== setupId) throw new Error(result.error ?? "The original wallet request could not be verified.");
       setWallet(result.commerce.wallet);

@@ -1,0 +1,254 @@
+{
+  "at": "2026-11-11T05:29:30.713Z",
+  "scope": "local isolated rehearsal UI and HTTP only",
+  "sourceHash": "d70f4adf0555f7bc4814710dc51264ed320422d489435ab7904a8740a5c18b1d",
+  "passed": 40,
+  "checks": [
+    "anonymous saved-workspace read is denied",
+    "create original QA rehearsal",
+    "initial list shows one current rehearsal",
+    "list is private no-store",
+    "name original rehearsal",
+    "rename leaves capability unchanged",
+    "create independent second rehearsal",
+    "new rehearsal has distinct identity",
+    "workspace retains both rehearsals",
+    "lost response replay returns canonical rehearsal",
+    "replay keeps exact target",
+    "replay keeps exact capability",
+    "replay is identified",
+    "changed replay is refused",
+    "stale tab read is refused",
+    "stale read never discloses another snapshot",
+    "cookie mutation requires displayed scope /api/show",
+    "cookie mutation requires displayed scope /api/payments",
+    "cookie mutation requires displayed scope /api/commerce",
+    "cookie mutation requires displayed scope /api/crew/invite",
+    "cookie mutation requires displayed scope /api/supplier/invite",
+    "cookie mutation requires displayed scope /api/suppliers/quotes",
+    "stale tab write is refused before command parsing",
+    "selected new rehearsal reads normally",
+    "new rehearsal starts fresh",
+    "new rehearsal has no financial evidence",
+    "new rehearsal has no acknowledgments",
+    "cross-origin switch refused",
+    "missing-origin mutation refused",
+    "unrelated producer sees only own rehearsal",
+    "foreign workspace cannot be selected",
+    "injected identity is rejected",
+    "switch back to preserved original",
+    "switch selects exact original",
+    "original snapshot preserved after switching",
+    "original producer identity is retained",
+    "old second tab now refuses actions",
+    "QA flow creates no provider or worker records",
+    "all protected original snapshots unchanged",
+    "protected original schema remains at 3"
+  ],
+  "originalShowsPreserved": 9,
+  "originalSchemaVersions": [
+    1,
+    2,
+    3
+  ],
+  "providerWrites": 0,
+  "moneyMovedMinor": 0,
+  "browserQualification": {
+    "status": "passed",
+    "operator": "root native browser",
+    "checks": [
+      "Create and name two rehearsals, switch back, and reload with both names retained.",
+      "A second crew-view tab immediately blocks after another rehearsal is selected.",
+      "Explicitly opening the selected rehearsal reloads the stale tab.",
+      "Actual 390px viewport has document width 390px and no horizontal overflow.",
+      "Desktop picker to 390px and Escape returns focus to visible Open navigation.",
+      "Mobile picker to 1280px and Escape returns focus to visible Saved rehearsals."
+    ],
+    "screenshots": [
+      "opening-rehearsals-mobile.png",
+      "opening-rehearsals-desktop.png"
+    ],
+    "focusFixSourceSha256": {
+      "src/components/ui.tsx": "b081cb073e5f201f0e4f62af90066d07b81d6d7233d0fa1c484656074bd528f3",
+      "src/components/rehearsal-manager.tsx": "369ce818ae18aa793886860ce64977809bcfa1492c720f97b86f5aa70ee8da33",
+      "src/components/production-console.tsx": "d94eaf383b8f7f8c42e62102f2f256bbc3282c8dc0d717374d2f72e8700bf441"
+    }
+  },
+  "trace": [
+    {
+      "path": "/api/rehearsals",
+      "method": "GET",
+      "status": 401,
+      "code": "SESSION_REQUIRED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/session",
+      "method": "POST",
+      "status": 200,
+      "code": null,
+      "hasCookie": true
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "GET",
+      "status": 200,
+      "code": null,
+      "hasCookie": false
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 200,
+      "code": null,
+      "hasCookie": false
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 201,
+      "code": null,
+      "hasCookie": true
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 200,
+      "code": null,
+      "hasCookie": true
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 409,
+      "code": "REHEARSAL_REQUEST_CHANGED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/show",
+      "method": "GET",
+      "status": 409,
+      "code": "PRODUCTION_CHANGED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/show",
+      "method": "POST",
+      "status": 409,
+      "code": "PRODUCTION_SCOPE_REQUIRED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/payments",
+      "method": "POST",
+      "status": 409,
+      "code": "PRODUCTION_SCOPE_REQUIRED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/commerce",
+      "method": "POST",
+      "status": 409,
+      "code": "PRODUCTION_SCOPE_REQUIRED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/crew/invite",
+      "method": "POST",
+      "status": 409,
+      "code": "PRODUCTION_SCOPE_REQUIRED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/supplier/invite",
+      "method": "POST",
+      "status": 409,
+      "code": "PRODUCTION_SCOPE_REQUIRED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/suppliers/quotes",
+      "method": "POST",
+      "status": 409,
+      "code": "PRODUCTION_SCOPE_REQUIRED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/show",
+      "method": "POST",
+      "status": 409,
+      "code": "PRODUCTION_CHANGED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/show",
+      "method": "GET",
+      "status": 200,
+      "code": null,
+      "hasCookie": false
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 403,
+      "code": "ORIGIN_DENIED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 403,
+      "code": "ORIGIN_DENIED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/session",
+      "method": "POST",
+      "status": 200,
+      "code": null,
+      "hasCookie": true
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "GET",
+      "status": 200,
+      "code": null,
+      "hasCookie": false
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 404,
+      "code": "REHEARSAL_NOT_OWNED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 400,
+      "code": "REHEARSAL_REVIEW_REQUIRED",
+      "hasCookie": false
+    },
+    {
+      "path": "/api/rehearsals",
+      "method": "POST",
+      "status": 200,
+      "code": null,
+      "hasCookie": true
+    },
+    {
+      "path": "/api/show",
+      "method": "GET",
+      "status": 200,
+      "code": null,
+      "hasCookie": false
+    },
+    {
+      "path": "/api/commerce",
+      "method": "GET",
+      "status": 409,
+      "code": "PRODUCTION_CHANGED",
+      "hasCookie": false
+    }
+  ]
+}

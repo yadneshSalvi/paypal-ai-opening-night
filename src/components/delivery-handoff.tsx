@@ -3,8 +3,10 @@ import { useState } from "react";
 import { Copy, QrCode, RefreshCw, ShieldCheck } from "lucide-react";
 import type { DeliveryAccessData } from "@/domain/supplier-contracts";
 import { Badge, Button, Modal } from "./ui";
+import { productionFetch } from "./production-fetch";
 
-export function DeliveryIssuer({ executionId, bearer, onChanged }: { executionId: string; bearer?: string; onChanged?: () => void }) {
+type IssuerProps = { executionId: string; onChanged?: () => void } & ({ bearer: string; tenantId?: never } | { tenantId: string; bearer?: never });
+export function DeliveryIssuer({ executionId, bearer, tenantId, onChanged }: IssuerProps) {
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
   const [issued, setIssued] = useState<{ data: DeliveryAccessData; image: string | null; handoff: string | null; recoveredWithoutCode: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -12,9 +14,10 @@ export function DeliveryIssuer({ executionId, bearer, onChanged }: { executionId
     setBusy(true); setError(null); setCopied(false);
     const headers = { ...(bearer ? { Authorization: "Bearer " + bearer } : {}), "Content-Type": "application/json" };
     try {
-      const current = await fetch(`/api/deliveries/${executionId}`, { headers, cache: "no-store" }); const data = await current.json();
+      const request = (path: string, init: RequestInit) => bearer ? fetch(path, init) : productionFetch(tenantId!, path, init);
+      const current = await request(`/api/deliveries/${executionId}`, { headers, cache: "no-store" }); const data = await current.json();
       if (!current.ok) throw new Error(data.error ?? "The current handoff could not load.");
-      const response = await fetch(`/api/deliveries/${executionId}/issue`, { method: "POST", headers, body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), expectedRevision: data.revision }) });
+      const response = await request(`/api/deliveries/${executionId}/issue`, { method: "POST", headers, body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), expectedRevision: data.revision }) });
       const payload = await response.json(); if (!response.ok) throw new Error(payload.error ?? "The handoff code could not be issued.");
       setIssued(payload); onChanged?.();
     } catch (error) { setError(error instanceof Error ? error.message : "The handoff code could not be issued."); }

@@ -13,8 +13,8 @@ const views = ["show", "plan", "resources", "calendar", "recovery", "execution",
 export default async function Page({ params }: { params: Promise<{ view?: string[] }> }) {
   const { view } = await params; const selected = view?.join("/") || "show";
   if (selected === "crew/access") return <CrewAccess />;
-  if (selected === "payments/return") return <PaymentReturn />;
-  if (selected === "wallet/return") return <WalletReturn />;
+  if (selected === "payments/return") return <PaymentReturn tenantId={(await currentActor())?.tenantId ?? null} />;
+  if (selected === "wallet/return") return <WalletReturn tenantId={(await currentActor())?.tenantId ?? null} />;
   if (selected === "supplier/access") return <SupplierAccess />;
   if (selected === "delivery/access") return <DeliveryAccess />;
   if (!views.includes(selected)) notFound();

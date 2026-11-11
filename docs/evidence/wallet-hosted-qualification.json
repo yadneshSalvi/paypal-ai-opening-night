@@ -1,0 +1,52 @@
+{
+  "sourceCommit": "0af2cc5e2ccd41600e83d96e21ea726e15ab5c62",
+  "at": "2026-11-11T05:24:33.201Z",
+  "finishedAt": "2026-11-11T05:24:42.453Z",
+  "transport": "actual_paypal_sandbox_generated_sdk",
+  "mode": "read_only_qualification",
+  "checks": {
+    "readOnlyTransaction": true,
+    "frozenSchema4": true,
+    "exactOwnedSetup": true,
+    "exactSavedWallet": true,
+    "activeWallet": true,
+    "setupAndExchangeSucceededOnce": true,
+    "saveOnlyTerms": true,
+    "exchangeExactSetup": true,
+    "exchangeExactSavedToken": true,
+    "setupProviderRead": true,
+    "savedTokenProviderRead": true,
+    "customerAssociation": true,
+    "payerIdentityUnchanged": true,
+    "usageTermsMatch": true,
+    "noPaymentRecords": true,
+    "cohortConsentUnapproved": true,
+    "noTicketDispatch": true,
+    "noActualFinancialEvidence": true,
+    "noActualTickets": true,
+    "onlyReadOnlyProviderRequests": true
+  },
+  "allChecksPassed": true,
+  "schemaVersions": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "savedWallets": 1,
+  "providerSetupStatus": "VAULTED",
+  "paymentTokenHttpStatus": 200,
+  "chargedMinor": 0,
+  "currency": "USD",
+  "paymentIntents": 0,
+  "paymentBindings": 0,
+  "cohorts": 1,
+  "ticketLines": 80,
+  "remedyItems": 0,
+  "privateProofSha256": "c8ca06b8f6756caff6452cb785c654f80b03f91cefde52a11d3056aa0fdd9f94",
+  "limitations": [
+    "Saving a wallet reserves no funds and authorizes no ticket charge.",
+    "The separate exact 80-ticket $3,370 consent remains unapproved at this readback.",
+    "Subsequent dispatch must recheck its own current application authority and token ownership."
+  ]
+}

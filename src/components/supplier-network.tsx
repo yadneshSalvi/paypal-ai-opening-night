@@ -1,4 +1,5 @@
 "use client";
+import { productionFetch } from "./production-fetch";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Clock3, Copy, ExternalLink, Fingerprint, LockKeyhole, PackageCheck, RefreshCw, ShieldCheck, Truck, TriangleAlert } from "lucide-react";
@@ -20,12 +21,12 @@ export function SupplierQuoteBoard({ data, onChange }: { data: ConsoleData; onCh
   const [overview, setOverview] = useState<SupplierOverview | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null); const [notice, setNotice] = useState("");
   const now = useRealTime(overview?.serverAt ?? data.serverAt);
   const execution = currentRentalExecution(data.show); const committed = execution && !["cancelled", "returned"].includes(execution.state);
-  const load = useCallback(async (signal?: AbortSignal) => { const response = await fetch("/api/suppliers", { cache: "no-store", ...(signal ? { signal } : {}) }); const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "The supplier board could not load."); setOverview(body); }, []);
+  const load = useCallback(async (signal?: AbortSignal) => { const response = await productionFetch(data.show.tenantId, "/api/suppliers", { cache: "no-store", ...(signal ? { signal } : {}) }); const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "The supplier board could not load."); setOverview(body); }, [data.show.tenantId]);
   useEffect(() => { if (data.show.commercialProtocol !== 2) return; const controller = new AbortController(); void load(controller.signal).catch(error => { if (!controller.signal.aborted) setError(error.message); }); return () => controller.abort(); }, [load, data.show.revision, data.show.commercialProtocol]);
   const request = async () => {
     if (busy) return; setBusy(true); setError(null); setNotice("");
     try {
-      const response = await fetch("/api/suppliers/quotes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), expectedRevision: data.show.revision }) });
+      const response = await productionFetch(data.show.tenantId, "/api/suppliers/quotes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), expectedRevision: data.show.revision }) });
       const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "The supplier collection could not start.");
       onChange(body); setOverview(body.suppliers);
       setNotice(body.work.status === "complete" ? "Three authenticated fixture quotes received. Recompute the recovery alternatives against these exact revisions." : body.work.status === "waiting" ? "Received quotes are saved. The durable worker will continue the same requests when the remaining service responds." : "The production changed during collection. Review the current plan and request fresh terms.");
@@ -60,17 +61,17 @@ export function SupplierExecutionDesk({ data, onChange }: { data: ConsoleData; o
   const captured = Boolean(execution && actual.some(item => item.kind === "capture" && item.purpose === "rental" && item.parentId === execution.authorizationId));
   const currentHold = Boolean(execution && (Date.parse(execution.holdExpiresAt) > now || ["confirmed", "delivered", "accepted", "returned"].includes(execution.state)) && !["cancelled", "compensation_pending", "needs_attention", "returned_unaccepted", "expired", "reconfirmation_required"].includes(execution.state));
   const previous = show.rentalExecutions?.filter(item => item.id !== execution?.id && !["cancelled", "returned"].includes(item.state)) ?? [];
-  const refresh = async () => { const response = await fetch("/api/show", { cache: "no-store" }); if (response.ok) onChange(await response.json()); };
+  const refresh = async () => { const response = await productionFetch(data.show.tenantId, "/api/show", { cache: "no-store" }); if (response.ok) onChange(await response.json()); };
   const perform = async (key: string, path: string, body: unknown) => {
     if (busy) return false; setBusy(key); setError(null); setNotice("");
-    try { const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error ?? "The supplier step could not complete."); onChange(payload); setNotice(key === "cancel" ? "Cancellation approval is saved. Only provider confirmation can close the original authorization." : "The supplier step is recorded against this exact production version."); return true; }
+    try { const response = await productionFetch(data.show.tenantId, path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error ?? "The supplier step could not complete."); onChange(payload); setNotice(key === "cancel" ? "Cancellation approval is saved. Only provider confirmation can close the original authorization." : "The supplier step is recorded against this exact production version."); return true; }
     catch (error) { setError(error instanceof Error ? error.message : "The supplier step could not complete."); await refresh().catch(() => undefined); return false; }
     finally { setBusy(null); }
   };
   const reserve = (type: "confirm" | "reconfirm" | "release", target = execution) => { if (target) void perform(type, `/api/suppliers/${target.supplierId}/reservations`, { idempotencyKey: crypto.randomUUID(), expectedRevision: show.revision, executionId: target.id, type }); };
   const invite = async (role: "driver" | "inspector") => {
     setBusy(role); setError(null); setCopied(false);
-    try { const response = await fetch("/api/deliveries/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role }) }); const body = await response.json(); if (!response.ok) throw new Error(body.error); setInvitation(body); }
+    try { const response = await productionFetch(data.show.tenantId, "/api/deliveries/invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role }) }); const body = await response.json(); if (!response.ok) throw new Error(body.error); setInvitation(body); }
     catch (error) { setError(error instanceof Error ? error.message : "The assigned client could not open."); }
     finally { setBusy(null); }
   };
@@ -85,7 +86,7 @@ export function SupplierExecutionDesk({ data, onChange }: { data: ConsoleData; o
       <div className="supplier-execution-actions">
         {!authorized && currentHold && <a className="button primary" href="#rental-payment">Continue to buyer approval <ArrowRight size={15} /></a>}
         {authorized && execution.state === "authorized" && <Button disabled={Boolean(busy)} busy={busy === "confirm"} onClick={() => reserve("confirm")}><PackageCheck size={15} />Confirm supplier reservation</Button>}
-        {execution.state === "confirmed" && <DeliveryIssuer executionId={execution.id} onChanged={() => { void refresh(); }} />}
+        {execution.state === "confirmed" && <DeliveryIssuer executionId={execution.id} tenantId={data.show.tenantId} onChanged={() => { void refresh(); }} />}
         {["confirmed", "delivered", "accepted", "needs_attention"].includes(execution.state) && <><Button disabled={Boolean(busy)} busy={busy === "driver"} onClick={() => void invite("driver")}><Truck size={15} />Open driver client</Button><Button disabled={Boolean(busy)} busy={busy === "inspector"} onClick={() => void invite("inspector")}><ShieldCheck size={15} />Open Priya's acceptance</Button></>}
         {!execution.paymentRootId && ["held", "expired"].includes(execution.state) && <Button disabled={Boolean(busy)} onClick={() => reserve("release")}>Release unused hold</Button>}
         {execution.authorizationId && !execution.captureIntentId && !execution.acceptedAt && ["confirmed", "authorized", "expired", "reconfirmation_required", "returned_unaccepted"].includes(execution.state) && !history.some(item => item.kind === "capture" && item.parentId === execution.authorizationId) && <Button disabled={Boolean(busy)} onClick={() => reviewCancellation(execution)}>Review uncaptured cancellation</Button>}

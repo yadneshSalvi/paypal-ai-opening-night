@@ -1,4 +1,5 @@
 "use client";
+import { productionFetch } from "./production-fetch";
 import { useCallback, useEffect, useState } from "react";
 import { Check, CircleDashed, Clock3, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { ConsoleData } from "@/domain/contracts";
@@ -16,16 +17,16 @@ const reasons: Record<string, string> = { PROVIDER_OUTCOME_UNKNOWN: "Provider ou
 export function PaymentFollowThrough({ data, onChange }: { data: ConsoleData; onChange: (value: ConsoleData) => void }) {
   const [state, setState] = useState<WorkState | null>(null); const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [notice, setNotice] = useState("");
   const load = useCallback(async (signal?: AbortSignal) => {
-    const response = await fetch("/api/jobs", { cache: "no-store", ...(signal ? { signal } : {}) }); const body = await response.json();
+    const response = await productionFetch(data.show.tenantId, "/api/jobs", { cache: "no-store", ...(signal ? { signal } : {}) }); const body = await response.json();
     if (!response.ok) throw new Error(body.error ?? "The payment follow-through status is unavailable.");
     setState(body); setError(null);
-  }, []);
+  }, [data.show.tenantId]);
   useEffect(() => { const controller = new AbortController(); void load(controller.signal).catch(error => { if (!controller.signal.aborted) setError(error.message); }); return () => controller.abort(); }, [load, data.show.revision]);
   const unresolved = (state?.counts.queued ?? 0) + (state?.counts.running ?? 0) + (state?.counts.waiting ?? 0);
   useEffect(() => { if (!unresolved) return; const controller = new AbortController(); const timer = setInterval(() => { void load(controller.signal).catch(() => { /* Keep the last verified status visible. */ }); }, 15000); return () => { clearInterval(timer); controller.abort(); }; }, [unresolved, load]);
   const resume = async () => {
     setBusy(true); setError(null); setNotice("");
-    try { const response = await fetch("/api/jobs", { method: "POST" }); const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "The saved work could not be checked."); onChange(body); await load(); setNotice(body.tick.processed ? "Saved work checked. Provider uncertainty stays visible until resolved." : "No saved work is due yet. Its next check remains scheduled."); }
+    try { const response = await productionFetch(data.show.tenantId, "/api/jobs", { method: "POST" }); const body = await response.json(); if (!response.ok) throw new Error(body.error ?? "The saved work could not be checked."); onChange(body); await load(); setNotice(body.tick.processed ? "Saved work checked. Provider uncertainty stays visible until resolved." : "No saved work is due yet. Its next check remains scheduled."); }
     catch (error) { setError(error instanceof Error ? error.message : "The saved work could not be checked."); }
     finally { setBusy(false); }
   };

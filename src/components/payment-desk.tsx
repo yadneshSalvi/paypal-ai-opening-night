@@ -1,4 +1,5 @@
 "use client";
+import { productionFetch } from "./production-fetch";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, Check, ExternalLink, Fingerprint, LockKeyhole, RefreshCw, ShieldCheck, WalletCards } from "lucide-react";
 import type { ConsoleData } from "@/domain/contracts";
@@ -22,7 +23,7 @@ const reviewCopy: Record<Review, { title: string; amount: number; detail: string
 export function PaymentDesk({ data, onChange, mode = "rental", followThrough = true }: { data: ConsoleData; onChange: (data: ConsoleData) => void; mode?: "rental" | "tickets" | "wrap"; followThrough?: boolean }) {
   const [payments, setPayments] = useState<PublicPayment[]>([]); const [loaded, setLoaded] = useState(false); const [busy, setBusy] = useState<string | null>(null); const [error, setError] = useState<string | null>(null); const [review, setReview] = useState<Review | null>(null); const [confirmed, setConfirmed] = useState(false); const [supplierUrl, setSupplierUrl] = useState<string | null>(null);
   const [remedyTicketId, setRemedyTicketId] = useState("");
-  const load = useCallback(async () => { const response = await fetch("/api/payments", { cache: "no-store" }); const result = await response.json(); if (!response.ok) throw new Error(result.error); setPayments(result.payments); setLoaded(true); }, []);
+  const load = useCallback(async () => { const response = await productionFetch(data.show.tenantId, "/api/payments", { cache: "no-store" }); const result = await response.json(); if (!response.ok) throw new Error(result.error); setPayments(result.payments); setLoaded(true); }, [data.show.tenantId]);
   useEffect(() => { void load().catch(error => setError(error.message)); }, [load, data.show.revision]);
   const { show } = data;
   const execution = currentRentalExecution(show);
@@ -43,7 +44,7 @@ export function PaymentDesk({ data, onChange, mode = "rental", followThrough = t
   const perform = async (request: PaymentRequest) => {
     setBusy(request.type); setError(null);
     try {
-      const response = await fetch("/api/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request) }); const result = await response.json();
+      const response = await productionFetch(data.show.tenantId, "/api/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request) }); const result = await response.json();
       if (!response.ok || !result.show) throw new Error(result.error ?? "This payment is awaiting reconciliation.");
       setPayments(result.payments); onChange(result); setReview(null); setConfirmed(false);
       if (result.operation.error) setError(result.operation.error);
@@ -52,7 +53,7 @@ export function PaymentDesk({ data, onChange, mode = "rental", followThrough = t
   };
   const inviteSupplier = async () => {
     setBusy("supplier"); setError(null);
-    try { const response = await fetch("/api/supplier/invite", { method: "POST" }); const result = await response.json(); if (!response.ok) throw new Error(result.error); setSupplierUrl(result.url); }
+    try { const response = await productionFetch(data.show.tenantId, "/api/supplier/invite", { method: "POST" }); const result = await response.json(); if (!response.ok) throw new Error(result.error); setSupplierUrl(result.url); }
     catch (error) { setError(error instanceof Error ? error.message : "The supplier portal could not open."); }
     finally { setBusy(null); }
   };
