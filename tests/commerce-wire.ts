@@ -6,7 +6,7 @@ type Json = Record<string, any>;
 export interface WireCall { method: string; path: string; body: Json | null; requestId: string | null; sdkIdempotencyKey: string | null; durable: boolean }
 export class CommerceWire {
   calls: WireCall[] = []; setups = new Map<string, Json>(); tokens = new Map<string, Json>(); orders = new Map<string, Json>();
-  sequence = 0; failNext: "setup_lost" | "exchange_lost" | "setup_refused" | "order_lost" | "order_refused" | "capture_lost" | "refund_lost" | "refund_pending" | null = null;
+  sequence = 0; failNext: "setup_lost" | "exchange_lost" | "setup_refused" | "token_unavailable" | "order_lost" | "order_refused" | "capture_lost" | "refund_lost" | "refund_pending" | null = null;
   immediateCapture = false; immediateCaptureStatus = "COMPLETED"; requirePayerApproval = false; tokenReadMutation: ((value: Json) => Json) | null = null;
   setupReadMutation: ((value: Json) => Json) | null = null; exchangeMutation: ((value: Json) => Json) | null = null;
   before: ((call: WireCall) => Promise<void>) | null = null;
@@ -42,6 +42,7 @@ export class CommerceWire {
       return this.json(this.exchangeMutation ? this.exchangeMutation(structuredClone(result)) : result, 201);
     }
     if (path.startsWith("/v3/vault/payment-tokens/") && request.method === "GET") {
+      if (this.failNext === "token_unavailable") { this.failNext = null; return this.json({ name: "INTERNAL_SERVER_ERROR", message: "Controlled token read unavailable" }, 503); }
       const result = this.tokens.get(path.split("/").at(-1)!); if (result) return this.json(this.tokenReadMutation ? this.tokenReadMutation(structuredClone(result)) : result);
     }
     if (path === "/v2/checkout/orders" && request.method === "POST") {

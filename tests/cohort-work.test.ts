@@ -91,6 +91,40 @@ test("revocation during the final token read stops a claimed operation before pr
   const operation = await (await payments.paymentStore()).get(intents[0]!.command.scope, intents[0]!.id); assert.equal(operation?.status, "not_sent");
   assert.equal((await storage.readCohortTicket(value.actor.tenantId, value.lines[0]!.id)).dispatchAuthorizedAt, null);
 });
+test("an unavailable final wallet read recovers only its original expired claim before reviewed cohort continuation", async () => {
+  const value = await approved(); let reads = 0; const before = wire.writes("/v2/checkout/orders").length;
+  wire.immediateCapture = true;
+  wire.before = async call => { if (call.method === "GET" && call.path.startsWith("/v3/vault/payment-tokens/") && ++reads === 2) wire.failNext = "token_unavailable"; };
+  try { await assert.rejects(() => run(value), code("WALLET_RESPONSE_UNCERTAIN")); }
+  finally { wire.before = null; }
+  try {
+    const line = await storage.readCohortTicket(value.actor.tenantId, value.lines[0]!.id);
+    const intent = await payments.readIntent(value.actor.tenantId, line.rootIntentId!);
+    const core = await payments.paymentStore(), claimed = (await core.get(intent.command.scope, intent.id))!;
+    assert.equal(claimed.status, "claimed"); assert.equal(line.dispatchAuthorizedAt, null);
+    assert.equal(wire.writes("/v2/checkout/orders").length, before);
+    assert.equal((await database.pool.query("SELECT count(*)::int AS count FROM paycore_attempts WHERE tenant_id=$1", [value.actor.tenantId])).rows[0].count, 0);
+    assert.equal((await database.pool.query("SELECT count(*)::int AS count FROM on_payment_bindings WHERE tenant_id=$1", [value.actor.tenantId])).rows[0].count, 0);
+    assert.equal((await view(value)).state, "paused");
+    await assert.rejects(() => cohort.resumeCohort(value.actor, value.cohort.id), code("COHORT_UNRESOLVED_TICKET"));
+    assert.deepEqual(await paymentService.reconcilePaymentIntent(value.actor.tenantId, intent.id, signal(), true), { status: "waiting", code: "OPERATION_LEASE_ACTIVE", delaySeconds: 65 });
+    assert.deepEqual(await run(value, 1), { status: "waiting", code: "COHORT_PAUSED", delaySeconds: 300 });
+    await database.pool.query("UPDATE paycore_operations SET document=$2 WHERE tenant_id=$1 AND id=$3", [value.actor.tenantId, JSON.stringify({ ...claimed, leaseUntil: new Date(Date.now() - 1000).toISOString() }), intent.id]);
+    assert.deepEqual(await paymentService.reconcilePaymentIntent(value.actor.tenantId, intent.id, signal(), false), { status: "waiting", code: "NOT_DISPATCHED", delaySeconds: 65 });
+    assert.equal(wire.writes("/v2/checkout/orders").length, before);
+    assert.equal((await run(value)).status, "complete");
+    const recovered = (await core.get(intent.command.scope, intent.id))!;
+    assert.equal(recovered.status, "succeeded"); assert.deepEqual(recovered.command, intent.command);
+    assert.equal(wire.writes("/v2/checkout/orders").length, before + 1);
+    assert.equal(wire.writes("/v2/checkout/orders").at(-1)!.requestId, intent.command.providerRequestId);
+    assert.equal((await payments.listIntents(value.actor.tenantId)).length, 1);
+    assert.equal((await view(value)).capturedCount, 1); assert.equal((await view(value)).state, "paused");
+    await cohort.resumeCohort(value.actor, value.cohort.id);
+    const resumed = await storage.readCohort(value.actor.tenantId, value.cohort.id);
+    assert.equal(resumed.state, "approved"); assert.equal(resumed.digest, value.cohort.digest); assert.equal(resumed.expiresAt, value.cohort.expiresAt);
+    assert.equal((await run(value)).status, "complete"); assert.equal(wire.writes("/v2/checkout/orders").length, before + 1);
+  } finally { wire.immediateCapture = false; }
+});
 test("a previously authorized in-flight capture may finish after stop, while every unstarted line stays stopped", async () => {
   const value = await approved(); wire.immediateCapture = true;
   wire.before = async call => { if (call.method === "POST" && call.path === "/v2/checkout/orders") await cohort.revokeCohort(value.actor, value.cohort.id); };

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "kind": "read-only-host-audit-and-controlled-regression",
+  "observedAt": "2026-11-11T06:10:17.193Z",
+  "readSourceCommit": "1176fb0bba73660dd1146ac271f56d5e7332ed28",
+  "transactionReadOnly": true,
+  "privateProofSha256": "3e2389b32b58d32ab6ceb388433df3756e72f2c9ba1133d389e94cf2b68254c0",
+  "observed": {
+    "capturedTickets": 9,
+    "capturedMinor": 33000,
+    "currency": "USD",
+    "pausePreserved": true,
+    "sameOriginalReservedLine": true,
+    "operationStatus": "claimed",
+    "dispatchAuthorized": false,
+    "attempts": 0,
+    "bindings": 0,
+    "cohortLocks": 0,
+    "savedTokenRead": {
+      "httpStatus": 200,
+      "durationMs": 590
+    }
+  },
+  "conclusion": "Final saved-wallet read failed before provider dispatch. Existing expired-claim recovery retains the original operation and provider request identity. The remaining cohort stays paused until that original line settles and the operator reviews continuation.",
+  "qualification": {
+    "transport": "controlled generated-SDK fixture; not a live payment",
+    "regression": "an unavailable final wallet read recovers only its original expired claim before reviewed cohort continuation",
+    "assertions": [
+      "Final token GET 503 causes no financial POST or provider binding.",
+      "An active claim lease blocks recovery.",
+      "Read-only webhook reconciliation never dispatches an expired claim.",
+      "Normal authorized recovery sends exactly one order using the identical original command and provider request ID.",
+      "Other ticket lines remain paused.",
+      "Cohort continuation requires original-line settlement and preserves approval digest and expiry.",
+      "Replaying the completed original line does not send another order."
+    ],
+    "commands": [
+      "./node_modules/.bin/tsx --test --test-name-pattern=\"unavailable final wallet read\" tests/cohort-work.test.ts",
+      "./node_modules/.bin/tsx --test tests/cohort-work.test.ts"
+    ],
+    "cohortTestsPassed": 28,
+    "cohortTestsFailed": 0
+  },
+  "productionActionsPerformedByThisAudit": []
+}
