@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "qualifiedAt": "2026-11-11T16:53:12.092Z",
+  "sourceCommit": "9fe9e98a1913d363dc5b405fa1b55965e2c93b6a",
+  "buildId": "cE3kCa0Nf1Y5k8sLMR-Cw",
+  "mode": "actual_paypal_sandbox",
+  "purpose": "One fictional crew liability paid to the existing owned Opening Night sandbox buyer from its isolated venue merchant.",
+  "principalMinor": 100,
+  "currency": "USD",
+  "currentVerifiedPaidMinor": 100,
+  "reservedMinor": 0,
+  "observedFeeMinor": 25,
+  "finalBatchStatus": "SUCCESS",
+  "finalDirectItemStatus": "SUCCESS",
+  "originalResourceBindingHash": "87eb622affefa710c4c3f1563eac7c94d354f90539eb629c42cb27df152cfd46",
+  "providerRequestCounts": {
+    "oauth": 1,
+    "create": 1,
+    "batchReads": 2,
+    "itemReads": 3,
+    "unknownRequests": 0
+  },
+  "immutableEncryptedRecordCounts": {
+    "recipient": 1,
+    "grant": 1,
+    "dispatch": 1,
+    "dispatch_result": 1,
+    "batch_read": 2,
+    "item_read": 3,
+    "refresh": 1
+  },
+  "canonicalFieldsPreserved": [
+    "tasks",
+    "dependencies",
+    "resources",
+    "sheets",
+    "acknowledgments",
+    "facts",
+    "crewCues",
+    "crewAttestations",
+    "state",
+    "approvedPlan",
+    "tickets",
+    "clock",
+    "policy",
+    "rentalExecutions"
+  ],
+  "canonicalBaselineHash": "a6e06136d2679b925a3d6f188a54c15798af9a265116408d4650a495e3aad7f8",
+  "canonicalAfterHash": "a6e06136d2679b925a3d6f188a54c15798af9a265116408d4650a495e3aad7f8",
+  "nativeBrowser": {
+    "observedAt": "2026-11-11T16:52:03.209Z",
+    "originalItemReadSucceeded": true,
+    "reloadGrantCount": 1,
+    "mobile": {
+      "scrollWidth": 390,
+      "viewport": 390
+    },
+    "consoleErrors": 0,
+    "newPayoutAuthorizationsFromBrowser": 0
+  },
+  "personalReceiptPassed": true,
+  "isolatedRestrictedLocalDatabase": true,
+  "originalProductionWrites": 0,
+  "hostedWrites": 0,
+  "modelRequests": 0,
+  "qualificationConfigurationFailure": {
+    "retained": true,
+    "beforeRecipientApprovalAndGrant": true,
+    "description": "Nested JSON was initially escaped incorrectly in the private dotenv registry; the admission check failed closed. The registry was serialized correctly and the independent server restarted before any recipient approval, grant or provider call."
+  },
+  "limitations": [
+    "Sandbox test funds only; not real payroll or physical attendance.",
+    "One owned US/USD recipient case; no actual cancellation, refusal, chargeback, currency or broader account variants are established.",
+    "Hosted recipient admission and release remain separate work."
+  ]
+}
