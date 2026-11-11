@@ -108,6 +108,20 @@ test("a slow preceding read cannot consume the next purchase's execution allowan
   const next = await runJobTick({ tenantId: actor.tenantId, limit: 1, handler: async () => ({ status: "complete" }) });
   assert.equal(next.results[0]?.id, remaining.id); assert.equal(next.results[0]?.status, "complete");
 });
+test("a paused cohort holds unrelated tickets without spending their retry allowance", async () => {
+  const { actor } = await newSession(); const cohortId = randomUUID(), original = randomUUID(), held = randomUUID();
+  await pool.query("INSERT INTO on_ticket_cohorts(id,tenant_id,document) VALUES($1,$2,$3)",
+    [cohortId, actor.tenantId, { state: "paused", pauseTicketId: original }]);
+  const other = await paymentTransaction(client => enqueueJob(client, { tenantId: actor.tenantId, kind: "cohort_ticket", semanticKey: held, payload: { cohortId, ticketId: held } }));
+  const recovering = await paymentTransaction(client => enqueueJob(client, { tenantId: actor.tenantId, kind: "cohort_ticket", semanticKey: original, payload: { cohortId, ticketId: original } }));
+  const tick = await runJobTick({ tenantId: actor.tenantId, handler: async () => ({ status: "complete" }) });
+  assert.deepEqual(tick.results.map(job => job.id), [recovering.id]);
+  const preserved = (await listJobs(actor.tenantId)).find(job => job.id === other.id)!;
+  assert.equal(preserved.status, "queued"); assert.equal(preserved.attempts, 0); assert.equal(preserved.leaseId, null);
+  await pool.query("UPDATE on_ticket_cohorts SET document=$2 WHERE id=$1", [cohortId, { state: "approved", pauseTicketId: null }]);
+  const resumed = await runJobTick({ tenantId: actor.tenantId, handler: async () => ({ status: "complete" }) });
+  assert.deepEqual(resumed.results.map(job => job.id), [other.id]);
+});
 test("the real verifier receives exact signature postback fields and fixture provenance stays separate", async () => {
   const { intent } = await seedRoot(); const capture = "CAPTURE-" + randomUUID(); await bind(intent, "capture", capture);
   const raw = eventBody("EVENT-" + randomUUID(), capture); const headers = signatureHeaders();

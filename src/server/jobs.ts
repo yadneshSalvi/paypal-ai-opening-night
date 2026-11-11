@@ -38,6 +38,11 @@ export async function claimJob(tenantId?: string): Promise<Job | null> {
   const result = await pool.query<JobRow>(`WITH next AS (
     SELECT id FROM on_jobs WHERE attempts<max_attempts AND ($1::uuid IS NULL OR tenant_id=$1)
       AND ((status IN ('queued','waiting') AND run_after<=now()) OR (status='running' AND lease_until<=now()))
+      AND NOT (kind='cohort_ticket' AND EXISTS (
+        SELECT 1 FROM on_ticket_cohorts cohort WHERE cohort.tenant_id=on_jobs.tenant_id
+          AND cohort.id::text=on_jobs.payload->>'cohortId' AND cohort.document->>'state'='paused'
+          AND (cohort.document->>'pauseTicketId') IS DISTINCT FROM (on_jobs.payload->>'ticketId')
+      ))
     ORDER BY run_after,created_at,id FOR UPDATE SKIP LOCKED LIMIT 1
   ) UPDATE on_jobs AS job SET status='running',lease_id=$2,lease_until=now()+interval '75 seconds',
       attempts=attempts+1,updated_at=now() FROM next WHERE job.id=next.id RETURNING job.*`, [tenantId ?? null, randomUUID()]);
