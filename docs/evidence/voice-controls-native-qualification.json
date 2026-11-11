@@ -19,7 +19,22 @@
     "enabledInObservedBuild": false,
     "finding": "Bryntum DomSync serializes disabled=false as an HTML attribute, which still disables a button.",
     "correction": "Omit the disabled attribute while enabled; retain it for genuine disabled states.",
-    "correctionNativeRetest": "pending"
+    "correctionNativeRetest": "passed",
+    "correctionSourceCommit": "399ec77e079e410a9b4d493ba6475c08e070202d",
+    "correctionNative": {
+      "recordEnabled": true,
+      "disabledAttributeAbsent": true,
+      "emptyDraftSendDisabled": true,
+      "realKeyboardTypingEnabledSend": true,
+      "clearDraftDisabledSend": true,
+      "keyboardTabFocusedNamedRecordButton": true,
+      "recordClicked": false,
+      "microphonePermissionRequested": false,
+      "microphoneCaptured": false,
+      "planningSent": false,
+      "providerRequests": 0,
+      "observationNote": "Immediate same-callback fill inspected state before the widget update. Real keyboard input and a fresh DOM read verified the enabled Send state."
+    }
   },
   "readOnlyDatabaseAudit": {
     "checkedAt": "2026-11-11T14:21:37.568Z",
@@ -44,7 +59,6 @@
   "limitations": [
     "No microphone permission, capture, physical phone, or real speaker was tested.",
     "This controlled one-second audio is not actual-provider speech qualification.",
-    "The disabled-button correction needs separate native verification.",
     "Two read-only audit harness failures were retained: digest-envelope omission and an uninitialized payment-table assumption. Neither mutated application records."
   ]
 }

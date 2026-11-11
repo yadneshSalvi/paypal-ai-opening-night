@@ -108,6 +108,8 @@ export interface ShowSnapshot {
   crewAttestations?: CrewAttestation[];
   crewCues?: CrewCueExecution[];
   crewNextCalls?: CrewNextCall[];
+  /** Private settlement records stay outside the operational snapshot. This marker protects their history. */
+  settlementVersion?: number;
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-11T15:07:36.735Z",
+  "checkpoint": "reported_work_rates_immutable_liabilities",
+  "provenance": "controlled_local_tests",
+  "fullSuite": {
+    "passed": 369,
+    "failed": 0,
+    "actualProviderTransport": "disabled_before_environment_load"
+  },
+  "focusedSettlementTests": 22,
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "http": {
+    "settlementChecks": 14,
+    "sourceAndVoiceRegressionChecks": 25,
+    "fullInstructionDigestAndActorVerified": true,
+    "reportSha256": "98cb3954f8199f7940dabf6fe7797ccaeb76727cfff7529cacfb7f2f13f6870f"
+  },
+  "demonstratedSettlement": {
+    "reportedMinutes": 60,
+    "regularHourlyMinor": 3500,
+    "approvedOriginalMinor": 3500,
+    "correctedMinutes": 30,
+    "creditAdjustmentMinor": -1750,
+    "approvedBalanceMinor": 1750,
+    "immutableEncryptedRecords": 5,
+    "originalReceiptRetained": true,
+    "otherPersonDataNotExposed": true,
+    "operationalAndFinancialFieldsUnchanged": true,
+    "actualPayouts": 0
+  },
+  "recovery": {
+    "originalCanonicalInstructionDigest": true,
+    "exactActorScopeOwnerAndCommand": true,
+    "changedSavedBodyHeld": true,
+    "noAutomaticResend": true
+  },
+  "buildTraces": {
+    "checked": 43,
+    "privatePathsFound": 0
+  },
+  "preservedFirstAttempt": {
+    "reason": "Pre-freeze review found receipt recovery needed the full instruction digest. The original source, database and passing test artifacts were retained separately.",
+    "fullSuitePassed": 368,
+    "httpChecksPassed": 39
+  },
+  "pendingQualification": [
+    "Native desktop and narrow-viewport settlement journey",
+    "Exact-recipient payout implementation and actual-provider qualification"
+  ],
+  "limitations": [
+    "Reports are controlled rehearsal statements, not proof of physical attendance or legal compliance.",
+    "Approved liabilities do not establish wages paid or a provider payout.",
+    "No original production database, frozen voice/source runtime or hosted deployment was changed."
+  ]
+}

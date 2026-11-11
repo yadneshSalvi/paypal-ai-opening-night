@@ -56,3 +56,7 @@ Dedicated supplier and delivery capabilities cannot read or mutate the general p
 ## Crew protocol 1
 
 The dedicated `/api/crew` allowlist excludes production-wide data and requires an explicit personal capability. Current skills and assignments authorize signed duties and cues. The producer API cannot impersonate crew. Exact readback identities survive offline retry and historical synchronization; the crew-only service worker caches an anonymous shell and static assets, never API responses or capabilities. New rehearsals enable the protocol; old rehearsals adopt it explicitly while retaining all money and legacy history. There is no SQL migration or automatic original-record rewrite. See [personal authority, compatibility and offline recovery](CREW_OPERATIONS.md).
+
+## Reported work and liabilities
+
+Schema migration 9 adds immutable encrypted settlement records and a verified revision cursor. Personal bearer capabilities can submit only their own time reports through `/api/crew/settlement`; exact current producer sessions separately approve rates, request corrections and approve reviewed liabilities through `/api/settlement`. Every action atomically binds its original instruction, actor/session, roster identity and both current revisions. A corrected report adds a separately reviewed adjustment and preserves earlier liabilities. Browser recovery requires the original command, actor and full canonical instruction digest. No recipient or provider dispatch is authorized by this ledger. See [settlement authority and verification](CREW_SETTLEMENT.md).

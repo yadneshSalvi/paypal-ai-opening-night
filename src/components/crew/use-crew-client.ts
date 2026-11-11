@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { crewDataSchema, type CrewCommandEnvelope, type CrewCommandResponse, type CrewData, type CrewLiveCommand } from "@/domain/crew/contracts";
+import type { SettlementEnvelope } from "@/domain/settlement/contracts";
 import { capabilityFingerprint, emptyOutbox, prepareReadbackAttempt, queueReadback, readbackEnvelope, readCache, readOutbox, recoveredReadback, rejectStaleReadback, retireLegacyCrewStorage, saveCache, saveOutbox, storageKeys, type CrewOutbox, type LegacyCrewDraft, type PendingLiveAction } from "./storage";
 
 type Connection = "loading" | "online" | "offline" | "unreachable" | "expired";
@@ -259,5 +260,11 @@ export function useCrewClient() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (cause) { setStorageError(message(cause)); }
   }, [access]);
-  return { data, outbox, legacyDraft, connection, cachedAt, clock, busy, error, notice, storageError, cacheWarning, refresh, acknowledge, syncReadbacks, sendLive, reviewAction, clearActionFeedback, retryStorage, resetDamagedQueue, clearLegacyDraft, exportSavedRequests };
+  const requestSettlement = useCallback(async (envelope?: SettlementEnvelope) => {
+    if (!access || accessEnded.current) throw new Error("Open your current personal crew access before reading or reporting hours.");
+    const response = await fetch("/api/crew/settlement", { credentials: "omit", cache: "no-store", signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${access.token}`, ...(envelope ? { "Content-Type": "application/json" } : {}) }, ...(envelope ? { method: "POST", body: JSON.stringify(envelope) } : {}) });
+    if (response.status === 401) endAccess();
+    return response;
+  }, [access, endAccess]);
+  return { data, outbox, legacyDraft, connection, cachedAt, clock, busy, error, notice, storageError, cacheWarning, refresh, acknowledge, syncReadbacks, sendLive, reviewAction, clearActionFeedback, retryStorage, resetDamagedQueue, clearLegacyDraft, exportSavedRequests, requestSettlement };
 }
