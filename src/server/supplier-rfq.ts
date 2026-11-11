@@ -62,6 +62,9 @@ export async function collectSupplierRfq(tenantId: string, id: string, signal: A
     if (show.approvedPlan) { show.approvedPlan = null; show.planVersion++; show.state = "standby"; show.goReportId = null; }
     for (const quote of quotes) show.sources.push({ id: quote.id, title: `${quote.offer.supplier} authenticated fixture quote · revision ${quote.revision}`, source: "sample", recordedAt: quote.issuedAt, detail: `${quote.equipment.model}. ${quote.equipment.capabilityEvidence} ${quote.cancellation} Terms digest ${quote.termsDigest}. Driver/condition evidence remains explicitly unresolved for the sister-venue loan.` });
     await client.query("UPDATE on_supplier_rfqs SET status='applied',quote_ids=$3,last_code=NULL,applied_at=now() WHERE tenant_id=$1 AND id=$2", [tenantId, id, JSON.stringify(quotes.map(quote => quote.id))]);
+    // A synchronous collection can finish before a worker claims its wakeup.
+    // Leave an already-running lease to its fenced owner to finish normally.
+    await client.query("UPDATE on_jobs SET status='complete',last_code=NULL,updated_at=now() WHERE tenant_id=$1 AND kind='supplier_rfq' AND semantic_key=$2 AND status IN ('queued','waiting')", [tenantId, id]);
     await saveSupplierSnapshot(client, show, request.actor_id, "supplier.quotes_received", "Received and authenticated three separately scoped fixture-service quotes. New offer revisions require a fresh recovery comparison; no physical capacity or payment is implied.");
     return { status: "complete" };
   });

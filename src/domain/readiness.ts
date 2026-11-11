@@ -21,8 +21,10 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
   const capture = actual.find(e => e.kind === "capture" && e.purpose === "rental" && e.amountMinor === 48000 && e.parentId === auth?.providerResourceId);
   const technical = Boolean(fact("focus_signed_off") && fact("cue_signed_off") && deliveryIsAccepted(show) && capture);
   if (scope === "DOORS") {
-    const approved = Boolean(show.approvedPlan && sheet.candidateId === show.approvedPlan.candidateId && fact("foh_contingency"));
-    gate("plan", "Approved running order", approved, approved ? `Run sheet v${sheet.version}` : "Awaiting approval", "Publish the approved plan and record the support-first FOH contingency.", [show.approvedPlan?.digest, fact("foh_contingency")?.id].filter((s): s is string => Boolean(s)), "/recovery");
+    const published = Boolean(show.approvedPlan && sheet.candidateId === show.approvedPlan.candidateId);
+    const approved = published && Boolean(fact("foh_contingency"));
+    const planStatus = approved ? `Run sheet v${sheet.version}` : !show.approvedPlan ? "Plan approval pending" : !published ? "Publication pending" : "FOH contingency pending";
+    gate("plan", "Published running order", approved, planStatus, "Publish the approved plan and record the support-first FOH contingency.", [show.approvedPlan?.digest, fact("foh_contingency")?.id].filter((s): s is string => Boolean(s)), "/recovery");
     gate("authorization", "Rental authorization", Boolean(auth), auth ? "$780 authorized" : "$780 required", "Verified supplier authorization for the $480 fee and $300 refundable hold.", auth ? [auth.id] : []);
     gate("supplier", "Supplier confirmation", supplierIsConfirmed(show), supplierIsConfirmed(show) ? "Confirmed" : "Unconfirmed", "The supplier must confirm the selected equipment and delivery window.", fact("supplier_confirmed") ? [fact("supplier_confirmed")!.id] : []);
     gate("delivery", "Console accepted", deliveryIsAccepted(show), deliveryIsAccepted(show) ? "Accepted" : "Delivery pending", "An authorized department lead records delivery and condition acceptance.", fact("delivery_accepted") ? [fact("delivery_accepted")!.id] : []);

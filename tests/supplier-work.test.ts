@@ -140,6 +140,7 @@ test("lost quote responses resume the original service request identities withou
   const current = await store.getShow(session.actor.tenantId);
   assert.equal(current.revision, show.revision + 1);
   assert.equal((await database.pool.query("SELECT count(*)::int AS count FROM on_supplier_quotes WHERE tenant_id=$1", [session.actor.tenantId])).rows[0].count, 3);
+  assert.equal((await database.pool.query("SELECT status FROM on_jobs WHERE tenant_id=$1 AND kind='supplier_rfq' AND semantic_key=$2", [session.actor.tenantId, id])).rows[0].status, "complete");
   assert.equal((await rfq.collectSupplierRfq(session.actor.tenantId, id, AbortSignal.timeout(5000), transport)).status, "complete");
   assert.equal((await store.getShow(session.actor.tenantId)).revision, current.revision);
 });

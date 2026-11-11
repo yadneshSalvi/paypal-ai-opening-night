@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "reportedAt": "2026-11-11T03:36:38.403735+00:00",
+  "source": "root_native_browser_review",
+  "reviewedSource": "6737253bdf7bf0bbe3efe627e32d2bfd301d51f4",
+  "browserEvidence": [
+    "IAB44",
+    "IAB45"
+  ],
+  "origin": "http://127.0.0.1:4205",
+  "providerWrites": 0,
+  "observed": [
+    "Fresh protocol-2 rehearsal opens through matching-origin checks.",
+    "Three authenticated supplier quotes received; sister-venue driver and condition remain unresolved.",
+    "Twelve real engine alternatives displayed; Protect doors approved with three scoped approval checkboxes.",
+    "Exact 48000 fee and 30000 deposit reviewed before equipment hold.",
+    "Reload retained the real hold, with countdown observed at 9:56.",
+    "390px layout has no horizontal overflow and keyboard focus is visible.",
+    "Supplier portal reports held capacity and fee awaiting accepted delivery, without claiming a confirmed reservation."
+  ],
+  "screenshots": [
+    "opening-signed-equipment-hold.png",
+    "opening-hold-mobile.png"
+  ],
+  "followupSourceFixes": [
+    "Compact supplier and mobile actions have minimum44px targets.",
+    "Readiness distinguishes plan approval, publication and FOH contingency.",
+    "Synchronous complete RFQ collection finishes its unclaimed job."
+  ],
+  "notQualified": [
+    "Fresh protocol-2 PayPal lifecycle",
+    "Driver camera or image upload in the native browser",
+    "Assigned live condition acceptance and automatic fee capture",
+    "Authentic signed provider lifecycle delivery",
+    "Physical phone or equipment delivery"
+  ]
+}
