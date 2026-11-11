@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-11T16:24:00.914Z",
+  "mode": "local_domain_recovery_postgresql_and_controlled_real_core_http",
+  "sourceBaseCommit": "c29c4f89b28356dbab005e88355fd4047f71d286",
+  "buildId": "ph3cP4Ar4PmaOhTh0DJtC",
+  "databaseSchemaVersion": 10,
+  "providerTransport": "local_fixture",
+  "actualProviderRequests": 0,
+  "nativeBrowserTested": false,
+  "qualification": {
+    "fullSuite": {
+      "passed": 400,
+      "failed": 0
+    },
+    "focusedPayoutCases": {
+      "passed": 28,
+      "failed": 0
+    },
+    "typecheck": true,
+    "productionBuild": true,
+    "pinnedPackages": true,
+    "http": {
+      "passed": 17,
+      "failed": 0,
+      "checks": [
+        {
+          "name": "anonymous producer and cookie-only personal reads denied",
+          "passed": true
+        },
+        {
+          "name": "fresh runtime has exact controlled admissions and no payout history",
+          "passed": true
+        },
+        {
+          "name": "producer/personal scopes, current production and exact origin remain required",
+          "passed": true
+        },
+        {
+          "name": "personal reports and producer rate/payable reviews create two exact liabilities only",
+          "passed": true
+        },
+        {
+          "name": "recipient approval requires exact admitted account and explicit review",
+          "passed": true
+        },
+        {
+          "name": "second person can be reviewed for a distinct unclaimed controlled account",
+          "passed": true
+        },
+        {
+          "name": "four independent checks and immutable server review digest precede transfer authority",
+          "passed": true
+        },
+        {
+          "name": "concurrent normalized approvals retain one grant and reserve 7000 cents",
+          "passed": true
+        },
+        {
+          "name": "saved work distinguishes batch processing from each exact item result",
+          "passed": true
+        },
+        {
+          "name": "personal item history remains exact-person scoped despite a producer cookie",
+          "passed": true
+        },
+        {
+          "name": "another tenant cannot refresh or cancel the retained grant",
+          "passed": true
+        },
+        {
+          "name": "fresh original read uses retained identities and keeps the historical credited receipt",
+          "passed": true
+        },
+        {
+          "name": "unclaimed cancellation requires its own exact review and retains one return",
+          "passed": true
+        },
+        {
+          "name": "reload and original-grant replay retain one batch and both original item identities",
+          "passed": true
+        },
+        {
+          "name": "controlled provider inputs preserve all canonical operational and actual-financial state",
+          "passed": true
+        },
+        {
+          "name": "read-only schema audit verifies encrypted exact history, single dispatch and three immutable bindings",
+          "passed": true
+        },
+        {
+          "name": "private controlled provider store contains exactly one retained batch and one returned original item",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "retainedControlledJourney": {
+    "currency": "USD",
+    "approvedLiabilityMinor": 7000,
+    "payoutGrants": 1,
+    "providerBatches": 1,
+    "dispatchRecords": 1,
+    "controlledCreditedMinor": 3500,
+    "controlledReturnedMinor": 3500,
+    "observedControlledFeeMinor": 50,
+    "cancellationDispatchRecords": 1,
+    "encryptedPayoutRecords": 15,
+    "settlementRecords": 6,
+    "immutableResourceBindings": 3,
+    "exactReplayAndReload": true,
+    "actualFinancialEvidence": 0,
+    "originalOperationalFieldsUnchanged": true,
+    "modelRequests": 0,
+    "voiceRequests": 0,
+    "sourceCompilations": 0,
+    "otherFinancialTablesInitialized": false
+  },
+  "isolation": {
+    "allActualCredentialsDisabledBeforeEnvironmentLoad": true,
+    "providerAdapterChecksBoundaryAgain": true,
+    "freshLocalSchema": true,
+    "independentRuntimeAndDependencies": true,
+    "olderFrozenRuntimesUnchanged": true,
+    "traceFiles": 47,
+    "privateTracePaths": 0
+  },
+  "originalFailure": {
+    "kind": "controlled_transport_fixture_missing_oauth_token_type",
+    "providerDispatches": 0,
+    "outcome": "not_sent",
+    "originalFailedLogRetained": true,
+    "correctedToOfficialBearerResponse": true
+  },
+  "priorNativeSettlementProof": {
+    "file": "settlement-native-root-qualification.json",
+    "sha256": "28f16708c64643ffacb0eec37d37a1c8328014cb047ce854af7a4f79c5486e70",
+    "includedUnchanged": true
+  },
+  "limitations": [
+    "Controlled HTTP fixtures do not establish PayPal account capability, recipient ownership, funding or actual money movement.",
+    "Typed financial-projection unit inputs are not actual provider observations or persisted financial evidence.",
+    "Native payout review, mobile/keyboard interaction and actual-provider payout qualification are separate root-owned gates.",
+    "No original production migration, original financial action, hosted configuration change or deployment was performed by this checkpoint.",
+    "Full invoices, Toolkit, costs/P&L, production/tour/roster, operational/adverse cases and broader evaluation remain active."
+  ]
+}

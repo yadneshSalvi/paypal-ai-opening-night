@@ -18,12 +18,13 @@ export function currentActual(show: ShowSnapshot): FinancialEvidence[] {
     const kind = entry.kind === "void" ? "authorization" : entry.kind;
     const parentKind = entry.kind === "refund" ? "capture" : entry.kind === "void" || entry.kind === "capture" && entry.purpose === "rental" ? "authorization" : "order";
     if (show.financialChecks?.some(check => check.transport === "paypal_https" && check.seller === seller && check.status === "pending" && check.resources.some(resource => resource.kind === kind && resource.id === entry.providerResourceId || resource.kind === parentKind && resource.id === entry.parentId))) return false;
-    const observation = (show.financialObservations ?? []).filter(read => read.transport === "paypal_https" && read.seller === seller && read.kind === kind && read.providerResourceId === entry.providerResourceId && Date.parse(read.observedAt) >= Date.parse(entry.recordedAt)).sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt))[0];
+    const observation = (show.financialObservations ?? []).filter(read => read.transport === "paypal_https" && read.seller === seller && read.kind === kind && read.providerResourceId === entry.providerResourceId && Date.parse(read.observedAt) >= Date.parse(entry.recordedAt)).sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt) || (b.readRevision ?? 0) - (a.readRevision ?? 0))[0];
     if (!observation) return true;
     if (entry.kind === "void") return observation.status === "VOIDED";
     if (observation.currency !== entry.currency || observation.amountMinor !== entry.amountMinor) return false;
     if (entry.kind === "capture") return ["COMPLETED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(observation.status);
     if (entry.kind === "refund") return observation.status === "COMPLETED";
+    if (entry.kind === "payout") return observation.status === "SUCCESS";
     if (entry.kind === "authorization") {
       if (["CREATED", "PARTIALLY_CAPTURED", "CAPTURED"].includes(observation.status)) return true;
       // An authorized, captured and correctly released rental is still historically secured.
@@ -38,7 +39,7 @@ export function financialSummary(show: ShowSnapshot) {
   const captures = actual.filter(e => e.kind === "capture" && e.purpose === "ticket");
   const qualifyingRefunds = actual.filter(e => {
     const ticket = show.tickets.find(t => t.id === e.ticketId);
-    const observedCapture = (show.financialObservations ?? []).filter(read => read.transport === "paypal_https" && read.seller === "venue" && read.kind === "capture" && read.providerResourceId === ticket?.captureId && Date.parse(read.observedAt) >= Date.parse(e.recordedAt)).sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt))[0];
+    const observedCapture = (show.financialObservations ?? []).filter(read => read.transport === "paypal_https" && read.seller === "venue" && read.kind === "capture" && read.providerResourceId === ticket?.captureId && Date.parse(read.observedAt) >= Date.parse(e.recordedAt)).sort((a, b) => Date.parse(b.observedAt) - Date.parse(a.observedAt) || (b.readRevision ?? 0) - (a.readRevision ?? 0))[0];
     const exactRemedy = !observedCapture || observedCapture.refundedMinor === undefined || observedCapture.refundedMinor === 1500;
     return exactRemedy && currentIds.has(e.id) && e.kind === "refund" && e.purpose === "vip_remedy" && e.amountMinor === 1500 && ticket?.tier === "vip" && ticket.admissionMinor === 3500 && ticket.perkMinor === 1500 && ticket.source === "live_sandbox" && ticket.captureId === e.parentId && captures.some(c => currentIds.has(c.id) && c.providerResourceId === ticket.captureId && c.ticketId === ticket.id && c.amountMinor === 5000);
   });
@@ -60,7 +61,8 @@ export function financialSummary(show: ShowSnapshot) {
     releasedMinor: sum(actual.filter(e => e.kind === "void" && e.purpose === "deposit")),
     cancelledAuthorizationMinor: sum(actual.filter(e => e.kind === "void" && e.purpose === "rental_cancel")),
     remainingRentalAuthorizationMinor,
-    crewPaidMinor: sum(actual.filter(e => e.kind === "payout" && e.purpose === "crew")),
+    crewPaidMinor: sum(current.filter(e => e.kind === "payout" && e.purpose === "crew")),
+    crewHistoricalPaidMinor: sum(actual.filter(e => e.kind === "payout" && e.purpose === "crew")),
     pendingCount: show.financialEvidence.filter(e => e.status === "pending").length,
     disputedEvidenceCount: actual.length - current.length,
     evidenceIds: qualifyingRefunds.map(e => e.id),

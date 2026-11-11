@@ -70,7 +70,7 @@ export interface FinancialEvidence {
   providerResourceId: string; parentId: string | null; ticketId: string | null; recordedAt: string;
 }
 export interface FinancialObservation {
-  id: string; seller: "venue" | "brightline"; kind: "order" | "authorization" | "capture" | "refund";
+  id: string; seller: "venue" | "brightline"; kind: "order" | "authorization" | "capture" | "refund" | "payout";
   providerResourceId: string; status: string; amountMinor: number | null; currency: string | null;
   parentId: string | null; observedAt: string; transport: "paypal_https" | "local_fixture"; refundedMinor?: number | null; readRevision?: number;
 }
@@ -110,6 +110,8 @@ export interface ShowSnapshot {
   crewNextCalls?: CrewNextCall[];
   /** Private settlement records stay outside the operational snapshot. This marker protects their history. */
   settlementVersion?: number;
+  /** Private recipient and payout records remain in the encrypted payout ledger. */
+  payoutVersion?: number;
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }

@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-11T15:40:37.343568+00:00",
+  "mode": "controlled_native_browser_and_read_only_database_audit",
+  "originalSourceCommit": "11405cea64048f55dfd04772e33a8e0e67fee6b3",
+  "correctedSourceCommit": "c29c4f89b28356dbab005e88355fd4047f71d286",
+  "correctedBuildId": "MHS8CmhoUCdXC5Fbx_ZmB",
+  "originalFinding": {
+    "trailingSpaceNotePersistedOnce": true,
+    "rawClientDigestDisagreedWithServerNormalization": true,
+    "recoveryHeldAfterReload": true,
+    "originalPrivateRecoveryFilePreserved": true
+  },
+  "nativeRecovery": {
+    "originalFileImportedThroughFileChooser": true,
+    "exactRetainedReceiptFound": true,
+    "originalRequestResubmitted": false,
+    "pendingRecoveryControlsAfterImport": 0,
+    "legacyRawDigestVerifiedBeforeNormalization": true
+  },
+  "nativeSettlement": {
+    "personalReportRequiresExplicitReview": true,
+    "firstReportMinutes": 60,
+    "originalApprovedMinor": 3500,
+    "correctionReportMinutes": 30,
+    "producerThreeReviewChecksRequired": true,
+    "creditNoteIncludedTrailingWhitespace": true,
+    "creditAdjustmentMinor": -1750,
+    "approvedLiabilityMinor": 1750,
+    "receiptVisibleImmediately": true,
+    "reloadRetainsTwoSeparateLiabilities": true,
+    "pendingReportsAfterReload": 0,
+    "pendingRecoveryControlsAfterReload": 0,
+    "currency": "USD"
+  },
+  "nativeAccessAndUsability": {
+    "separatePersonalCapabilityNoOtherPersonsHoursOrRatesOrLiabilities": true,
+    "personalTabsKeyboardPassed": true,
+    "producerTabsKeyboardPassed": true,
+    "rateDialogEscapeRestoresTriggerFocus": true,
+    "producerViewportWidth": 390,
+    "producerDocumentWidth": 390,
+    "personalViewportWidth": 390,
+    "personalDocumentWidth": 390,
+    "producerConsoleErrors": 0,
+    "personalConsoleErrors": 0,
+    "priorBrowserQaCookieRestored": true
+  },
+  "readOnlyFinalAudit": {
+    "observedAt": "2026-11-11T15:37:26.087Z",
+    "mode": "read_only_native_fixture_audit",
+    "legacyRawEnvelopeHashVerified": true,
+    "serverNormalizedReceiptMatched": true,
+    "originalFileUnchanged": true,
+    "originalRequestResent": false,
+    "originalApprovedMinor": 3500,
+    "creditAdjustmentMinor": -1750,
+    "currentApprovedMinor": 1750,
+    "pendingReports": 0,
+    "correctedMinutes": 30,
+    "originalPayableRecords": 1,
+    "originalCommandRows": 1,
+    "records": 5,
+    "encryptedRequestsAndRecords": 5,
+    "showRevision": 6,
+    "settlementRevision": 5,
+    "operationalAndFinancialFieldsUnchangedDuringRead": true,
+    "financialEvidence": 0,
+    "crewAcknowledgments": 0,
+    "crewAttestations": 0,
+    "crewCues": 0,
+    "providerRequests": 0,
+    "counts": {
+      "on_intelligence_runs": 0,
+      "on_voice_runs": 0,
+      "on_source_compilations": 0,
+      "on_jobs": 0,
+      "on_payment_intents": "not_initialized",
+      "on_payment_imports": "not_initialized"
+    }
+  },
+  "readOnlyOriginalFixtureComparison": {
+    "observedAt": "2026-11-11T15:38:07.556Z",
+    "mode": "read_only_exact_created_fixture_comparison",
+    "protectedFields": [
+      "tasks",
+      "dependencies",
+      "resources",
+      "sheets",
+      "sources",
+      "incidents",
+      "runs",
+      "approvedPlan",
+      "policy",
+      "clock",
+      "facts",
+      "state",
+      "tickets",
+      "financialEvidence",
+      "acknowledgments",
+      "doorsAt",
+      "curfewAt",
+      "accessUntil",
+      "nextCallAt",
+      "planVersion",
+      "goReportId"
+    ],
+    "allUnchanged": true,
+    "eventsOnlyExpectedSettlementSequence": true,
+    "records": 5,
+    "sourceAndPublishedPlanUnchanged": true
+  },
+  "screenshots": [
+    {
+      "fileName": "opening-settlement-recovery-mismatch.jpg",
+      "sha256": "2076b52c2cea60857994a96c74754a66806a8c5777cb00e5c28bd0fc55bd7f21",
+      "privateArtifact": true
+    },
+    {
+      "fileName": "opening-settlement-adjustment-desktop.jpg",
+      "sha256": "d0c9fa1ca87ed6f1c6922d87735ce63c0e60034f37ff626745a9d9c820500a72",
+      "privateArtifact": true
+    },
+    {
+      "fileName": "opening-settlement-adjustment-mobile.jpg",
+      "sha256": "00461eeb6826f1dabc8bbdf13a221f8ac9fea11bf4fd11637e6d21538358cbb2",
+      "privateArtifact": true
+    },
+    {
+      "fileName": "opening-settlement-personal-approved-mobile.jpg",
+      "sha256": "5b3c59ce51bfc1ab7797841de735c22f7db2c47ed571ef42db3d9633670a5bd3",
+      "privateArtifact": true
+    }
+  ],
+  "limitations": [
+    "This is a fictional controlled local rehearsal, not physical attendance, human approval evidence or a provider payout.",
+    "No payment, model, voice or source-compilation request was made by this qualification.",
+    "Browser interaction and retained command identity prove the observed recovery path; no network HAR claim is made.",
+    "The earlier digest mismatch and original recovery artifact remain retained; this receipt does not claim the first build passed.",
+    "This unit does not establish full-product completion or hosted qualification."
+  ]
+}

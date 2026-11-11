@@ -4,7 +4,7 @@ import { DomainError } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
 import { migrate, pool } from "./store";
 
-export type JobKind = "payment_reconcile" | "webhook_reconcile" | "supplier_rfq" | "supplier_expire" | "supplier_confirm" | "wallet_setup" | "cohort_ticket" | "remedy_item";
+export type JobKind = "payment_reconcile" | "webhook_reconcile" | "supplier_rfq" | "supplier_expire" | "supplier_confirm" | "wallet_setup" | "cohort_ticket" | "remedy_item" | "payout_batch" | "payout_item" | "payout_cancel";
 export type JobStatus = "queued" | "running" | "waiting" | "complete" | "needs_attention";
 export interface Job {
   id: string; tenantId: string; kind: JobKind; semanticKey: string; payload: Record<string, unknown>;
@@ -30,13 +30,13 @@ export async function enqueueJob(client: Pick<PoolClient, "query">, spec: { tena
 }
 
 /** Database time, row locks and a fresh fencing token decide the only active owner. */
-export async function claimJob(tenantId?: string): Promise<Job | null> {
+export async function claimJob(tenantId?: string, kinds?: readonly JobKind[]): Promise<Job | null> {
   await migrate();
   await pool.query(`UPDATE on_jobs SET status='needs_attention',last_code='ATTEMPT_LIMIT',lease_id=NULL,lease_until=NULL,updated_at=now()
     WHERE attempts>=max_attempts AND ((status IN ('queued','waiting') AND run_after<=now()) OR (status='running' AND lease_until<=now()))
-    AND ($1::uuid IS NULL OR tenant_id=$1)`, [tenantId ?? null]);
+    AND ($1::uuid IS NULL OR tenant_id=$1) AND ($2::text[] IS NULL OR kind=ANY($2))`, [tenantId ?? null, kinds ?? null]);
   const result = await pool.query<JobRow>(`WITH next AS (
-    SELECT id FROM on_jobs WHERE attempts<max_attempts AND ($1::uuid IS NULL OR tenant_id=$1)
+    SELECT id FROM on_jobs WHERE attempts<max_attempts AND ($1::uuid IS NULL OR tenant_id=$1) AND ($3::text[] IS NULL OR kind=ANY($3))
       AND ((status IN ('queued','waiting') AND run_after<=now()) OR (status='running' AND lease_until<=now()))
       AND NOT (kind='cohort_ticket' AND EXISTS (
         SELECT 1 FROM on_ticket_cohorts cohort WHERE cohort.tenant_id=on_jobs.tenant_id
@@ -45,7 +45,7 @@ export async function claimJob(tenantId?: string): Promise<Job | null> {
       ))
     ORDER BY run_after,created_at,id FOR UPDATE SKIP LOCKED LIMIT 1
   ) UPDATE on_jobs AS job SET status='running',lease_id=$2,lease_until=now()+interval '75 seconds',
-      attempts=attempts+1,updated_at=now() FROM next WHERE job.id=next.id RETURNING job.*`, [tenantId ?? null, randomUUID()]);
+      attempts=attempts+1,updated_at=now() FROM next WHERE job.id=next.id RETURNING job.*`, [tenantId ?? null, randomUUID(), kinds ?? null]);
   return result.rows[0] ? project(result.rows[0]) : null;
 }
 

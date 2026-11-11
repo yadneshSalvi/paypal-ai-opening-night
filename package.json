@@ -21,7 +21,8 @@
     "test:intelligence": "tsx --test tests/intelligence.test.ts tests/intelligence-store.test.ts",
     "test:voice": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/voice.test.ts tests/voice-store.test.ts",
     "test:sources": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/sources.test.ts tests/sources-store.test.ts",
-    "test:settlement": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/settlement.test.ts tests/settlement-store.test.ts tests/settlement-recovery.test.ts"
+    "test:settlement": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/settlement.test.ts tests/settlement-store.test.ts tests/settlement-recovery.test.ts",
+    "test:payouts": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/payouts.test.ts tests/payouts-store.test.ts"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",

@@ -1,6 +1,6 @@
 // Import before application env or Next. This is local fixture isolation, never a hosted mode.
 if (process.env.VERCEL) throw new Error("Provider-disabled QA cannot run in a hosted environment");
-for (const key of ["OPENAI_API_KEY", "GEMINI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "CHANNEL3_API_KEY", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_ID", "OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_SECRET", "BLOB_READ_WRITE_TOKEN", "CRON_SECRET"]) process.env[key] = "";
+for (const key of ["OPENAI_API_KEY", "GEMINI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "CHANNEL3_API_KEY", "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_ID", "OPENING_NIGHT_SUPPLIER_PAYPAL_CLIENT_SECRET", "OPENING_NIGHT_PAYOUT_RECIPIENTS_JSON", "BLOB_READ_WRITE_TOKEN", "CRON_SECRET"]) process.env[key] = "";
 for (const key of Object.keys(process.env)) if (/OPENAI|GEMINI|PAYPAL|CHANNEL3|ANTHROPIC|BLOB_READ_WRITE_TOKEN|CRON_SECRET/.test(key)) process.env[key] = "";
 process.env.OPENING_NIGHT_AI_QA = "1";
 process.env.OPENING_NIGHT_QA_FIXTURE = "1";

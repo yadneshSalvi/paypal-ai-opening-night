@@ -266,5 +266,11 @@ export function useCrewClient() {
     if (response.status === 401) endAccess();
     return response;
   }, [access, endAccess]);
-  return { data, outbox, legacyDraft, connection, cachedAt, clock, busy, error, notice, storageError, cacheWarning, refresh, acknowledge, syncReadbacks, sendLive, reviewAction, clearActionFeedback, retryStorage, resetDamagedQueue, clearLegacyDraft, exportSavedRequests, requestSettlement };
+  const requestPayouts = useCallback(async () => {
+    if (!access || accessEnded.current) throw new Error("Open your current personal crew access before reading payout history.");
+    const response = await fetch("/api/crew/payouts", { credentials: "omit", cache: "no-store", signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${access.token}` } });
+    if (response.status === 401) endAccess();
+    return response;
+  }, [access, endAccess]);
+  return { data, outbox, legacyDraft, connection, cachedAt, clock, busy, error, notice, storageError, cacheWarning, refresh, acknowledge, syncReadbacks, sendLive, reviewAction, clearActionFeedback, retryStorage, resetDamagedQueue, clearLegacyDraft, exportSavedRequests, requestSettlement, requestPayouts };
 }

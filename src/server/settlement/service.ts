@@ -27,7 +27,7 @@ async function lockedShow(db: PoolClient, tenantId: string, write: boolean): Pro
   if (!row) throw new DomainError("SHOW_NOT_FOUND", "This production is no longer available.", 404);
   return row.snapshot;
 }
-async function readState(db: PoolClient, show: ShowSnapshot): Promise<SettlementState> {
+export async function readState(db: PoolClient, show: ShowSnapshot): Promise<SettlementState> {
   const saved = (await db.query<{ revision: number }>("SELECT revision FROM on_settlement_state WHERE tenant_id=$1", [show.tenantId])).rows[0];
   const rows = (await db.query<RecordRow>("SELECT * FROM on_settlement_records WHERE tenant_id=$1 ORDER BY revision LIMIT 4001", [show.tenantId])).rows;
   const revision = saved?.revision ?? 0;

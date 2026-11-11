@@ -1,7 +1,7 @@
 import { PaymentError, ProviderError } from "@fracture/paypal-core";
 import { z } from "zod";
 import { DomainError } from "@/domain/contracts";
-import { claimJob, finishJob, type Job, type JobResult } from "./jobs";
+import { claimJob, finishJob, type Job, type JobKind, type JobResult } from "./jobs";
 import { listIntents, paymentTransaction, readIntent } from "./payment-store";
 import { pool } from "./store";
 import { observeOwnedPayment } from "./payment-observations";
@@ -11,6 +11,12 @@ import { WalletProviderError } from "./wallet-provider";
 const paymentPayload = z.object({ intentId: z.uuid() }).strict();
 const webhookPayload = z.object({ seller: z.enum(["venue", "brightline"]), eventId: z.string().min(3).max(128), rootIntentId: z.uuid() }).strict();
 export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResult> {
+  if (job.kind === "payout_batch" || job.kind === "payout_item" || job.kind === "payout_cancel") {
+    const schema = job.kind === "payout_item" ? z.object({ grantId: z.uuid(), senderItemId: z.uuid(), batchReadId: z.uuid() }).strict() : job.kind === "payout_cancel" ? z.object({ grantId: z.uuid(), cancellationId: z.uuid() }).strict() : z.object({ grantId: z.uuid() }).strict();
+    const parsed = schema.safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./payouts/worker")).runPayoutJob(job.tenantId, job.kind, parsed.data, signal);
+  }
   if (job.kind === "wallet_setup") {
     const parsed = z.object({ setupId: z.uuid() }).strict().safeParse(job.payload);
     if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
@@ -75,7 +81,7 @@ function failure(error: unknown): JobResult {
   if (error instanceof ProviderError) return { status: "waiting", code: "PROVIDER_" + error.kind.toUpperCase() };
   return { status: "waiting", code: "WORK_INTERRUPTED" };
 }
-export async function runJobTick(options: { tenantId?: string; limit?: number; budgetMs?: number; handler?: typeof handleJob } = {}) {
+export async function runJobTick(options: { tenantId?: string; kinds?: readonly JobKind[]; limit?: number; budgetMs?: number; handler?: typeof handleJob } = {}) {
   const budget = Math.max(1000, Math.min(options.budgetMs ?? 45000, 50000));
   const limit = Math.max(1, Math.min(options.limit ?? 4, 8)); const until = Date.now() + budget;
   const results: { id: string; kind: Job["kind"]; status: JobResult["status"] | "lease_lost" }[] = [];
@@ -85,7 +91,7 @@ export async function runJobTick(options: { tenantId?: string; limit?: number; b
   // identity and attempt count for the next tick.
   const minimumStartBudget = Math.min(budget, 30000);
   for (let index = 0; index < limit && (index === 0 || until - Date.now() >= minimumStartBudget); index++) {
-    const job = await claimJob(options.tenantId); if (!job) break;
+    const job = await claimJob(options.tenantId, options.kinds); if (!job) break;
     const signal = AbortSignal.timeout(Math.max(1, until - Date.now())); let result: JobResult;
     try { result = await (options.handler ?? handleJob)(job, signal); }
     catch (error) { result = failure(error); }
