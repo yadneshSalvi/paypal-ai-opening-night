@@ -1,0 +1,36 @@
+{
+  "checkedAt": "2026-11-11",
+  "sourceCommit": "c293072ac0304a8a47716990c5c604cddf696c8a",
+  "method": "Root-operated native in-app browser",
+  "environment": "Isolated local production build at 127.0.0.1:4305 with PayPal transport disabled",
+  "checks": {
+    "freshRehearsalOpened": true,
+    "exact42StandardAnd38VipAllocation": true,
+    "exact3370Ceiling": true,
+    "separateSaveOnlyZeroChargeReview": true,
+    "walletReviewEscapeAndFocusReturn": true,
+    "individualCheckoutCohortReviewedAndApproved": true,
+    "all80AllocationsPersistAfterReload": true,
+    "vipFilterContains38": true,
+    "paginationRetainsOriginalTicketOrdinals": true,
+    "width320NoDocumentOverflow": true,
+    "width390DialogFits": true,
+    "keyboardFocusReturns": true,
+    "separateStopReviewConfirmed": true,
+    "stoppedStatusPersistsAfterReload": true,
+    "stoppedAllocationRetains80Tickets": true,
+    "stoppedAllocationHasNoPurchaseButtons": true,
+    "capturedCountRemainsZero": true
+  },
+  "measured390Dialog": { "widthPx": 358, "leftPx": 16, "rightPx": 374 },
+  "financialBoundary": {
+    "providerWrites": 0,
+    "walletSaved": false,
+    "actualCaptures": 0,
+    "actualRefunds": 0,
+    "individualApprovalStillRequiredForEachPurchase": true
+  },
+  "followUp": "Repeated purchase and recovery controls now include the original ticket or remedy ordinal in their accessible name; this source follow-up is separate from the reviewed build.",
+  "privateScreenshots": ["opening-commerce-mobile-consent.png", "opening-commerce-stopped.png"],
+  "remaining": ["hosted migration 4", "actual wallet capability", "80 actual sandbox captures", "38 original-capture refunds", "authentic venue delivery qualification"]
+}

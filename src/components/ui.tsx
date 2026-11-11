@@ -2,8 +2,8 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { ArrowUpRight, LoaderCircle, X } from "lucide-react";
 export function Badge({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "amber" | "green" | "red" | "blue" }) { return <span className={`badge ${tone}`}>{children}</span>; }
-export function Button({ children, onClick, disabled, busy, variant = "secondary", className = "", title }: { children: ReactNode; onClick?: () => void; disabled?: boolean; busy?: boolean; variant?: "primary" | "secondary" | "ghost"; className?: string; title?: string }) {
-  return <button type="button" className={`button ${variant} ${className}`} onClick={onClick} disabled={disabled || busy} aria-busy={busy} title={title}>{busy ? <LoaderCircle size={15} className="spin" /> : null}{children}</button>;
+export function Button({ children, onClick, disabled, busy, variant = "secondary", className = "", title, ariaLabel }: { children: ReactNode; onClick?: () => void; disabled?: boolean; busy?: boolean; variant?: "primary" | "secondary" | "ghost"; className?: string; title?: string; ariaLabel?: string }) {
+  return <button type="button" className={`button ${variant} ${className}`} onClick={onClick} disabled={disabled || busy} aria-busy={busy} aria-label={ariaLabel} title={title}>{busy ? <LoaderCircle size={15} className="spin" /> : null}{children}</button>;
 }
 export function SectionHeading({ label, title, aside }: { label?: string; title: string; aside?: ReactNode }) { return <div className="section-heading"><div>{label && <span className="eyebrow">{label}</span>}<h2>{title}</h2></div>{aside}</div>; }
 export function PageHeading({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description: string; actions?: ReactNode }) { return <header className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></div><div className="heading-actions">{actions}</div></header>; }
