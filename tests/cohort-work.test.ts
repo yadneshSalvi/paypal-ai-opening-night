@@ -12,21 +12,21 @@ const cohort = await import("../src/server/cohort-service"), storage = await imp
 await payments.paymentStore(); after(async () => { await storage.closeCommerceLocks(); await database.close(); });
 const signal = () => AbortSignal.timeout(10000);
 const code = (value: string) => (error: unknown) => Boolean(error && typeof error === "object" && "code" in error && error.code === value);
-async function draft(mode: "saved_wallet" | "buyer_present" = "saved_wallet") {
+async function draft(mode: "saved_wallet" | "buyer_present" = "saved_wallet", origin = "http://localhost:4105") {
   const session = await store.createSession(undefined, "cohort-test:" + randomUUID()); let walletId: string | null = null;
   if (mode === "saved_wallet") {
-    const setup = await wallet.beginWalletSetup(session.actor, randomUUID(), session.show.revision, "http://localhost:4105");
+    const setup = await wallet.beginWalletSetup(session.actor, randomUUID(), session.show.revision, origin);
     await wallet.runWalletSetup(session.actor.tenantId, setup.id, signal());
     const pending = await walletStorage.readWalletSetup(session.actor.tenantId, setup.id); wire.setups.get(pending.setupTokenId!)!.status = "APPROVED";
     await wallet.runWalletSetup(session.actor.tenantId, setup.id, signal()); walletId = (await walletStorage.readWalletSetup(session.actor.tenantId, setup.id)).savedWalletId;
   }
   const current = await store.getShow(session.actor.tenantId);
-  const prepared = await cohort.draftCohort(session.actor, mode, walletId, current.revision, "http://localhost:4105");
+  const prepared = await cohort.draftCohort(session.actor, mode, walletId, current.revision, origin);
   const lines = (await database.pool.query<{ document: import("../src/server/commerce-storage").CohortTicketRecord }>("SELECT document FROM on_cohort_tickets WHERE tenant_id=$1 ORDER BY ordinal", [session.actor.tenantId])).rows.map(row => row.document);
   return { ...session, cohort: prepared, lines, walletId };
 }
-async function approved(mode: "saved_wallet" | "buyer_present" = "saved_wallet") {
-  const value = await draft(mode); const current = await store.getShow(value.actor.tenantId);
+async function approved(mode: "saved_wallet" | "buyer_present" = "saved_wallet", origin = "http://localhost:4105") {
+  const value = await draft(mode, origin); const current = await store.getShow(value.actor.tenantId);
   return { ...value, cohort: await cohort.approveCohort(value.actor, value.cohort.id, value.cohort.digest, current.revision, signal()) };
 }
 async function run(value: Awaited<ReturnType<typeof approved>>, index = 0) { return cohort.runCohortTicket(value.actor.tenantId, value.cohort.id, value.lines[index]!.id, signal()); }
@@ -150,4 +150,80 @@ test("a changed logical-ticket document cannot bypass its immutable price alloca
   await database.pool.query("UPDATE on_cohort_tickets SET document=jsonb_set(document,'{amountMinor}','5000'::jsonb) WHERE tenant_id=$1 AND id=$2", [value.actor.tenantId, line.id]);
   await assert.rejects(() => run(value), code("COHORT_LINE_MISMATCH"));
   assert.equal(wire.writes("/v2/checkout/orders").length, before);
+});
+test("a pre-reservation origin failure resumes only after configuration is fixed and retains exact consent", async () => {
+  const originalOrigin = process.env.NEXT_PUBLIC_APP_URL, origin = "https://controlled-checkout-fixture.vercel.app";
+  process.env.NEXT_PUBLIC_APP_URL = origin;
+  try {
+    const value = await approved("saved_wallet", origin), before = wire.writes("/v2/checkout/orders").length;
+    const consent = structuredClone(value.cohort), ids = value.lines.map(line => line.id);
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    await assert.rejects(() => run(value), code("CHECKOUT_ORIGIN"));
+    const paused = await storage.readCohort(value.actor.tenantId, value.cohort.id), line = await storage.readCohortTicket(value.actor.tenantId, value.lines[0]!.id);
+    assert.equal(paused.state, "paused"); assert.equal(line.rootIntentId, null); assert.equal(line.captureIntentId, null);
+    assert.equal(line.reservedAt, null); assert.equal(line.dispatchAuthorizedAt, null); assert.equal((await payments.listIntents(value.actor.tenantId)).length, 0);
+    await database.pool.query("UPDATE on_jobs SET status='needs_attention',attempts=max_attempts,last_code='CHECKOUT_ORIGIN' WHERE tenant_id=$1 AND semantic_key=$2", [value.actor.tenantId, line.id]);
+    await assert.rejects(() => cohort.resumeCohort(value.actor, value.cohort.id), code("CHECKOUT_ORIGIN"));
+    process.env.NEXT_PUBLIC_APP_URL = origin;
+    const resumed = await cohort.resumeCohort(value.actor, value.cohort.id);
+    assert.equal(resumed.state, "approved"); assert.equal(resumed.pauseTicketId, null); assert.equal(resumed.pauseCode, null);
+    for (const field of ["id", "digest", "ticketSetDigest", "reviewDigest", "approvedBy", "approvedAt", "expiresAt", "version", "origin", "terms"] as const) assert.deepEqual(resumed[field], consent[field]);
+    assert.deepEqual((await database.pool.query("SELECT id FROM on_cohort_tickets WHERE tenant_id=$1 ORDER BY ordinal", [value.actor.tenantId])).rows.map(row => row.id), ids);
+    assert.equal((await database.pool.query("SELECT count(*)::int AS count FROM on_jobs WHERE tenant_id=$1 AND kind='cohort_ticket' AND status='queued'", [value.actor.tenantId])).rows[0].count, 80);
+    assert.equal(wire.writes("/v2/checkout/orders").length, before); assert.equal((await payments.listIntents(value.actor.tenantId)).length, 0);
+    assert.equal((await run(value)).status, "complete"); assert.equal((await run(value)).status, "complete");
+    assert.equal(wire.writes("/v2/checkout/orders").length, before + 1);
+  } finally { if (originalOrigin === undefined) delete process.env.NEXT_PUBLIC_APP_URL; else process.env.NEXT_PUBLIC_APP_URL = originalOrigin; }
+});
+test("resume refuses every durable trace of an unresolved ticket, including incomplete row projections", async t => {
+  for (const kind of ["reserved_at", "dispatch_authorized", "root_column", "orphan_intent", "orphan_operation"] as const) await t.test(kind, async () => {
+    const value = await approved(), line = value.lines[0]!;
+    const policy = await import("../src/server/commerce-policy");
+    await policy.pauseCohortTicket(value.actor.tenantId, value.cohort.id, line.id, "COHORT_READBACK_REQUIRED");
+    if (kind === "reserved_at" || kind === "dispatch_authorized") {
+      const current = await storage.readCohortTicket(value.actor.tenantId, line.id);
+      if (kind === "reserved_at") current.reservedAt = new Date().toISOString(); else current.dispatchAuthorizedAt = new Date().toISOString();
+      await storage.saveCohortTicket(database.pool, current);
+    } else if (kind === "root_column") await database.pool.query("UPDATE on_cohort_tickets SET root_intent_id=$3 WHERE tenant_id=$1 AND id=$2", [value.actor.tenantId, line.id, randomUUID()]);
+    else if (kind === "orphan_intent") await database.pool.query("INSERT INTO on_payment_intents(id,tenant_id,seller,semantic_key,document) VALUES($1,$2,'venue',$3,$4)", [randomUUID(), value.actor.tenantId, "ticket:" + line.id + ":order", { ticketId: line.id }]);
+    else await database.pool.query("INSERT INTO paycore_operations(id,tenant_id,project_id,business_key,provider_request_id,payload_hash,status,version,amount_minor,document) VALUES($1,$2,'opening-night:venue',$3,$4,$5,'not_sent',1,3500,'{}')", [randomUUID(), value.actor.tenantId, "ticket:" + line.id + ":order", randomUUID(), "a".repeat(64)]);
+    const before = wire.writes("/v2/checkout/orders").length;
+    await assert.rejects(() => cohort.resumeCohort(value.actor, value.cohort.id), code("COHORT_UNRESOLVED_TICKET"));
+    assert.equal((await storage.readCohort(value.actor.tenantId, value.cohort.id)).state, "paused");
+    assert.equal(wire.writes("/v2/checkout/orders").length, before);
+  });
+});
+test("a reserved original ticket with no core operation resumes without changing any payment identity", async () => {
+  const originalOrigin = process.env.NEXT_PUBLIC_APP_URL, origin = "https://controlled-retained-origin.vercel.app";
+  process.env.NEXT_PUBLIC_APP_URL = origin;
+  try {
+    const value = await approved("saved_wallet", origin), before = wire.writes("/v2/checkout/orders").length;
+    wire.before = async call => { if (call.method === "GET" && call.path.startsWith("/v3/vault/payment-tokens/")) delete process.env.NEXT_PUBLIC_APP_URL; };
+    await assert.rejects(() => run(value), code("CHECKOUT_ORIGIN")); wire.before = null;
+    const line = await storage.readCohortTicket(value.actor.tenantId, value.lines[0]!.id);
+    assert.ok(line.rootIntentId); assert.ok(line.reservedAt); assert.equal(line.dispatchAuthorizedAt, null);
+    const original = await payments.readIntent(value.actor.tenantId, line.rootIntentId);
+    assert.equal(await (await payments.paymentStore()).get(original.command.scope, original.id), null);
+    assert.equal(wire.writes("/v2/checkout/orders").length, before);
+    process.env.NEXT_PUBLIC_APP_URL = origin;
+    const resumed = await cohort.resumeCohort(value.actor, value.cohort.id);
+    assert.equal(resumed.expiresAt, value.cohort.expiresAt); assert.equal(resumed.digest, value.cohort.digest);
+    assert.deepEqual(await payments.readIntent(value.actor.tenantId, original.id), original);
+    assert.deepEqual(await storage.readCohortTicket(value.actor.tenantId, line.id), line);
+    assert.equal((await run(value)).status, "complete"); assert.equal((await run(value)).status, "complete");
+    assert.equal(wire.writes("/v2/checkout/orders").length, before + 1);
+    assert.equal(wire.writes("/v2/checkout/orders").at(-1)!.requestId, original.command.providerRequestId);
+    assert.equal((await storage.readCohortTicket(value.actor.tenantId, line.id)).rootIntentId, original.id);
+  } finally { wire.before = null; if (originalOrigin === undefined) delete process.env.NEXT_PUBLIC_APP_URL; else process.env.NEXT_PUBLIC_APP_URL = originalOrigin; }
+});
+test("an unstarted ticket cannot resume after its approving actor or wallet is revoked", async t => {
+  for (const revoked of ["actor", "wallet"] as const) await t.test(revoked, async () => {
+    const value = await approved();
+    const policy = await import("../src/server/commerce-policy");
+    await policy.pauseCohortTicket(value.actor.tenantId, value.cohort.id, value.lines[0]!.id, "CHECKOUT_ORIGIN");
+    if (revoked === "actor") await database.pool.query("UPDATE on_sessions SET expires_at=now()-interval '1 second' WHERE tenant_id=$1", [value.actor.tenantId]);
+    else await database.pool.query("UPDATE on_saved_wallets SET document=jsonb_set(document,'{active}','false') WHERE tenant_id=$1", [value.actor.tenantId]);
+    await assert.rejects(() => cohort.resumeCohort(value.actor, value.cohort.id), code(revoked === "actor" ? "COMMERCE_AUTHORITY_EXPIRED" : "WALLET_AUTHORITY_REVOKED"));
+    assert.equal((await storage.readCohort(value.actor.tenantId, value.cohort.id)).state, "paused");
+  });
 });

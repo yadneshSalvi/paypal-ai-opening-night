@@ -14,7 +14,7 @@
     "start": "next start --port 4105",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/domain.test.ts tests/scheduling.test.ts tests/finance.test.ts tests/payments.test.ts tests/milestones.test.ts",
-    "test:integration": "tsx --test tests/store.test.ts tests/bryntum.test.ts tests/payment-wire.test.ts tests/session-admission.test.ts tests/durable-work.test.ts tests/supplier-work.test.ts tests/wallet-work.test.ts tests/cohort-work.test.ts tests/remedy-work.test.ts tests/commerce-api.test.ts tests/rehearsals.test.ts",
+    "test:integration": "tsx --test tests/store.test.ts tests/bryntum.test.ts tests/payment-wire.test.ts tests/session-admission.test.ts tests/durable-work.test.ts tests/supplier-work.test.ts tests/wallet-work.test.ts tests/cohort-work.test.ts tests/remedy-work.test.ts tests/commerce-api.test.ts tests/rehearsals.test.ts tests/commerce-locks.test.ts",
     "worker:once": "tsx scripts/worker.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "verify:packages": "tsx scripts/verify-packages.ts"
