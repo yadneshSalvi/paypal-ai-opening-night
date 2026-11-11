@@ -1,0 +1,20 @@
+{
+  "startedAt": "2026-11-11T07:37:33.530Z",
+  "finishedAt": "2026-11-11T07:38:40.959Z",
+  "passed": true,
+  "source": "7afb616",
+  "originalCohortTickets": 80,
+  "originalCaptureGrossMinor": 337000,
+  "exactRemedyAllocations": 38,
+  "verifiedRefunds": 38,
+  "refundMinor": 57000,
+  "retainedVipAdmissionMinor": 133000,
+  "cohortNetAdmissionMinor": 280000,
+  "currency": "USD",
+  "providerGetRequests": 114,
+  "financialProviderWrites": 0,
+  "authorityExpiresAt": "2026-11-12T07:09:22.418Z",
+  "limitations": [
+    "Sandbox funds only. Admissions retained is financial allocation, not evidence of physical event attendance."
+  ]
+}
