@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "qualifiedAt": "2026-11-11T16:45:02.687Z",
+  "mode": "controlled_provider_fixture",
+  "sourceBase": "1a6d28a4b9a6db64128204570bc5eecdd3239348",
+  "buildId": "d7UjsjL_Nyrf1w9QOU9vm",
+  "changes": [
+    "Explicit return target for asynchronous payout review",
+    "Ignore BODY, disconnected, inert, hidden and disabled focus targets"
+  ],
+  "nativeJourney": {
+    "schemaVersion": 1,
+    "observedAt": "2026-11-11T16:42:16.605Z",
+    "sourceCommit": "1a6d28a4b9a6db64128204570bc5eecdd3239348",
+    "buildId": "ph3cP4Ar4PmaOhTh0DJtC",
+    "mode": "controlled_provider_fixture",
+    "nativeBrowserJourney": true,
+    "financialJourneyPassed": true,
+    "actualProviderRequests": 0,
+    "principalMinor": 7000,
+    "controlledPaidMinor": 3500,
+    "controlledReturnedMinor": 3500,
+    "observedControlledFeeMinor": 50,
+    "currency": "USD",
+    "recordCounts": {
+      "recipient": 2,
+      "grant": 1,
+      "dispatch": 1,
+      "dispatch_result": 1,
+      "batch_read": 3,
+      "item_read": 6,
+      "refresh": 2,
+      "cancel_request": 1,
+      "cancel_dispatch": 1,
+      "cancel_result": 1
+    },
+    "personalIsolationPassed": true,
+    "canonicalFieldsPreserved": [
+      "tasks",
+      "dependencies",
+      "resources",
+      "sheets",
+      "acknowledgments",
+      "financialEvidence",
+      "financialObservations",
+      "facts",
+      "crewCues",
+      "crewAttestations",
+      "state",
+      "approvedPlan",
+      "tickets",
+      "clock",
+      "policy",
+      "rentalExecutions"
+    ],
+    "baselineHash": "4c49abe535211e03d69b25befd5942ffb23f86e1368468afc4c915760ca6ac25",
+    "afterHash": "4c49abe535211e03d69b25befd5942ffb23f86e1368468afc4c915760ca6ac25",
+    "nativeFindings": {
+      "recipientReviewChecks": true,
+      "fourIndependentTransferChecksAndNote": true,
+      "originalReadAndReload": true,
+      "separateOriginalCancellation": true,
+      "mobile390NoHorizontalOverflow": true,
+      "mobileDialogWithinViewport": true,
+      "consoleErrors": 0,
+      "escapeFocusRestoration": false
+    },
+    "limitations": [
+      "Payment results are a controlled HTTP fixture, not actual PayPal money movement.",
+      "Escape restored focus to BODY; a separate correction and native qualification are required.",
+      "Native datetime-local fill did not enter values; validation rejected empty input, then native accessibility date controls were used."
+    ]
+  },
+  "correctedFocus": {
+    "observedAt": "2026-11-11T16:44:34.147Z",
+    "payoutEscape": {
+      "label": "Review exact payout",
+      "tag": "BUTTON"
+    },
+    "payoutCloseButton": {
+      "label": "Review exact payout",
+      "tag": "BUTTON"
+    },
+    "rateEscape": {
+      "label": "New rate version",
+      "tag": "BUTTON"
+    },
+    "mobileEscape": {
+      "label": "Review exact payout",
+      "tag": "BUTTON"
+    },
+    "mobile": {
+      "dialog": {
+        "height": 759.59375,
+        "width": 343,
+        "x": 16,
+        "y": 42.203125
+      },
+      "scrollWidth": 375,
+      "viewport": 390
+    },
+    "consoleErrors": 0,
+    "newPaymentAuthorizations": 0
+  },
+  "retainedOriginalHistory": {
+    "sameGrant": true,
+    "sameBatch": true,
+    "sameTwoItems": true,
+    "oneTransferDispatch": true,
+    "oneOriginalCancellation": true,
+    "controlledProviderFileUnchanged": true
+  },
+  "qualificationSetupFailure": {
+    "retained": true,
+    "cause": "The separate focus runtime initially lacked its copied controlled provider history, so original reads were unavailable.",
+    "recovery": "Copied the exact retained controlled history, restarted, and continued original GET reads. No grant or transfer was replaced.",
+    "unknownStatePreserved": true
+  },
+  "verification": {
+    "previousFullSuite": 400,
+    "typecheck": true,
+    "independentProductionBuild": true,
+    "nativeDesktopAnd390px": true,
+    "actualProviderRequests": 0
+  },
+  "limitations": [
+    "Actual PayPal payout capability remains unqualified.",
+    "The earlier focus failure and unavailable fixture read remain retained separately."
+  ]
+}
