@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "observedSourceCommit": "f03b8a7dc2b8a1405e1e2f07006643af7db6d6d6",
+  "mode": "controlled_native_browser",
+  "nativePlayback": {
+    "playingStatusAndStopVisible": true,
+    "naturalEndShowsFinishedAndHidesStop": true,
+    "explicitStopShowsStopped": true,
+    "closeAndReopenKeepsStopped": true,
+    "savedAudioHasNativeControls": true,
+    "savedOriginalRequests": 1,
+    "durationSeconds": 1,
+    "providerSource": "controlled_fixture"
+  },
+  "recordControl": {
+    "nativeButton": true,
+    "accessibleName": "Record a planning draft",
+    "tabIndex": 0,
+    "enabledInObservedBuild": false,
+    "finding": "Bryntum DomSync serializes disabled=false as an HTML attribute, which still disables a button.",
+    "correction": "Omit the disabled attribute while enabled; retain it for genuine disabled states.",
+    "correctionNativeRetest": "pending"
+  },
+  "readOnlyDatabaseAudit": {
+    "checkedAt": "2026-11-11T14:21:37.568Z",
+    "showRevision": 2,
+    "planVersion": 1,
+    "existingTasksUnchanged": 82,
+    "protectedOperationalFieldsUnchanged": true,
+    "voiceRequests": 1,
+    "voiceState": "completed",
+    "waveBytes": 48044,
+    "waveSha256": "e0957d33ebced2c1ba7a354bd559f6f4f67c1d645153db0023782e522173b6f7",
+    "encryptedChunks": 1,
+    "receiptAndChunkHashesVerified": true,
+    "transcriptionRequests": 0,
+    "planningRequests": 0,
+    "paymentIntents": "table not initialized",
+    "financialEvidence": 0,
+    "crewAcknowledgments": 0,
+    "crewAttestations": 0,
+    "crewCues": 0
+  },
+  "limitations": [
+    "No microphone permission, capture, physical phone, or real speaker was tested.",
+    "This controlled one-second audio is not actual-provider speech qualification.",
+    "The disabled-button correction needs separate native verification.",
+    "Two read-only audit harness failures were retained: digest-envelope omission and an uninitialized payment-table assumption. Neither mutated application records."
+  ]
+}

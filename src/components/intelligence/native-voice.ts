@@ -7,9 +7,11 @@ import { finishVoicePlayback, transcriptDraft, voiceLimits, voicePlaybackText, t
 
 /** Preserve the installed trigger handler, with a real keyboard-operable button. */
 export function nativeAudioTrigger(label: string) {
-  return { tag: "button", ariaLabel: label, compose(this: { ariaLabel?: string; disabled?: boolean }, config: { tag?: string; type?: string; title?: string; tabIndex?: number; disabled?: boolean; listeners: Record<string, unknown>; "aria-hidden"?: boolean; "aria-label"?: string }) {
+  return { tag: "button", ariaLabel: label, compose(this: { ariaLabel?: string; disabled?: boolean }, config: { tag?: string; type?: string; title?: string; tabIndex?: number; disabled?: boolean | null; listeners: Record<string, unknown>; "aria-hidden"?: boolean; "aria-label"?: string }) {
     delete config["aria-hidden"]; delete config.listeners.keypress;
-    config.tag = "button"; config.type = "button"; config.tabIndex = 0; config.disabled = Boolean(this.disabled);
+    config.tag = "button"; config.type = "button"; config.tabIndex = 0;
+    // DomSync serializes attributes, so disabled=false still disables an HTML button.
+    config.disabled = this.disabled ? true : null;
     config["aria-label"] = config.title = this.ariaLabel || label;
     // The textarea's Enter keymap must not also send while a trigger has focus.
     config.listeners.keydown = (event: KeyboardEvent) => { if (event.key === "Enter" || event.key === " ") event.stopPropagation(); };
