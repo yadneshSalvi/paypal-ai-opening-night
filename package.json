@@ -22,7 +22,9 @@
     "test:voice": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/voice.test.ts tests/voice-store.test.ts",
     "test:sources": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/sources.test.ts tests/sources-store.test.ts",
     "test:settlement": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/settlement.test.ts tests/settlement-store.test.ts tests/settlement-recovery.test.ts",
-    "test:payouts": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/payouts.test.ts tests/payouts-store.test.ts"
+    "test:payouts": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/payouts.test.ts tests/payouts-store.test.ts",
+    "test:wrap": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/wrap.test.ts tests/wrap-store.test.ts tests/wrap-assistant-store.test.ts tests/provider-egress.test.ts",
+    "qa:wrap:export": "node --import ./scripts/qa/disabled-providers.mjs --import tsx scripts/qa/wrap-export-qa.ts"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",
@@ -36,11 +38,16 @@
     "@bryntum/scheduler-react-enterprise": "8.0.0",
     "@fracture/paypal-core": "file:vendor/fracture-paypal-core-0.2.4.tgz",
     "@js-temporal/polyfill": "0.5.1",
+    "@paypal/agent-toolkit": "1.11.0",
+    "@pdf-lib/fontkit": "1.1.1",
+    "ag-charts-community": "14.3.0",
+    "axios": "1.21.1",
     "dotenv": "17.2.3",
     "exceljs": "4.4.0",
     "jsqr": "1.4.0",
     "lucide-react": "0.468.0",
     "next": "16.4.6",
+    "pdf-lib": "1.17.1",
     "pdfjs-dist": "6.5.438",
     "pg": "8.16.3",
     "qrcode": "1.5.4",
@@ -53,6 +60,9 @@
   "overrides": {
     "exceljs": {
       "uuid": "11.1.1"
+    },
+    "@paypal/agent-toolkit": {
+      "mathjs": "15.2.0"
     }
   },
   "devDependencies": {

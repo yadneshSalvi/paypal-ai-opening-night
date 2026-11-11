@@ -28,7 +28,7 @@ const navigation = [
   { id: "execution", label: "Execution", icon: Clapperboard, href: "/execution" },
   { id: "crew", label: "Crew readback", icon: AudioLines, href: "/crew" },
   { id: "box-office", label: "Box office", icon: Ticket, href: "/box-office" },
-  { id: "wrap", label: "Wrap & settlement", icon: WalletCards, href: "/wrap" },
+  { id: "wrap", label: "Wrap desk", icon: WalletCards, href: "/wrap" },
   { id: "evidence", label: "Evidence room", icon: FileCheck2, href: "/evidence" },
 ];
 function Brand() { return <Link className="brand" href="/" aria-label="Opening Night home"><span className="brand-mark"><i /><i /><i /><i /></span><span>OPENING<br />NIGHT<span className="brand-period">.</span></span></Link>; }

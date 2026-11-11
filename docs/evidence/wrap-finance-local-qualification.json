@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "unit": "wrap-finance-invoices-toolkit-assistant-reports",
+  "qualifiedAt": "2026-11-11T20:39:23.544Z",
+  "sourceBase": "29d05f6b663cad2eb07cf8934d2063dfd3e9eb78",
+  "appInputDigest": "3f1a27d5f4f2ca852265f6621dd7e0805636a26c6e7a3a103c20c92607473c85",
+  "buildId": "1J73iLPv6NXPa3srKR8HE",
+  "boundary": {
+    "database": "new restricted local PostgreSQL role and database",
+    "transport": "injected core / official Toolkit / model protocol; real loopback HTTP",
+    "providerCredentials": "blanked before dotenv loading",
+    "providerEgress": "fetch, Node HTTP and Node HTTPS blocked for actual provider hosts; mixed case, terminal dot, proxy path/Host and TLS servername forms tested",
+    "actualProviderQualification": false,
+    "nativeBrowserQualification": false,
+    "deploymentPerformed": false,
+    "sharedCoreChanged": false,
+    "originalOrHostedDataReadOrChanged": false
+  },
+  "checks": {
+    "controlledDomainAndPostgres": {
+      "passed": 356,
+      "failed": 0,
+      "logSha256": "19908e7182906b89f44919f4bed7a3d7f64e9aee191abe39e8103954bc4ce8e7"
+    },
+    "legacyInjectedDomainAndPostgres": {
+      "passed": 125,
+      "failed": 0,
+      "logSha256": "90d5af8a2c8d9ccf3add53347331f4f5f458965a180c19a39108087705e4a8ba",
+      "mode": "Provider-egress preload stays active; UI fixture flag disabled only in a separate own-DB regression process so its legacy injected SDK seam is admitted."
+    },
+    "totalRegressionTests": 481,
+    "strictTypeScript": {
+      "passed": true,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "productionBuild": {
+      "passed": true,
+      "engine": "Next 16.4.6 webpack",
+      "node": "22.22.3",
+      "npm": "10.9.8",
+      "logSha256": "3a99493ecbb087f9f7c5cf43d913af8e99b61ffa40e2202bead7904f0a503221"
+    },
+    "packageAndFontPins": {
+      "passed": true,
+      "logSha256": "4e0fee9b849251005a9d50a61951b9c0bcdaa4240c2e6aba288f944b6fea9ada"
+    },
+    "http": {
+      "passed": 26,
+      "requests": 111,
+      "checks": [
+        "exact new production and controlled boundary",
+        "personal role cannot read producer account",
+        "cross-production header denied",
+        "foreign origin denied before mutation",
+        "arbitrary invoice mutation denied",
+        "three concurrent retries retain one original entry version",
+        "separately reviewed invoice create and share remain claim not cash",
+        "cancel preserves original identity and supplies no collection",
+        "unknown creation recovers exact original number/reference without replacement",
+        "identified original invoice payment/refund conserve net collection",
+        "official installed Toolkit exact read and replay through bundled server",
+        "wire evidence proves one creation per invoice and both notification flags false",
+        "Toolkit cannot widen owned resource scope",
+        "real HTTP personal hours and exact producer approval create one liability",
+        "real HTTP exact payout original reconciles principal fee and releases reservation",
+        "durable assistant completed bounded reads and only an unapproved proposal",
+        "full real paginated PDF and canonical JSON download with verified content hashes",
+        "historical PDF and JSON bytes unchanged after new source and adverse read",
+        "filtered or partial export request denied",
+        "foreign producer report bytes denied",
+        "foreign assistant original denied",
+        "cookie mutation requires exact displayed production scope",
+        "expired original session denied",
+        "revoked exact original session denied",
+        "controlled review form restores separate original HttpOnly cookie and wrap route renders",
+        "personal chooser uses retained fragment capability without changing owner cookie"
+      ],
+      "logSha256": "21e03002b086225cfe6dc53ec7b2f7eb18da2b90e08f01ec5a018354f4c0bc4c",
+      "resultSha256": "0bb4a832bdaa10aa6eb599ec5c1f0a8892d9d26d0b81d189cd421535a5bd0a54"
+    }
+  },
+  "export": {
+    "state": "passed",
+    "pages": 54,
+    "markersExpected": 72,
+    "markersFound": 72,
+    "charactersInspected": 182386,
+    "charactersOutsidePage": 0,
+    "pdfSha256": "632b4290a333d3335c6176a5e72f6feb9b894884234271779a0d0ac37a525159",
+    "jsonExactUnicode": true,
+    "renderedInspectedPages": [
+      1,
+      30
+    ],
+    "limitations": "Unicode without an embedded glyph is explicitly escaped as code points in PDF; JSON retains exact text.",
+    "renderInspection": "Poppler cover and source appendix page rendered and inspected; not a native browser qualification",
+    "nativeFixtureEditions": 4,
+    "nativeFixtureFinalPages": 25,
+    "earlierNativeFilesReverified": 6,
+    "earlierBytesUnchanged": true
+  },
+  "firstFailure": {
+    "toolkitEgress": "unknown",
+    "successfulProviderRead": false,
+    "successfulProviderAction": false,
+    "preserved": true,
+    "correction": "Exact Toolkit-owned CJS axios interceptor plus pre-construction guard and credential checks; no successful actual provider/action claim from the failed run."
+  },
+  "dependencies": {
+    "paypalCore": "0.2.4",
+    "paypalCoreArchiveSha256": "5c03e848a603c91f98f213c9bfee2e5e4ccb00fd54946ae349945c55f53c3f0f",
+    "apimaticPaypal": "2.29.0",
+    "paypalAgentToolkit": "1.11.0",
+    "toolkitLicense": "npm metadata ISC; upstream Apache-2.0 discrepancy recorded",
+    "agChartsCommunity": "14.3.0",
+    "bryntum": "8.0.0",
+    "pdfLib": "1.17.1",
+    "fontkit": "1.1.1",
+    "axios": "1.21.1",
+    "audit": {
+      "high": 10,
+      "moderate": 1,
+      "total": 11
+    },
+    "auditClaim": "Not vulnerability-free; scoped adapter reachability and remaining release gate are documented."
+  },
+  "remainingGates": [
+    "Root native desktop/390px/keyboard, chart/grid linkage, exact reviews and downloads.",
+    "Root separately admitted actual owned-party invoice / Toolkit and finance-model protocol qualification.",
+    "Transitive dependency remediation and full release security/performance/cold install review.",
+    "Full crew completion and shift swaps; second incident/no-feasible recovery/partial cancellation; production admission/templates/tours/travel/network/stage depth.",
+    "Incident corpus, 500-task/100-resource and 400-synthetic evaluation, three independent complete hero runs, real-phone/practitioner proof or honest fallback, 170-second film and full release."
+  ],
+  "scopeConclusion": "The controlled local wrap unit is ready for independent root native review. It does not complete Opening Night or all six projects."
+}

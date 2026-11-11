@@ -1,0 +1,21 @@
+import "./disabled-providers.mjs";
+import { appendFileSync, existsSync, readFileSync, mkdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { createWrapWireFixture } from "./wrap-wire-fixture.mjs";
+import { createPayoutWireFixture } from "./payout-wire-fixture.mjs";
+import { createWrapAssistantFixture } from "./wrap-assistant-fixture.mjs";
+if (process.env.VERCEL || globalThis.openingNightProviderEgressGuard?.version !== 2 || process.env.OPENING_NIGHT_AI_QA !== "1") throw new Error("Restricted wrap fixture preload is required");
+const directory = resolve(process.cwd(), ".artifacts/wrap-4538-private"); mkdirSync(directory, { recursive: true, mode: 0o700 });
+const controlPath = resolve(directory, "http-controls.json");
+const controls = () => existsSync(controlPath) ? JSON.parse(readFileSync(controlPath, "utf8")) : {};
+const invoice = createWrapWireFixture({ storePath: resolve(directory, "invoice-wire.json"), beforeCall: async call => {
+  appendFileSync(resolve(directory, "wire-log.ndjson"), JSON.stringify({ at: new Date().toISOString(), transport: "local_fixture", ...call }) + "\n", { mode: 0o600 });
+  if (!existsSync(controlPath)) return;
+  const control = controls();
+  for (const name of ["lostCreate", "searchUnavailable", "lostSend", "readsUnavailable", "toolkitUnavailable"]) invoice.behavior[name] = control[name] === true;
+  if (control.collection && invoice.invoices.has(control.collection.providerId)) invoice.collect(control.collection.providerId, control.collection.paidMinor, control.collection.refundedMinor ?? 0);
+} });
+Reflect.set(globalThis, "openingNightWrapFixture", invoice);
+Reflect.set(globalThis, "openingNightPayoutFixture", createPayoutWireFixture({ storePath: resolve(directory, "payout-wire.json") }));
+const model = createWrapAssistantFixture({ storePath: resolve(directory, "model-wire.json") });
+Reflect.set(globalThis, "openingNightWrapModelFixture", model); Reflect.set(globalThis, "openingNightPlanningQa", model.provider);

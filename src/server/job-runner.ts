@@ -11,6 +11,11 @@ import { WalletProviderError } from "./wallet-provider";
 const paymentPayload = z.object({ intentId: z.uuid() }).strict();
 const webhookPayload = z.object({ seller: z.enum(["venue", "brightline"]), eventId: z.string().min(3).max(128), rootIntentId: z.uuid() }).strict();
 export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResult> {
+  if (job.kind === "invoice_operation") {
+    const parsed = z.object({ invoiceId: z.uuid(), grantId: z.uuid().nullable(), refreshId: z.uuid().nullable() }).strict().safeParse(job.payload);
+    if (!parsed.success || Boolean(parsed.data.grantId) === Boolean(parsed.data.refreshId)) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./wrap/worker")).runInvoiceJob(job.tenantId, parsed.data, signal);
+  }
   if (job.kind === "payout_batch" || job.kind === "payout_item" || job.kind === "payout_cancel") {
     const schema = job.kind === "payout_item" ? z.object({ grantId: z.uuid(), senderItemId: z.uuid(), batchReadId: z.uuid() }).strict() : job.kind === "payout_cancel" ? z.object({ grantId: z.uuid(), cancellationId: z.uuid() }).strict() : z.object({ grantId: z.uuid() }).strict();
     const parsed = schema.safeParse(job.payload);

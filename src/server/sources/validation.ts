@@ -12,6 +12,7 @@ const at = (value: string) => Date.parse(value);
 const endOf = (start: string, minutes: number) => new Date(at(start) + minutes * 60_000).toISOString();
 
 export function sourceApplicationBlock(show: ShowSnapshot): string | null {
+  if (show.wrapVersion) return "This production has retained account entries, invoice instructions or report editions. Source proposals cannot replace their source identities.";
   if (show.payoutVersion) return "This production has retained recipient or payout history. Source proposals cannot replace its approved roster and payment identities.";
   if (show.settlementVersion) return "This production has retained crew settlement records. Source proposals cannot replace the production or roster behind reported work and approved liabilities.";
   if (show.approvedPlan || show.planVersion > 1 || show.sheets.some(sheet => sheet.candidateId || sheet.version > 1) || show.acknowledgments.length || show.financialEvidence.length || show.facts.length || show.rentalExecutions?.length || show.crewAttestations?.length || show.crewCues?.length || show.state !== "standby" || show.goReportId) return "This production already has approved or operational work. Its source proposals remain reviewable; create a fresh rehearsal to import planning changes without rewriting that history.";

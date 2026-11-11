@@ -112,6 +112,8 @@ export interface ShowSnapshot {
   settlementVersion?: number;
   /** Private recipient and payout records remain in the encrypted payout ledger. */
   payoutVersion?: number;
+  /** Attributed account entries, invoice instructions and report editions have immutable private history. */
+  wrapVersion?: number;
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }

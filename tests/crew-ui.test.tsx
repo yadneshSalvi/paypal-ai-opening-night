@@ -28,7 +28,7 @@ test("fixture money views identify seeded records and expose no payment review c
   assert.match(box, /CONTROLLED GROSS CAPTURES/); assert.match(box, /fixture refund input/);
   assert.doesNotMatch(box, /actual captures|verified refunded|Review exact \$15 remedy|Individual ticket desk/);
   const wrap = renderToStaticMarkup(<WrapView {...value} />);
-  assert.match(wrap, /CONTROLLED PAYOUT INPUTS/); assert.match(wrap, /Controlled \$480 fee input/); assert.doesNotMatch(wrap, /VERIFIED CREW PAYOUTS|Review.*hold release/);
+  assert.match(wrap, /CONTROLLED ACCOUNT/); assert.match(wrap, /Opening the production account/); assert.doesNotMatch(wrap, /VERIFIED CREW PAYOUTS|Review.*hold release/);
   const evidence = renderToStaticMarkup(<EvidenceView {...value} />);
   assert.match(evidence, /PROVIDERS DISABLED/); assert.match(evidence, /controlled financial inputs/); assert.doesNotMatch(evidence, /ACTUAL RECEIPTS|verified completed provider receipts are recorded/);
   const execution = renderToStaticMarkup(<ExecutionView {...value} />);
