@@ -1,8 +1,11 @@
 import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
+import { z } from "zod";
 import { digest } from "../src/domain/hash";
-import type { SourceUpload } from "../src/domain/sources";
+import { legacyCompiledGraphSchema, type SourceUpload } from "../src/domain/sources";
+import { sourceBaselineRetention } from "../src/server/sources/retention";
+import { sealIntelligence } from "../src/server/intelligence/private-payload";
 import type { IntelligenceAuthority } from "../src/server/intelligence/ledger";
 import type { SourceProvider } from "../src/server/sources/compiler";
 import { base } from "./helpers";
@@ -21,7 +24,7 @@ async function workspace() {
   const authority = { actor, sessionHash } satisfies IntelligenceAuthority;
   return { show, authority };
 }
-function wire(options: { lost?: boolean; pending?: boolean; foreignId?: boolean; tool?: boolean; noResult?: boolean; wait?: Promise<void>; after?: () => Promise<void>; assumption?: boolean } = {}) {
+function wire(options: { lost?: boolean; pending?: boolean; foreignId?: boolean; tool?: boolean; noResult?: boolean; wrongContract?: boolean; wrongVersion?: boolean; retentionChange?: boolean; wait?: Promise<void>; after?: () => Promise<void>; assumption?: boolean } = {}) {
   const calls: { method: string; url: string; body?: Record<string, unknown> }[] = []; let saved: Record<string, unknown>;
   const provider: SourceProvider = { configured: true, mode: "controlled_fixture", fetch: async (url, init) => {
     const method = init?.method ?? "GET";
@@ -31,8 +34,11 @@ function wire(options: { lost?: boolean; pending?: boolean; foreignId?: boolean;
     if (method === "GET" && options.noResult) return new Response("", { status: 404 });
     const input = saved.input as { content: { text: string }[] }[], data = JSON.parse(input[0]!.content[0]!.text), sourceId = data.sources[0].id;
     const { graph } = sourceFixture(data.selectedProduction, sourceId);
+    graph.baselineRetention = data.compilationContract.baselineRetention;
+    if (options.retentionChange) graph.baselineRetention.policy.maxShiftMinutes += 60;
     if (options.assumption) graph.tasks[0]!.amplified = { value: false, citations: [], assumption: "The paperwork call uses no amplified audio." };
-    return Response.json({ id: method === "GET" && options.foreignId ? "resp_wrong" : "resp_source_fixture", model: "gpt-6.1-sol", store: false, status: options.pending && method === "POST" ? "queued" : "completed", metadata: saved.metadata, output: options.pending && method === "POST" ? [] : options.tool ? [{ type: "function_call", name: "approve", arguments: "{}" }] : [{ type: "message", role: "assistant", content: [{ type: "output_text", text: JSON.stringify(graph) }] }], usage: { input_tokens: 100, output_tokens: 100 } }, { headers: { "x-request-id": "req_source_fixture" } });
+    const { baselineRetention: _retained, ...shared } = graph, outputGraph = options.wrongVersion ? { ...shared, schemaVersion: 1 } : graph;
+    return Response.json({ id: method === "GET" && options.foreignId ? "resp_wrong" : "resp_source_fixture", model: "gpt-6.1-sol", store: false, status: options.pending && method === "POST" ? "queued" : "completed", metadata: options.wrongContract ? { ...(saved.metadata as Record<string, string>), compiler_contract: "unmatched_contract" } : saved.metadata, output: options.pending && method === "POST" ? [] : options.tool ? [{ type: "function_call", name: "approve", arguments: "{}" }] : [{ type: "message", role: "assistant", content: [{ type: "output_text", text: JSON.stringify(outputGraph) }] }], usage: { input_tokens: 100, output_tokens: 100 } }, { headers: { "x-request-id": "req_source_fixture" } });
   } };
   return { provider, calls };
 }
@@ -61,6 +67,7 @@ test("source versions supersede only the selected current version and preserve o
 test("compiler saves one encrypted original request and real-engine review, never applying model output", async () => {
   const { show, authority, command, fake, run } = await compilation();
   assert.equal(run.state, "completed"); assert.equal(run.current, true); assert.equal(run.review?.canApply, true, JSON.stringify(run.review?.issues));
+  assert.equal(run.review?.graph.schemaVersion, 2); assert.deepEqual(run.review?.baselineRetention, { ...sourceBaselineRetention(show), matches: true });
   const replay = await compiler.startSourceCompilation(authority, command, fake.provider); assert.deepEqual(replay, run); assert.equal(fake.calls.filter(call => call.method === "POST").length, 1);
   const row = (await fixture.pool.query("SELECT * FROM on_source_compilations WHERE id=$1", [run.id])).rows[0]; assert.equal(row.provider_store, false); assert.equal(row.resolved_model, "gpt-6.1-sol"); assert.ok(!JSON.stringify(row).includes("Lighting paperwork")); assert.ok(row.provider_output_cipher && row.request_cipher && row.result_cipher);
   assert.equal(digest((await fixture.pool.query("SELECT snapshot FROM on_shows WHERE tenant_id=$1", [show.tenantId])).rows[0].snapshot), digest(show));
@@ -100,6 +107,7 @@ test("exact producer review accepts every source and assumption, commits once, a
   const result = await compiler.applySourceCompilation(authority, command), replay = await compiler.applySourceCompilation(authority, command);
   assert.equal(result.replayed, false); assert.equal(replay.replayed, true); assert.equal(result.show.revision, show.revision + 1); assert.equal(result.show.tasks.length, show.tasks.length + 1);
   assert.deepEqual(result.show.sheets, show.sheets); assert.deepEqual(result.show.financialEvidence, []); assert.deepEqual(result.show.acknowledgments, []); assert.deepEqual(result.show.facts, []); assert.equal(result.show.approvedPlan, null); assert.equal(result.show.planVersion, show.planVersion);
+  assert.deepEqual(result.show.policy, { ...show.policy, version: show.policy.version + 1 });
   assert.equal(fake.calls.length, 1); assert.equal((await fixture.pool.query("SELECT count(*) FROM on_source_reviews WHERE compilation_id=$1", [run.id])).rows[0].count, "1");
   await assert.rejects(sources.deleteSource(authority, source.id, source.contentHash), code("SOURCE_IN_APPROVED_GRAPH"));
   await assert.rejects(compiler.applySourceCompilation(authority, { ...command, commandId: randomUUID() }), code("SOURCE_ALREADY_APPLIED"));
@@ -129,4 +137,50 @@ test("foreign, scoped and ended sessions cannot read original private files or c
   await assert.rejects(sources.readSource({ ...authority, actor: { ...authority.actor, personId: "sam", roles: ["crew"] } }, source.id), code("PLANNING_ROLE_REQUIRED"));
   await fixture.pool.query("DELETE FROM on_sessions WHERE token_hash=$1", [authority.sessionHash]);
   await assert.rejects(sources.readSourceFile(authority, source.id), code("PLANNING_SESSION_ENDED")); assert.equal(fake.calls.length, 0);
+});
+test("v2 provider contract mismatches, wrong output versions and changed retained policy never apply", async () => {
+  for (const options of [{ wrongContract: true }, { wrongVersion: true }, { retentionChange: true }]) {
+    const { show, authority, fake, run } = await compilation(options);
+    assert.equal(run.state, options.wrongContract ? "indeterminate" : options.wrongVersion ? "failed" : "completed");
+    assert.ok(!run.review?.canApply); assert.equal(fake.calls.length, 1);
+    if (options.retentionChange) {
+      assert.ok(run.review?.issues.some(issue => issue.code === "BASELINE_RETENTION_CHANGED"));
+      await assert.rejects(compiler.applySourceCompilation(authority, reviewCommand(run)), code("SOURCE_REVIEW_NOT_APPLICABLE"));
+    }
+    assert.equal(digest((await fixture.pool.query("SELECT snapshot FROM on_shows WHERE tenant_id=$1", [show.tenantId])).rows[0].snapshot), digest(show));
+  }
+});
+test("retained v1 requests recover their original schema and unsupported holds through one original GET", async () => {
+  for (const held of [false, true]) {
+    const { show, authority, source, command } = await prepare(), id = randomUUID(), document = await sources.readSource(authority, source.id);
+    const request = compiler.sourceCompilerRequest(id, show, [document], authority.actor.id), schema = z.toJSONSchema(legacyCompiledGraphSchema); delete schema.$schema;
+    request.text = { format: { type: "json_schema", name: "opening_night_source_graph", strict: true, schema } };
+    request.metadata = { opening_compilation: id, source_digest: digest(show) };
+    const input = JSON.parse((request.input as { content: { text: string }[] }[])[0]!.content[0]!.text); delete input.compilationContract;
+    request.input = [{ role: "user", content: [{ type: "input_text", text: JSON.stringify(input) }] }];
+    const requestCipher = sealIntelligence(show.tenantId, `source-compilation:${id}:request`, { request, base: show, documents: [document] });
+    const bindings = [{ id: source.id, familyId: source.familyId, version: source.version, hash: source.contentHash, extractionDigest: document.extractionDigest }];
+    await fixture.pool.query("INSERT INTO on_source_compilations(id,tenant_id,actor_id,session_hash,request_id,request_hash,base_revision,base_digest,source_bindings,request_cipher,requested_model,provider_source,state,provider_response_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,'gpt-6.1-sol','controlled_fixture','running','resp_legacy_fixture')", [id, show.tenantId, authority.actor.id, authority.sessionHash, command.requestId, digest(command), show.revision, digest(show), JSON.stringify(bindings), requestCipher]);
+    const { graph } = sourceFixture(show, source.id), { baselineRetention: _retained, ...shared } = graph;
+    const message = "Retain the existing 720-minute maximum-shift limit unchanged; the v1 schema has no field for it.";
+    const legacy = { ...shared, schemaVersion: 1, unsupportedRequirements: held ? [{ message, citations: [] }] : [] };
+    let reads = 0;
+    const provider: SourceProvider = { configured: true, mode: "controlled_fixture", fetch: async (url, init) => {
+      assert.equal(String(url), "https://api.openai.com/v1/responses/resp_legacy_fixture"); assert.equal(init?.method, "GET"); reads++;
+      return Response.json({ id: "resp_legacy_fixture", model: "gpt-6.1-sol", store: false, status: "completed", metadata: request.metadata, output: [{ type: "message", role: "assistant", content: [{ type: "output_text", text: JSON.stringify(legacy) }] }] });
+    } };
+    const recovered = await compiler.readSourceCompilation(authority, id, provider), repeated = await compiler.readSourceCompilation(authority, id, provider);
+    assert.equal(recovered.state, "completed"); assert.equal(recovered.review?.graph.schemaVersion, 1); assert.equal(recovered.review?.baselineRetention, undefined); assert.equal(recovered.review?.canApply, !held);
+    assert.deepEqual(recovered.review?.graph.unsupportedRequirements, legacy.unsupportedRequirements); assert.deepEqual(repeated, recovered); assert.equal(reads, 1);
+    if (held) assert.ok(recovered.review?.issues.some(issue => issue.code === "SOURCE_UNSUPPORTED_REQUIREMENT" && issue.message === message && issue.blocking));
+    const saved = (await fixture.pool.query("SELECT request_cipher,provider_response_id FROM on_source_compilations WHERE id=$1", [id])).rows[0];
+    assert.equal(saved.request_cipher, requestCipher); assert.equal(saved.provider_response_id, "resp_legacy_fixture");
+  }
+});
+test("a same-revision change to retained baseline settings invalidates exact producer application", async () => {
+  const { show, authority, run, fake } = await compilation(), changed = structuredClone(show); changed.policy.maxShiftMinutes += 60;
+  await fixture.pool.query("UPDATE on_shows SET snapshot=$1 WHERE tenant_id=$2", [changed, show.tenantId]);
+  assert.equal((await compiler.readSourceCompilation(authority, run.id, fake.provider)).current, false);
+  await assert.rejects(compiler.applySourceCompilation(authority, reviewCommand(run)), code("COMPILATION_STALE"));
+  assert.equal(fake.calls.length, 1); assert.equal((await fixture.pool.query("SELECT count(*) FROM on_source_reviews WHERE compilation_id=$1", [run.id])).rows[0].count, "0");
 });

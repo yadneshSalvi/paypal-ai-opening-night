@@ -1,8 +1,9 @@
 import type { Dependency, EngineReport, ShowSnapshot, Task } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
 import { qualificationIssues, topologicalOrder } from "@/domain/scheduling";
-import { compiledGraphSchema, graphFacts, type CompiledGraph, type CompilerAssumption, type CompilerIssue, type CompilerReview, type SourceCitation, type SourceDocument, type SourceFact } from "@/domain/sources";
+import { retainedCompiledGraphSchema, graphFacts, type CompiledGraph, type CompilerAssumption, type CompilerIssue, type CompilerReview, type SourceCitation, type SourceDocument, type SourceFact } from "@/domain/sources";
 import { commitGraphEngine } from "../engine";
+import { sourceBaselineRetention } from "./retention";
 
 const text = (value: string) => value.normalize("NFKC").replace(/\s+/g, " ").trim();
 const sameName = (a: string, b: string) => text(a).toLocaleLowerCase("en") === text(b).toLocaleLowerCase("en");
@@ -18,7 +19,7 @@ export function sourceApplicationBlock(show: ShowSnapshot): string | null {
 
 /** The compiler proposes. This deterministic check binds every quote to private original bytes and every change to a reviewable graph. */
 export async function validateSourceGraph(show: ShowSnapshot, raw: CompiledGraph, sources: SourceDocument[], compilationId: string, engine: typeof commitGraphEngine = commitGraphEngine): Promise<CompilerReview> {
-  const graph = compiledGraphSchema.parse(raw), issues: CompilerIssue[] = [], assumptions: CompilerAssumption[] = [], citations: CompilerReview["citations"] = [];
+  const graph = retainedCompiledGraphSchema.parse(raw), issues: CompilerIssue[] = [], assumptions: CompilerAssumption[] = [], citations: CompilerReview["citations"] = [];
   const issue = (code: string, field: string, message: string, refs: SourceCitation[] = [], severity: CompilerIssue["severity"] = "hard", blocking = true) => { issues.push({ code, field, message, citations: refs, severity, blocking }); };
   const assume = (field: string, statement: string, value: unknown) => { const id = `assumption:${field}:${digest({ statement, value }).slice(0, 16)}`; if (!assumptions.some(item => item.id === id)) assumptions.push({ id, field, statement, value }); };
   const selected = new Map(sources.map(source => [source.id, source]));
@@ -43,6 +44,13 @@ export async function validateSourceGraph(show: ShowSnapshot, raw: CompiledGraph
   for (const entry of graph.unknowns) issue("SOURCE_UNKNOWN", entry.field, entry.message, [], "unknown", entry.blocking);
   for (const entry of graph.conflicts) { verify(entry.field, entry.citations); issue("SOURCE_CONFLICT", entry.field, entry.message, entry.citations); }
   for (const entry of graph.unsupportedRequirements) { verify("unsupported", entry.citations); issue("SOURCE_UNSUPPORTED_REQUIREMENT", "unsupported", entry.message, entry.citations, "unknown"); }
+
+  let baselineRetention: CompilerReview["baselineRetention"];
+  if (graph.schemaVersion === 2) {
+    const expected = sourceBaselineRetention(show), matches = sameValue(graph.baselineRetention, expected);
+    baselineRetention = { ...expected, matches };
+    if (!matches) issue("BASELINE_RETENTION_CHANGED", "baselineRetention", "The proposed retention values do not match the exact selected production. Maximum-shift, remedy cohort and critical crew settings stay unchanged; changing them needs a separate supported policy review.");
+  }
 
   const productionFields = ["title", "venue", "zone", "showDate"] as const;
   for (const field of productionFields) {
@@ -175,5 +183,5 @@ export async function validateSourceGraph(show: ShowSnapshot, raw: CompiledGraph
     engineReport = await engine(patch.tasks, patch.dependencies, show.zone);
     if (engineReport.status !== "passed") issue("ENGINE_NOT_PASSED", "graph", engineReport.reason ?? "The scheduling engine did not validate these exact dates.", [], engineReport.status === "unavailable" ? "unknown" : "hard");
   }
-  return { graph, issues, assumptions, citations, patch, engine: engineReport, canApply: Boolean(engineReport?.status === "passed" && !issues.some(item => item.blocking) && patch.importedTaskIds.length) };
+  return { graph, issues, assumptions, citations, ...(baselineRetention ? { baselineRetention } : {}), patch, engine: engineReport, canApply: Boolean(engineReport?.status === "passed" && !issues.some(item => item.blocking) && patch.importedTaskIds.length) };
 }

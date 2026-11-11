@@ -31,7 +31,7 @@ globalThis.openingNightSourceQa = {
     const fact = (value, index = 0) => ({ value, citations: [{ sourceId: source.id, unitId: units[index].id, quote: units[index].text }], assumption: null });
     const priya = base.resources.find(item => item.id === "priya");
     const graph = {
-      schemaVersion: 1, summary: "Add a sourced lighting paperwork review between existing programming and later calls. This proposal uses controlled model output and still requires producer review.",
+      schemaVersion: 2, baselineRetention: input.compilationContract.baselineRetention, summary: "Add a sourced lighting paperwork review between existing programming and later calls. This proposal uses controlled model output and still requires producer review.",
       production: { title: fact(base.title), venue: fact(base.venue), zone: fact(base.zone), showDate: fact(base.showDate) },
       policy: { curfewAt: fact(base.curfewAt, 3), accessUntil: fact(base.accessUntil, 3), minimumRestMinutes: fact(base.policy.minimumRestMinutes, 3) },
       resources: [{ key: "priya", targetId: "priya", name: fact("Priya Shah", 2), kind: fact("person", 2), department: fact("lighting", 2), skills: fact(priya.skills, 2), availableFrom: fact(priya.availableFrom, 2), availableUntil: fact(priya.availableUntil, 2), capacity: fact(1, 2), hourlyRateMinor: fact(3500, 2) }],

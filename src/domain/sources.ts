@@ -30,7 +30,8 @@ export type SourceFact<T> = { value: T | null; citations: SourceCitation[]; assu
 const label = z.string().trim().min(1).max(180), instant = z.string().datetime({ offset: true });
 const key = z.string().regex(/^[a-z][a-z0-9_-]{0,79}$/), target = z.string().min(1).max(150).nullable();
 const lane = z.enum(["lighting", "audio", "stage", "people", "commercial", "house"]);
-export const compiledGraphSchema = z.object({
+// Retained v1 provider requests must keep the exact output contract they were sent with.
+export const legacyCompiledGraphSchema = z.object({
   schemaVersion: z.literal(1), summary: z.string().min(1).max(2000),
   production: z.object({ title: fact(label), venue: fact(label), zone: fact(z.string().min(1).max(80)), showDate: fact(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)) }).strict(),
   policy: z.object({ curfewAt: fact(instant), accessUntil: fact(instant), minimumRestMinutes: fact(z.number().int().min(0).max(1440)) }).strict(),
@@ -48,7 +49,16 @@ export const compiledGraphSchema = z.object({
   conflicts: z.array(z.object({ field: z.string().max(200), message: z.string().min(1).max(800), citations: z.array(sourceCitationSchema).min(1).max(8) }).strict()).max(100),
   unsupportedRequirements: z.array(z.object({ message: z.string().min(1).max(800), citations: z.array(sourceCitationSchema).max(8) }).strict()).max(100),
 }).strict();
-export type CompiledGraph = z.infer<typeof compiledGraphSchema>;
+export const sourceCompilerContract = "opening_night_source_graph_v2";
+export const sourceBaselineRetentionSchema = z.object({
+  baseRevision: z.number().int().positive(), baseDigest: z.string().regex(/^[a-f0-9]{64}$/),
+  policy: z.object({ maxShiftMinutes: z.number().int().positive(), refundCount: z.number().int().nonnegative(), criticalCrewCount: z.number().int().nonnegative() }).strict(),
+}).strict();
+export type SourceBaselineRetention = z.infer<typeof sourceBaselineRetentionSchema>;
+export const compiledGraphSchema = legacyCompiledGraphSchema.extend({ schemaVersion: z.literal(2), baselineRetention: sourceBaselineRetentionSchema }).strict();
+export const retainedCompiledGraphSchema = z.discriminatedUnion("schemaVersion", [legacyCompiledGraphSchema, compiledGraphSchema]);
+export type CurrentCompiledGraph = z.infer<typeof compiledGraphSchema>;
+export type CompiledGraph = z.infer<typeof retainedCompiledGraphSchema>;
 export interface SourceBinding { id: string; familyId: string; version: number; hash: string; extractionDigest: string }
 export interface CompilerIssue { code: string; severity: "hard" | "unknown"; blocking: boolean; field: string; message: string; citations: SourceCitation[] }
 export interface CompilerAssumption { id: string; field: string; statement: string; value: unknown }
@@ -56,6 +66,7 @@ export interface CompilerCitation { field: string; citation: SourceCitation; val
 export interface CompilerPatch { tasks: Task[]; dependencies: Dependency[]; resources: Resource[]; curfewAt: string; accessUntil: string; minimumRestMinutes: number; importedTaskIds: string[]; importedResourceIds: string[] }
 export interface CompilerReview {
   graph: CompiledGraph; issues: CompilerIssue[]; assumptions: CompilerAssumption[]; citations: CompilerCitation[];
+  baselineRetention?: SourceBaselineRetention & { matches: boolean };
   patch: CompilerPatch; engine: EngineReport | null; canApply: boolean;
 }
 export type CompilationState = "dispatching" | "running" | "validating" | "completed" | "failed" | "indeterminate" | "unavailable" | "deleted";

@@ -4,8 +4,9 @@ import { randomUUID } from "node:crypto";
 import ExcelJS from "exceljs";
 import { parseSource, sourceFormat } from "../src/server/sources/parser";
 import { validateSourceGraph } from "../src/server/sources/validation";
-import { sourceCompilerRequest, graphFromResponse, sourceProvider } from "../src/server/sources/compiler";
-import { sourceLimits } from "../src/domain/sources";
+import { sourceCompilerRequest, graphFromResponse, retainedSourceContractVersion, sourceProvider } from "../src/server/sources/compiler";
+import { legacyCompiledGraphSchema, sourceCompilerContract, sourceLimits } from "../src/domain/sources";
+import { sourceBaselineRetention } from "../src/server/sources/retention";
 import { base, evidence } from "./helpers";
 import { sourceFixture } from "./source-fixture";
 
@@ -61,6 +62,7 @@ test("a sourced call passes real Bryntum validation without changing canonical c
   const review = await validateSourceGraph(show, graph, [source], randomUUID());
   assert.equal(review.canApply, true, JSON.stringify(review.issues)); assert.equal(review.engine?.status, "passed"); assert.equal(review.engine?.dates.length, show.tasks.length + 1);
   assert.equal(review.patch.importedTaskIds.length, 1); assert.equal(review.assumptions.length, 0); assert.ok(review.citations.length > 20 && review.citations.every(item => item.valid));
+  assert.deepEqual(review.baselineRetention, { ...sourceBaselineRetention(show), matches: true });
   assert.equal(JSON.stringify(show), before); assert.deepEqual(review.patch.tasks.filter(task => !review.patch.importedTaskIds.includes(task.id)), show.tasks);
 });
 test("foreign citations, unsupported facts and conflicting sources cannot yield applicable graphs", async () => {
@@ -92,4 +94,51 @@ test("source provider contract has no tools and rejects a document-induced tool 
   assert.throws(() => graphFromResponse({ status: "completed", output: [{ type: "function_call" }] }), /AUTHORITY/);
   assert.throws(() => graphFromResponse({ status: "completed", output: [{ type: "message", role: "assistant", content: [{ type: "refusal" }] }] }), /SHAPE/);
   assert.equal(sourceProvider().configured, false); assert.throws(() => sourceProvider().fetch("https://api.openai.com/v1/responses"), /disabled/);
+});
+test("v2 explicitly retains the exact baseline without presenting it as uploaded evidence", () => {
+  const { show, actor } = base(), { source } = sourceFixture(show), request = sourceCompilerRequest(randomUUID(), show, [source], actor.id);
+  const input = JSON.parse((request.input as { content: { text: string }[] }[])[0]!.content[0]!.text);
+  assert.deepEqual(input.compilationContract, { name: sourceCompilerContract, baselineRetention: sourceBaselineRetention(show) });
+  assert.equal(retainedSourceContractVersion(request), 2);
+  assert.equal((request.metadata as Record<string, string>).compiler_contract, sourceCompilerContract);
+  const format = (request.text as { format: { name: string; schema: { properties: Record<string, unknown>; required: string[] } } }).format;
+  assert.equal(format.name, sourceCompilerContract); assert.ok(format.schema.required.includes("baselineRetention"));
+  assert.match(String(request.instructions), /new shift\/pay rule/); assert.match(String(request.instructions), /must still be a blocking unsupported requirement/);
+});
+test("changed maximum-shift settings, cohort settings or base identities are held without rewriting the baseline", async () => {
+  const { show } = base(), before = JSON.stringify(show), fixture = sourceFixture(show);
+  for (const change of [
+    { baseRevision: show.revision + 1 }, { baseDigest: "f".repeat(64) },
+    ...["maxShiftMinutes", "refundCount", "criticalCrewCount"].map(field => ({ policy: { ...fixture.graph.baselineRetention.policy, [field]: 1 } })),
+  ]) {
+    const graph = structuredClone(fixture.graph); Object.assign(graph.baselineRetention, change);
+    const review = await validateSourceGraph(show, graph, [fixture.source], randomUUID());
+    assert.equal(review.canApply, false); assert.equal(review.baselineRetention?.matches, false);
+    assert.ok(review.issues.some(item => item.code === "BASELINE_RETENTION_CHANGED" && item.blocking));
+    assert.deepEqual(review.baselineRetention?.policy, sourceBaselineRetention(show).policy);
+  }
+  assert.equal(JSON.stringify(show), before);
+});
+test("v1 holds remain exact and v2 retention never suppresses an unsupported requirement", async () => {
+  const { show } = base(), fixture = sourceFixture(show), { baselineRetention: _retained, ...shared } = fixture.graph;
+  const message = "Assumption from selected-production reference data: retain the existing 720-minute maximum-shift limit unchanged. This schema has no maxShiftMinutes policy field.";
+  const legacy = legacyCompiledGraphSchema.parse({ ...shared, schemaVersion: 1, unsupportedRequirements: [{ message, citations: [] }] });
+  const old = await validateSourceGraph(show, legacy, [fixture.source], randomUUID());
+  assert.equal(old.canApply, false); assert.equal(old.baselineRetention, undefined); assert.deepEqual(old.graph.unsupportedRequirements, legacy.unsupportedRequirements);
+  assert.ok(old.issues.some(item => item.code === "SOURCE_UNSUPPORTED_REQUIREMENT" && item.message === message && item.blocking));
+  fixture.graph.unsupportedRequirements.push({ message: "A source requires a new maximum-shift or pay rule that this planning contract cannot apply.", citations: fixture.fact(null, 4).citations });
+  const current = await validateSourceGraph(show, fixture.graph, [fixture.source], randomUUID());
+  assert.equal(current.baselineRetention?.matches, true); assert.equal(current.canApply, false);
+  assert.ok(current.issues.some(item => item.code === "SOURCE_UNSUPPORTED_REQUIREMENT" && item.blocking));
+  fixture.graph.unsupportedRequirements = [{ message, citations: [] }];
+  assert.equal((await validateSourceGraph(show, fixture.graph, [fixture.source], randomUUID())).canApply, false);
+});
+test("an output can only satisfy its originally requested graph version", () => {
+  const { show } = base(), { graph } = sourceFixture(show), { baselineRetention: _retained, ...shared } = graph;
+  const legacy = { ...shared, schemaVersion: 1 };
+  const response = (value: unknown) => ({ status: "completed", output: [{ type: "message", role: "assistant", content: [{ type: "output_text", text: JSON.stringify(value) }] }] });
+  assert.equal(graphFromResponse(response(graph), 2).schemaVersion, 2); assert.equal(graphFromResponse(response(legacy), 1).schemaVersion, 1);
+  assert.throws(() => graphFromResponse(response(legacy), 2), /COMPILER_OUTPUT_VERSION/);
+  assert.throws(() => graphFromResponse(response(graph), 1), /COMPILER_OUTPUT_VERSION/);
+  assert.throws(() => retainedSourceContractVersion({}), /COMPILER_REQUEST_VERSION/);
 });
