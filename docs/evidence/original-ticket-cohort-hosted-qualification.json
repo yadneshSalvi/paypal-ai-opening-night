@@ -1,0 +1,25 @@
+{
+  "at": "2026-11-11T06:55:43.745Z",
+  "finishedAt": "2026-11-11T06:57:18.871Z",
+  "qualifiedOrders": 80,
+  "qualifiedCaptures": 80,
+  "originalTicketIdentities": 80,
+  "amountMinor": 337000,
+  "financialWrites": 0,
+  "providerGetRequests": 160,
+  "passed": true,
+  "source": "7afb616",
+  "deployment": "dpl_CeZ49vceYLUXg6LSuiQ4FrrdE1BP",
+  "url": "https://paypal-ai-opening-night.vercel.app",
+  "currency": "USD",
+  "standardTickets": 42,
+  "standardMinor": 3500,
+  "vipTickets": 38,
+  "vipAdmissionMinor": 3500,
+  "vipPerkMinor": 1500,
+  "limitations": [
+    "One controlled sandbox buyer; eighty logical tickets do not imply eighty people or attendance.",
+    "Capture and order audit is read-only; asynchronous signed-event reconciliation continues separately.",
+    "Thirty-eight perk remedies have not yet been executed at this audit cutoff."
+  ]
+}
