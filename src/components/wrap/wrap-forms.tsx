@@ -4,8 +4,9 @@ import type { EvidenceRef } from "@/domain/contracts";
 import { categoryLabels, wrapCategories, type EntryInput, type EntryRecord, type InvoiceReview, type InvoiceView, type WrapCommand, type WrapData, type WrapReport } from "@/domain/wrap/contracts";
 import { parseWrapAmount, wrapMoney, wrapTime } from "@/domain/wrap/presentation";
 import { Badge, Button } from "../ui";
+import type { FocusOrigin } from "./use-focus-return";
 
-export type WrapSubmit = (command: WrapCommand) => Promise<unknown>;
+export type WrapSubmit = (command: WrapCommand, origin?: FocusOrigin) => Promise<unknown>;
 function ReviewCheck({ children, checked, onChange }: { children: React.ReactNode; checked: boolean; onChange: (value: boolean) => void }) { return <label className="wrap-check"><input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} /><span>{children}</span></label>; }
 export function EntryForm({ record, showDate, sources, busy, submit, close }: { record: EntryRecord | null; showDate: string; sources: EvidenceRef[]; busy: boolean; submit: WrapSubmit; close: () => void }) {
   const [kind, setKind] = useState<EntryInput["kind"]>(record?.entry.kind ?? "baseline_cost"), [category, setCategory] = useState(record?.entry.category ?? "production"), [label, setLabel] = useState(record?.entry.label ?? ""), [amount, setAmount] = useState(record ? (record.entry.amountMinor / 100).toFixed(2) : ""), [day, setDay] = useState(record?.entry.serviceDay ?? showDate), [reference, setReference] = useState(record?.entry.reference ?? ""), [detail, setDetail] = useState(""), [sourceIds, setSourceIds] = useState(record?.entry.sourceIds ?? []), [checked, setChecked] = useState(false), [error, setError] = useState<string | null>(null);

@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useId, useRef, type ReactNode, type Ref } from "react";
+import { useEffect, useId, useRef, type MouseEventHandler, type ReactNode, type Ref } from "react";
 import { ArrowUpRight, LoaderCircle, X } from "lucide-react";
 export function Badge({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "amber" | "green" | "red" | "blue" }) { return <span className={`badge ${tone}`}>{children}</span>; }
-export function Button({ children, onClick, disabled, busy, variant = "secondary", className = "", title, ariaLabel, ref }: { children: ReactNode; onClick?: () => void; disabled?: boolean; busy?: boolean; variant?: "primary" | "secondary" | "ghost"; className?: string; title?: string; ariaLabel?: string; ref?: Ref<HTMLButtonElement> }) {
+export function Button({ children, onClick, disabled, busy, variant = "secondary", className = "", title, ariaLabel, ref }: { children: ReactNode; onClick?: MouseEventHandler<HTMLButtonElement>; disabled?: boolean; busy?: boolean; variant?: "primary" | "secondary" | "ghost"; className?: string; title?: string; ariaLabel?: string; ref?: Ref<HTMLButtonElement> }) {
   return <button ref={ref} type="button" className={`button ${variant} ${className}`} onClick={onClick} disabled={disabled || busy} aria-busy={busy} aria-label={ariaLabel} title={title}>{busy ? <LoaderCircle size={15} className="spin" /> : null}{children}</button>;
 }
 export function SectionHeading({ label, title, aside }: { label?: string; title: string; aside?: ReactNode }) { return <div className="section-heading"><div>{label && <span className="eyebrow">{label}</span>}<h2>{title}</h2></div>{aside}</div>; }
