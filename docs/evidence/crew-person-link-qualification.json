@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-11-11T09:50:17.561286+00:00",
+  "sourceSha256": "b359e9235179a4e7b5d2d6cf82a1ee5f5fcb29b2498fbc677a1a235e9fcfb70b",
+  "provenance": "Controlled isolated QA; no real worker or provider action",
+  "checks": [
+    "Anonymous open document followed by valid personal fragment loads Sam without manual reload",
+    "Different valid capability on same path replaces Sam with Priya in a new document",
+    "Only Priya own calls and prior readback shown after switch",
+    "Skip-to-main fragment preserves document and current capability",
+    "Hard reload at #main retains Priya scoped sheet"
+  ],
+  "localTests": {
+    "unit": 109,
+    "failed": 0,
+    "typecheck": "pass",
+    "productionBuild": "pass"
+  },
+  "screenshots": [
+    "opening-person-switch-qualified.png"
+  ],
+  "limitations": [
+    "No additional readback/signoff/cue/financial action dispatched by this check",
+    "This fixture does not prove physical participation"
+  ]
+}

@@ -96,16 +96,23 @@ export function useCrewClient() {
 
   useEffect(() => {
     let active = true;
+    // A second personal link can navigate within this same document. Start a
+    // fresh client so no sheet, in-flight read or queue crosses capabilities.
+    // Ordinary page anchors must not replace the tab's personal access.
+    const followPersonalLink = () => {
+      if (/^[A-Za-z0-9_-]{43}$/.test(location.hash.slice(1))) location.reload();
+    };
+    window.addEventListener("hashchange", followPersonalLink);
     void (async () => {
       setClock(Date.now());
       const hash = location.hash.slice(1);
-      let token = hash;
-      if (hash) {
+      let token = hash === "main" ? "" : hash;
+      if (/^[A-Za-z0-9_-]{43}$/.test(token)) {
         // Capability material lives only in this tab's session storage. Remove
         // the URL fragment before the first network request or cache write.
         history.replaceState(null, "", location.pathname + location.search);
         try { sessionStorage.setItem("opening-night-crew", hash); } catch { /* The open tab can still use its in-memory capability. */ }
-      } else { try { token = sessionStorage.getItem("opening-night-crew") ?? ""; } catch { /* No reusable tab session. */ } }
+      } else if (!token) { try { token = sessionStorage.getItem("opening-night-crew") ?? ""; } catch { /* No reusable tab session. */ } }
       if (!/^[A-Za-z0-9_-]{43}$/.test(token)) { setError("This personal access link has no valid capability. Open a new link from the crew readback desk."); setConnection("expired"); return; }
       const fingerprint = await capabilityFingerprint(token);
       if (!active) return;
@@ -117,7 +124,7 @@ export function useCrewClient() {
       } catch (cause) { setStorageError(message(cause)); }
       setAccess({ token, fingerprint });
     })().catch(cause => { setError(message(cause)); setConnection("unreachable"); });
-    return () => { active = false; };
+    return () => { active = false; window.removeEventListener("hashchange", followPersonalLink); };
   }, []);
 
   useEffect(() => {
