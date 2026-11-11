@@ -79,7 +79,12 @@ export async function runJobTick(options: { tenantId?: string; limit?: number; b
   const budget = Math.max(1000, Math.min(options.budgetMs ?? 45000, 50000));
   const limit = Math.max(1, Math.min(options.limit ?? 4, 8)); const until = Date.now() + budget;
   const results: { id: string; kind: Job["kind"]; status: JobResult["status"] | "lease_lost" }[] = [];
-  for (let index = 0; index < limit && Date.now() < until - 500; index++) {
+  // Leave a whole provider-read allowance before claiming another job. Starting a
+  // new purchase in the final milliseconds used to abort its wallet/readback
+  // checks and unnecessarily pause the entire cohort. Deferred work keeps its
+  // identity and attempt count for the next tick.
+  const minimumStartBudget = Math.min(budget, 30000);
+  for (let index = 0; index < limit && (index === 0 || until - Date.now() >= minimumStartBudget); index++) {
     const job = await claimJob(options.tenantId); if (!job) break;
     const signal = AbortSignal.timeout(Math.max(1, until - Date.now())); let result: JobResult;
     try { result = await (options.handler ?? handleJob)(job, signal); }

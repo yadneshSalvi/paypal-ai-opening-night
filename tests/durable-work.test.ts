@@ -91,6 +91,23 @@ test("an aborted transaction cannot leave a detached wakeup", async () => {
   const { actor } = await newSession(); await assert.rejects(paymentTransaction(async client => { await enqueueJob(client, { tenantId: actor.tenantId, kind: "payment_reconcile", semanticKey: "rollback", payload: { intentId: randomUUID() } }); throw new Error("fixture rollback"); }), /rollback/);
   assert.equal((await listJobs(actor.tenantId)).length, 0);
 });
+test("a slow preceding read cannot consume the next purchase's execution allowance", async t => {
+  const { actor } = await newSession();
+  for (const semanticKey of ["first-read", "next-original-purchase"]) await paymentTransaction(client => enqueueJob(client, {
+    tenantId: actor.tenantId, kind: "payment_reconcile", semanticKey, payload: { intentId: randomUUID() },
+  }));
+  const now = Date.now(); let elapsed = 0;
+  const clock = t.mock.method(Date, "now", () => now + elapsed);
+  const tick = await runJobTick({ tenantId: actor.tenantId, limit: 8, budgetMs: 45000, handler: async () => {
+    elapsed = 24000; return { status: "complete" };
+  } });
+  clock.mock.restore();
+  assert.equal(tick.processed, 1);
+  const remaining = (await listJobs(actor.tenantId)).find(job => job.status === "queued");
+  assert.ok(remaining); assert.equal(remaining.attempts, 0); assert.equal(remaining.leaseId, null);
+  const next = await runJobTick({ tenantId: actor.tenantId, limit: 1, handler: async () => ({ status: "complete" }) });
+  assert.equal(next.results[0]?.id, remaining.id); assert.equal(next.results[0]?.status, "complete");
+});
 test("the real verifier receives exact signature postback fields and fixture provenance stays separate", async () => {
   const { intent } = await seedRoot(); const capture = "CAPTURE-" + randomUUID(); await bind(intent, "capture", capture);
   const raw = eventBody("EVENT-" + randomUUID(), capture); const headers = signatureHeaders();

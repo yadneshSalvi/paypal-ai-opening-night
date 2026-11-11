@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "qualifiedAt": "2026-11-11T06:25:22.549405+00:00",
+  "change": "Do not claim another job unless at least 30 seconds of the request allowance remain; a deliberately shorter one-job budget retains its original bounded behavior.",
+  "checks": {
+    "dedicatedDurableTests": 26,
+    "fullIntegrationTests": 162,
+    "typecheck": true,
+    "productionBuild": true
+  },
+  "regression": "A preceding 24-second read leaves the next original purchase queued with zero attempts and no lease; the following tick completes that same job identity.",
+  "files": {
+    "src/server/job-runner.ts": "0024ac7858de94bce45e0abf90c06f6b360e2b47c8748e03eb4eba01dc01406b",
+    "tests/durable-work.test.ts": "c71216f83ab6fb4685ec1ada2cecf041d9c54c6f7a13229c39deb219714d5157"
+  },
+  "financialProviderCalls": 0,
+  "limitations": [
+    "Synthetic time passage with actual isolated PostgreSQL job claims, not a live provider timing guarantee.",
+    "Real unknown payment outcomes still pause the cohort and require original-resource reconciliation."
+  ]
+}
