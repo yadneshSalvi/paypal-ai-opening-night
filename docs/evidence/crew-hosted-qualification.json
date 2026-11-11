@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-11-11T09:36:15.302Z",
+  "sourceCommit": "59ddbaae83023fed4e2f737c140a6636895778a7",
+  "deploymentId": "dpl_EFSsFY9SpazoKDxVjTerp14wC6Ha",
+  "stableUrl": "https://paypal-ai-opening-night.vercel.app",
+  "passed": true,
+  "httpChecks": [
+    "/crew/access served",
+    "/crew/sw.js served",
+    "anonymous personal API denied",
+    "foreign-origin session denied",
+    "separate fresh rehearsal has crew protocol and no payment evidence",
+    "producer cookie does not substitute for personal capability",
+    "personal projection excludes finance and other assignments; live cues remain blocked",
+    "crew capability cannot read producer show",
+    "invalid bearer never falls back to producer cookie",
+    "cross-origin personal command denied",
+    "controlled personal readback persisted",
+    "exact response-loss replay returns one readback receipt",
+    "changed replay rejected",
+    "producer cannot manufacture a personal readback",
+    "revoked personal capability fails closed",
+    "revocation replay does not revoke a later capability",
+    "all original tenant rows remain byte-for-byte unchanged",
+    "qualification created no provider work or financial records"
+  ],
+  "originalScopedTablesUnchanged": 29,
+  "qualificationScope": "Separate controlled fictional rehearsal; no physical crew work or payment qualification",
+  "providerCalls": 0,
+  "financialRecordsCreated": 0,
+  "controlledReadbacks": 1,
+  "cuesExecuted": 0,
+  "nativeProduction": {
+    "personalClient": "Sam, here is your call",
+    "originalReadbackRetained": true,
+    "calendarSaturdayCalls": 5,
+    "calendarSundayCalls": 1,
+    "rest": "10h30; minimum10h",
+    "keyboardTabs": true,
+    "mobileViewport": 390,
+    "documentWidth": 390,
+    "offlineHardReload": true,
+    "savedAgeAndUnavailableLiveReadinessShown": true,
+    "reconnected": true,
+    "networkAndViewportOverridesCleared": true,
+    "originalProducerCookieUnchanged": true
+  },
+  "previewProtection": {
+    "observation": "Unpromoted Vercel deployment redirects cookie-less personal API fetches to SSO; authorized CLI HTTP qualification passed. Native tests used the promoted stable production URL.",
+    "securityChange": false,
+    "temporaryPreviewCookieRemoved": true
+  },
+  "screenshots": [
+    "opening-hosted-crew-offline.png"
+  ],
+  "remaining": "Full project implementation continues; grounded AI planning, actual hours/settlement, tour operations, evaluations and final demonstration remain in the plans."
+}
