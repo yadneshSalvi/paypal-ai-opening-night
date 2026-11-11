@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import type { PaymentAction, PaymentOperation, ProviderResource } from "@fracture/paypal-core";
+import { payloadHash, type PaymentAction, type PaymentOperation, type ProviderResource } from "@fracture/paypal-core";
 import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
 import { ticketCohort, type CohortMode, type CohortTerms, type PublicCohort, type PublicCommerceLine } from "@/domain/commerce-contracts";
 import { digest } from "@/domain/hash";
 import { currentActual } from "@/domain/finance";
-import { safeApprovalUrl, type PaymentIntent } from "@/domain/payment-authority";
+import { assertPaymentAuthority, safeApprovalUrl, type PaymentIntent } from "@/domain/payment-authority";
 import { activeCommerceActor, readCohort, readCohortTicket, saveCohort, withCommerceLock, type CohortTicketRecord, type TicketCohortRecord } from "./commerce-storage";
 import { assertCohortActive, assertCohortInventory, cohortConsentDigest, pauseCohortTicket } from "./commerce-policy";
 import { readSavedWallet } from "./wallet-storage";
@@ -91,20 +91,58 @@ export async function revokeCohort(actor: Actor, id: string) {
 }
 export async function resumeCohort(actor: Actor, id: string) {
   assertProducer(actor);
-  return paymentTransaction(async client => {
+  return withCommerceLock("cohort:" + actor.tenantId + ":" + id, () => paymentTransaction(async client => {
     const show = await lockSupplierShow(client, actor.tenantId), cohort = await readCohort(actor.tenantId, id, client, true);
     assertCohortActive(cohort, cohort.pauseTicketId ?? undefined);
     if (cohort.approvedBy !== actor.id) throw new DomainError("COHORT_APPROVING_ACTOR_REQUIRED", "The operator who approved this bounded cohort must review its continuation.", 403);
+    await activeCommerceActor(actor.tenantId, actor.id, client); await assertCohortInventory(cohort, client);
+    checkoutOrigin(cohort.origin);
+    const wallet = cohort.terms.walletId ? await readSavedWallet(actor.tenantId, cohort.terms.walletId, client) : null;
+    if (wallet) {
+      if (!wallet.active || wallet.actorId !== actor.id) throw new DomainError("WALLET_AUTHORITY_REVOKED", "The approved wallet is no longer available to this operator.", 403);
+    }
     if (cohort.state === "paused" && cohort.pauseTicketId) {
       const line = await readCohortTicket(actor.tenantId, cohort.pauseTicketId, client);
+      if (line.cohortId !== cohort.id) throw new DomainError("COHORT_LINE_MISMATCH", "The paused ticket differs from this approved cohort.", 403);
       const capture = verifiedCohortCapture(show, line);
-      if (!capture || !currentActual(show).some(item => item.id === capture.id)) throw new DomainError("COHORT_UNRESOLVED_TICKET", "Resolve the paused ticket's original instruction and current provider state before resuming the remainder.");
+      const settled = Boolean(capture && currentActual(show).some(item => item.id === capture.id));
+      let undispatched = !line.captureIntentId && !line.dispatchAuthorizedAt
+        && !show.tickets.some(ticket => ticket.id === line.id) && !show.financialEvidence.some(item => item.ticketId === line.id);
+      if (undispatched) {
+        const intents = await client.query<{ id: string; document: PaymentIntent }>("SELECT id,document FROM on_payment_intents WHERE tenant_id=$1 AND (document->>'ticketId'=$2 OR semantic_key=$3)", [actor.tenantId, line.id, "ticket:" + line.id + ":order"]);
+        const original = line.rootIntentId && intents.rows.length === 1 && intents.rows[0]?.id === line.rootIntentId ? intents.rows[0].document : null;
+        undispatched = line.rootIntentId ? Boolean(original && line.reservedAt) : !line.reservedAt && intents.rows.length === 0;
+        if (undispatched && original) {
+          assertPaymentAuthority(show, original);
+          const command = original.command, expectedAction = ticketAction(original.id, cohort, line, wallet?.tokenId ?? null);
+          undispatched = original.id === line.rootIntentId && original.tenantId === actor.tenantId && original.ticketId === line.id && original.cohortId === cohort.id
+            && original.seller === "venue" && original.purpose === "ticket_order" && original.tier === line.tier && original.parentId === null
+            && original.approvedBy === actor.id && original.semanticKey === "ticket:" + line.id + ":order"
+            && command.operationId === original.id && command.businessKey === original.semanticKey && command.intentId === original.id
+            && command.approval.expiresAt === cohort.expiresAt && command.approval.id === "approval:" + original.id && command.approval.version === original.planVersion
+            && command.payloadHash === payloadHash(expectedAction) && digest(command.action) === digest(expectedAction)
+            && digest(original.resourceIds) === digest(wallet ? [wallet.tokenId] : [])
+            && command.approval.digest === digest({ actorId: actor.id, action: command.action, planDigest: original.planDigest, cohortId: cohort.id, cohortDigest: cohort.digest });
+        }
+        // A reserved identity is retained only if the durable core has never started it. Even a
+        // not_sent/refused operation needs its existing explicit retry path; unknown effects reconcile.
+        const records = await client.query<{ aligned: boolean; operation: boolean; attempt: boolean; binding: boolean; imported: boolean }>(`SELECT
+          EXISTS(SELECT 1 FROM on_cohort_tickets WHERE tenant_id=$1::uuid AND id=$2::uuid AND root_intent_id IS NOT DISTINCT FROM $4::uuid AND capture_intent_id IS NULL) AS aligned,
+          EXISTS(SELECT 1 FROM paycore_operations WHERE tenant_id=$1::text AND (business_key=$3 OR id=$4::text OR provider_request_id=$5)) AS operation,
+          EXISTS(SELECT 1 FROM paycore_attempts WHERE tenant_id=$1::text AND operation_id=$4::text) AS attempt,
+          EXISTS(SELECT 1 FROM on_payment_bindings WHERE tenant_id=$1::uuid AND root_intent_id=$4::uuid) AS binding,
+          EXISTS(SELECT 1 FROM on_payment_imports WHERE tenant_id=$1::uuid AND operation_id=$4::text) AS imported`,
+        [actor.tenantId, line.id, "ticket:" + line.id + ":order", line.rootIntentId, original?.command.providerRequestId ?? null]);
+        const proof = records.rows[0];
+        undispatched = Boolean(undispatched && proof?.aligned && !proof.operation && !proof.attempt && !proof.binding && !proof.imported);
+      }
+      if (!settled && !undispatched) throw new DomainError("COHORT_UNRESOLVED_TICKET", "Resolve the paused ticket's original instruction and current provider state before resuming the remainder.");
     }
     cohort.state = "approved"; cohort.pauseCode = null; cohort.pauseTicketId = null; await saveCohort(client, cohort);
     await client.query("UPDATE on_jobs SET status='queued',run_after=now(),attempts=0,last_code=NULL WHERE tenant_id=$1 AND kind='cohort_ticket' AND payload->>'cohortId'=$2 AND status NOT IN ('running','complete')", [actor.tenantId, id]);
     await saveSupplierSnapshot(client, show, actor.id, "cohort.resumed", "Resumed the remaining original ticket instructions under the same unexpired approval and unchanged $3,370 ceiling.");
     return cohort;
-  });
+  }));
 }
 function ticketAction(id: string, cohort: TicketCohortRecord, line: CohortTicketRecord, tokenId: string | null): PaymentAction {
   return { kind: "create_order", money: { currency: "USD", minor: line.amountMinor }, intent: "CAPTURE", customId: "on:" + id,
@@ -161,6 +199,7 @@ async function runLine(tenantId: string, cohortId: string, ticketId: string, sig
   if (verifiedCohortCapture(await getShow(tenantId), line)) return { status: "complete" };
   const permitted = !cohort.revokedAt && Boolean(cohort.expiresAt && Date.parse(cohort.expiresAt) > Date.now()) && (cohort.state === "approved" || cohort.state === "paused" && cohort.pauseTicketId === ticketId);
   if (!permitted && !line.rootIntentId) return cohort.state === "paused" ? { status: "waiting", code: "COHORT_PAUSED", delaySeconds: 300 } : { status: "needs_attention", code: "COHORT_AUTHORITY_REVOKED" };
+  if (!line.rootIntentId) checkoutOrigin(cohort.origin);
   const root = line.rootIntentId ? await readIntent(tenantId, line.rootIntentId) : await prepareLine(tenantId, cohortId, ticketId);
   const rootResult = await reconcilePaymentIntent(tenantId, root.id, signal, permitted);
   if (rootResult.status !== "complete") return rootResult;

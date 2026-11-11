@@ -1,8 +1,8 @@
-import { Pool, type PoolClient } from "pg";
-import { AsyncLocalStorage } from "node:async_hooks";
+import type { PoolClient } from "pg";
 import { DomainError, type Actor } from "@/domain/contracts";
 import type { CohortState, CohortTerms, TicketTier } from "@/domain/commerce-contracts";
 import { pool } from "./store";
+export { withCommerceLock, closeCommerceLocks } from "./commerce-locks";
 
 export type DatabaseReader = Pick<PoolClient, "query">;
 export interface TicketCohortRecord {
@@ -60,26 +60,3 @@ export async function readRemedyItem(tenantId: string, id: string, client: Datab
 }
 export async function saveRemedyBatch(client: DatabaseReader, batch: RemedyBatchRecord) { await client.query("UPDATE on_remedy_batches SET document=$3,updated_at=now() WHERE tenant_id=$1 AND id=$2", [batch.tenantId, batch.id, batch]); }
 export async function saveRemedyItem(client: DatabaseReader, item: RemedyItemRecord) { await client.query("UPDATE on_remedy_items SET intent_id=$3,document=$4 WHERE tenant_id=$1 AND id=$2", [item.tenantId, item.id, item.intentId, item]); }
-
-const shared = globalThis as typeof globalThis & { openingNightCommerceLocks?: Pool };
-const heldLocks = new AsyncLocalStorage<ReadonlySet<string>>();
-/** Separate small pool: a network-bound dispatch lock must never consume the query pool needed by its own policy. */
-function lockPool() { return shared.openingNightCommerceLocks ??= new Pool({ ...pool.options, max: 2, connectionTimeoutMillis: 6000, idleTimeoutMillis: 15000 }); }
-export async function withCommerceLock<T>(scope: string, work: () => Promise<T>): Promise<T> {
-  if (heldLocks.getStore()?.has(scope)) return work();
-  const client = await lockPool().connect(); let held = false; let released = false;
-  try {
-    const result = await client.query<{ held: boolean }>("SELECT pg_try_advisory_lock(hashtextextended($1,4105004)) AS held", [scope]);
-    held = result.rows[0]?.held === true;
-    if (!held) throw new DomainError("COMMERCE_WORK_ACTIVE", "The current instruction is still finishing. Its result will be checked before another starts.", 503);
-    return await heldLocks.run(new Set([...(heldLocks.getStore() ?? []), scope]), work);
-  } finally {
-    if (held) {
-      try { await client.query("SELECT pg_advisory_unlock(hashtextextended($1,4105004))", [scope]); }
-      catch { client.release(true); released = true; }
-    }
-    if (!released) client.release();
-  }
-}
-/** Used by disposable-schema tests; production reuses its bounded process pool. */
-export async function closeCommerceLocks() { if (shared.openingNightCommerceLocks) { const instance = shared.openingNightCommerceLocks; delete shared.openingNightCommerceLocks; await instance.end(); } }

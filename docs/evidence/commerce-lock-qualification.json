@@ -1,0 +1,39 @@
+{
+  "baseCommit": "0af2cc5e2ccd41600e83d96e21ea726e15ab5c62",
+  "qualifiedAt": "2026-11-11T05:53:12.620020+00:00",
+  "scope": "isolated runtime hotfix; no schema migration or provider writes",
+  "validation": {
+    "domainTestsPassed": 70,
+    "integrationTestsPassed": 145,
+    "focusedLockAndCohortTestsPassed": 32,
+    "typecheck": "passed by production build",
+    "productionBuild": "passed",
+    "sessionAdvisoryLockCallsInApplicationSource": 0
+  },
+  "hostedReadOnlyQualification": {
+    "at": "2026-11-11T05:48:56.565Z",
+    "transactionReadOnly": "on",
+    "selectedAlias": "DATABASE_URL_UNPOOLED",
+    "sameDatabase": true,
+    "sameRole": true,
+    "matchingDirectEndpoint": true,
+    "selectedIsPooler": false,
+    "backendStable": true,
+    "providerCalls": 0
+  },
+  "pausedTicketReadback": {
+    "reservedOriginalIdentities": 1,
+    "paymentCoreOperations": 0,
+    "providerBindings": 0,
+    "dispatchAuthorized": false
+  },
+  "privateProofSha256": "d70c44cbadb8d7bb6bba90d34e28d460ccf8f723c9ea5b82ffbc39e1ccf668e0",
+  "invariants": [
+    "Commerce uses a matching direct connection and transaction-scoped advisory lock.",
+    "Lock transactions roll back and their connections are destroyed on every completion path.",
+    "Cohort Resume retains original consent, expiry, immutable allocation and existing payment identity.",
+    "Reserved identities with any payment operation, attempt, dispatch, binding or import still require original retry or reconciliation.",
+    "Unknown payment outcomes never qualify for replacement identities."
+  ],
+  "deploymentStatus": "not deployed by this qualification"
+}
