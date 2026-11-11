@@ -5,10 +5,11 @@ import { getShow, transactCommand } from "@/server/store";
 import { generateCandidates } from "@/server/engine";
 export const runtime = "nodejs";
 export const maxDuration = 60;
-export async function GET(request: Request) { try { const actor = await requireActor(request); return Response.json(consoleData(await getShow(actor.tenantId), actor), { headers: { "Cache-Control": "private, no-store" } }); } catch (e) { return errorResponse(e); } }
+export async function GET(request: Request) { try { const actor = await requireActor(request); if (!actor.roles.some(role => ["producer", "stage_manager", "foh", "crew"].includes(role))) throw new DomainError("SCOPED_CLIENT_REQUIRED", "Open the dedicated supplier or delivery client for this capability.", 403); return Response.json(consoleData(await getShow(actor.tenantId), actor), { headers: { "Cache-Control": "private, no-store" } }); } catch (e) { return errorResponse(e); } }
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request); const actor = await requireActor(request);
+    if (!actor.roles.some(role => ["producer", "stage_manager", "foh", "crew"].includes(role))) throw new DomainError("SCOPED_CLIENT_REQUIRED", "Use the dedicated supplier or delivery actions for this capability.", 403);
     if (Number(request.headers.get("content-length") ?? 0) > 30000) throw new DomainError("REQUEST_TOO_LARGE", "This request is too large.", 413);
     const parsed = commandEnvelope.safeParse(await request.json());
     if (!parsed.success) throw new DomainError("INVALID_COMMAND", "These instructions do not match the production command contract.", 400);

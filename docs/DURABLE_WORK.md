@@ -28,7 +28,7 @@ Task completion and financial dependency styles derive from current financial an
 
 `PAYPAL_WEBHOOK_ID` and `OPENING_NIGHT_SUPPLIER_PAYPAL_WEBHOOK_ID` are registered merchant IDs. Their presence is configuration, not evidence of delivery. The UI counts only `paypal_https` inbox rows as authentic signed delivery. Integration tests inject the actual core verifier's fetch transport at a server-only boundary and persist `local_fixture` provenance instead.
 
-Local proof covers concurrent claims, process death, lease fencing, atomic rollback, bounded retries, signature postback fields, unsigned/malicious certificate rejection, duplicates, conflicts, foreign merchants, exact capture/refund readback, stale observations, current authority and tenant isolation. Actual hosted worker execution and authentic signed deliveries remain required qualification work. The full ticket, supplier, crew, AI/voice, settlement, evaluation and film scope remains active.
+Local proof covers concurrent claims, process death, lease fencing, atomic rollback, bounded retries, signature postback fields, unsigned/malicious certificate rejection, duplicates, conflicts, foreign merchants, exact capture/refund readback, stale observations, current authority and tenant isolation. Root qualified authenticated hosted worker execution, the configured minute cron and a subsequent automatic tick on source 40082b7. Authentic signed lifecycle delivery remains required qualification work. The full ticket, supplier, crew, AI/voice, settlement, evaluation and film scope remains active.
 
 ## Activation contract
 
@@ -76,3 +76,9 @@ GROUP BY seller,status,transport;
 ```
 
 After registration, inject the two webhook ID names and `CRON_SECRET`, then configure the deployment scheduler for authenticated `/api/jobs/tick` calls. No new public credential or service is required. Root owns production migration, deployment, registration and browser qualification. A code build or successful local fixture does not establish those activation steps.
+
+## Observed hosted checkpoint
+
+Root promoted source `40082b7` after migration 2 preserved five existing saved-show hashes. Eleven hosted HTTP checks passed, including unsigned-receiver rejection, worker authentication, exact browser origin and an empty payment-intent ledger. Both merchant endpoints registered eleven events; `CHECKOUT.PAYMENT-APPROVAL.REVERSED` was unavailable in the merchant registration catalog and is not claimed registered. A subsequent automatic minute tick returned 200.
+
+The original $480 capture was independently read as completed. An event-list attempt returned 503; the next returned 200 with zero matching events because the capture predates registration. No resend or financial write was performed. This is not authentic signed delivery qualification. A future authorized lifecycle event in a fresh owned hosted tenant must establish that evidence. The supplier extension and migration 3 are documented separately in [SUPPLIER_EXECUTION.md](SUPPLIER_EXECUTION.md).

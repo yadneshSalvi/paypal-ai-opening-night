@@ -2,14 +2,16 @@ import type { PaymentCommand, ProviderResource, PaymentOperation } from "@fractu
 import { DomainError, type ShowSnapshot, type FinancialEvidence } from "./contracts";
 import { digest } from "./hash";
 import { atVenue, compareInstants } from "./time";
+import { currentRentalExecution, deliveryIsAccepted, supplierIsConfirmed } from "./supplier-contracts";
 
 export type PaymentSeller = "venue" | "brightline";
-export type PaymentPurpose = "rental_order" | "rental_authorize" | "rental_fee" | "rental_release" | "ticket_order" | "ticket_capture" | "vip_refund";
+export type PaymentPurpose = "rental_order" | "rental_authorize" | "rental_fee" | "rental_release" | "rental_cancel" | "ticket_order" | "ticket_capture" | "vip_refund";
 export interface PaymentIntent {
   id: string; tenantId: string; seller: PaymentSeller; purpose: PaymentPurpose; semanticKey: string;
   planVersion: number; planDigest: string | null; parentId: string | null; ticketId: string | null;
   resourceIds: string[]; approvedBy: string; createdAt: string; command: PaymentCommand;
   feeMinor: number; depositMinor: number; tier: "standard" | "vip" | null;
+  executionId?: string;
 }
 export interface PublicPayment {
   id: string; purpose: PaymentPurpose; seller: PaymentSeller; amountMinor: number; planVersion: number;
@@ -34,10 +36,20 @@ export function assertPaymentAuthority(show: ShowSnapshot, intent: PaymentIntent
   if (action.money.currency !== "USD" || !Number.isSafeInteger(action.money.minor) || action.money.minor <= 0) throw new DomainError("PAYMENT_AMOUNT", "Payment authority requires an exact positive USD amount.", 400);
   const resourceIds = ["orderId" in action ? action.orderId : null, "authorizationId" in action ? action.authorizationId : null, "captureId" in action ? action.captureId : null].filter((id): id is string => Boolean(id));
   if (resourceIds.some(id => !intent.resourceIds.includes(id))) throw new DomainError("PAYMENT_RESOURCE", "The payment resource is not owned by this execution.", 403);
-  if (intent.purpose.startsWith("rental_")) {
+  if (intent.purpose === "rental_cancel") {
+    const execution = show.rentalExecutions?.find(item => item.id === intent.executionId);
+    if (!execution || execution.state !== "compensation_pending" || !execution.cancellationApprovedAt || execution.planVersion !== intent.planVersion || execution.planDigest !== intent.planDigest || intent.seller !== "brightline" || execution.supplierId !== "brightline" || intent.parentId !== execution.paymentRootId || execution.authorizationId === null || action.kind !== "void_authorization" || action.authorizationId !== execution.authorizationId || action.money.minor !== execution.feeMinor + execution.depositMinor || intent.feeMinor !== execution.feeMinor || intent.depositMinor !== execution.depositMinor || show.financialEvidence.some(item => item.kind === "capture" && item.source === "live_sandbox" && item.verified && item.parentId === execution.authorizationId)) throw new DomainError("UNCAPTURED_CANCELLATION_REQUIRED", "Cancellation requires explicit approval for this exact uncaptured rental authorization.", 403);
+  } else if (intent.purpose.startsWith("rental_")) {
     const { plan, offer } = approvedRental(show);
     if (intent.planVersion !== show.planVersion || intent.planDigest !== plan.digest) throw new DomainError("STALE_PAYMENT_PLAN", "The approved recovery changed. This payment cannot execute under its old terms.", 403);
     if (intent.seller !== "brightline" || offer.supplierId !== "brightline" || intent.feeMinor !== offer.feeMinor || intent.depositMinor !== offer.depositMinor || plan.commercialCapMinor !== offer.feeMinor + offer.depositMinor) throw new DomainError("SELLER_NOT_QUALIFIED", "This offer does not have a matching qualified supplier payment adapter.", 403);
+    if (show.commercialProtocol === 2) {
+      const execution = currentRentalExecution(show);
+      if (!execution || intent.executionId !== execution.id || execution.quoteId !== offer.serviceQuote?.id || execution.quoteDigest !== offer.serviceQuote.termsDigest || execution.unitId !== offer.unitId || execution.feeMinor !== offer.feeMinor || execution.depositMinor !== offer.depositMinor) throw new DomainError("SUPPLIER_HOLD_REQUIRED", "Reserve the exact authenticated supplier quote before approving payment.");
+      if (["rental_order", "rental_authorize"].includes(intent.purpose) && (!["held", "awaiting_payment", "authorized"].includes(execution.state) || Date.parse(execution.holdExpiresAt) <= Date.now())) throw new DomainError("SUPPLIER_HOLD_EXPIRED", "The real-time equipment hold is no longer available. Reconfirm capacity before another payment instruction.");
+      if (intent.purpose === "rental_fee" && (!execution.captureConsentAt || !deliveryIsAccepted(show) || !supplierIsConfirmed(show))) throw new DomainError("SIGNED_ACCEPTANCE_REQUIRED", "The exact signed handoff and assigned department acceptance are required before capturing the approved fee.");
+      if (intent.purpose === "rental_release" && execution.state !== "returned") throw new DomainError("SIGNED_RETURN_REQUIRED", "The owned supplier execution needs its authenticated return inspection.");
+    }
     const expectedKind = { rental_order: "create_order", rental_authorize: "authorize_order", rental_fee: "capture_authorization", rental_release: "void_authorization" }[intent.purpose as "rental_order" | "rental_authorize" | "rental_fee" | "rental_release"];
     const expectedAmount = intent.purpose === "rental_fee" ? offer.feeMinor : plan.commercialCapMinor;
     if (action.kind !== expectedKind || action.money.minor !== expectedAmount) throw new DomainError("PAYMENT_AMOUNT", "The payment instruction differs from the exact approved rental terms.", 403);
@@ -46,7 +58,7 @@ export function assertPaymentAuthority(show: ShowSnapshot, intent: PaymentIntent
     if (intent.purpose === "rental_fee") {
       if (action.kind !== "capture_authorization" || action.finalCapture !== false) throw new DomainError("HOLD_MUST_REMAIN", "The fee capture must preserve the remaining damage hold.", 403);
       if (!show.facts.some(f => f.kind === "supplier_confirmed" && f.planVersion === show.planVersion) || !show.facts.some(f => f.kind === "delivery_accepted" && f.planVersion === show.planVersion)) throw new DomainError("DELIVERY_ACCEPTANCE_REQUIRED", "Supplier confirmation and department acceptance must precede the rental fee capture.");
-      if (compareInstants(show.clock, atVenue("17:20")) < 0) throw new DomainError("CAPTURE_TOO_EARLY", "Advance the labeled fixture to the 17:20 fee-capture step after accepted delivery.");
+      if (show.commercialProtocol !== 2 && compareInstants(show.clock, atVenue("17:20")) < 0) throw new DomainError("CAPTURE_TOO_EARLY", "Advance the labeled fixture to the 17:20 fee-capture step after accepted delivery.");
     }
     if (intent.purpose === "rental_release") {
       if (!show.facts.some(f => f.kind === "return_accepted" && f.planVersion === show.planVersion)) throw new DomainError("RETURN_ACCEPTANCE_REQUIRED", "Record an attributed undamaged return before releasing the remaining hold.");
@@ -83,6 +95,7 @@ export function evidenceForOperation(intent: PaymentIntent, operation: PaymentOp
     if (intent.purpose === "rental_authorize" && resource.kind === "authorization" && ["CREATED", "PARTIALLY_CAPTURED", "CAPTURED"].includes(resource.status) && amount === action.money.minor && action.kind === "authorize_order" && parentId === action.orderId) kind = "authorization";
     if (intent.purpose === "rental_fee" && resource.kind === "capture" && resource.status === "COMPLETED" && amount === intent.feeMinor && action.kind === "capture_authorization" && parentId === action.authorizationId) kind = "capture";
     if (intent.purpose === "rental_release" && resource.kind === "authorization" && resource.status === "VOIDED" && amount === intent.feeMinor + intent.depositMinor && action.kind === "void_authorization" && resource.id === action.authorizationId) { kind = "void"; purpose = "deposit"; amount = intent.depositMinor; parentId = resource.id; }
+    if (intent.purpose === "rental_cancel" && resource.kind === "authorization" && resource.status === "VOIDED" && amount === intent.feeMinor + intent.depositMinor && action.kind === "void_authorization" && resource.id === action.authorizationId) { kind = "void"; purpose = "rental_cancel"; parentId = resource.id; }
     if (["ticket_order", "ticket_capture"].includes(intent.purpose) && resource.kind === "capture" && ["COMPLETED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(resource.status) && amount === action.money.minor && receipt.resources.some(r => r.kind === "order" && r.id === parentId)) { kind = "capture"; purpose = "ticket"; }
     if (intent.purpose === "vip_refund" && resource.kind === "refund" && resource.status === "COMPLETED" && amount === 1500 && action.kind === "refund_capture" && parentId === action.captureId) { kind = "refund"; purpose = "vip_remedy"; }
     return kind ? [{ id: "provider:" + intent.seller + ":" + kind + ":" + resource.id, operationId: operation.command.operationId, kind, purpose, status: "completed" as const, amountMinor: amount, currency: "USD" as const, source: "live_sandbox" as const, verified: true, planVersion: intent.planVersion, providerResourceId: resource.id, parentId, ticketId: intent.ticketId, recordedAt: receipt.observedAt }] : [];

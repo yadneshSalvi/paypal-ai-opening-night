@@ -6,6 +6,8 @@ import { digest } from "@/domain/hash";
 import { env } from "./env";
 import { claimSessionAdmission, SESSION_ADMISSION_SCOPE } from "./session-admission";
 import { projectExecutionMilestones } from "@/domain/milestones";
+import { supplierMigration } from "./migrations/suppliers-v3";
+import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
 export const pool = shared.openingNightPool ??= new Pool({ connectionString: env.databaseUrl, max: 6, connectionTimeoutMillis: 6000, idleTimeoutMillis: 30000 });
@@ -68,6 +70,8 @@ export async function migrate() {
         `);
         await client.query("INSERT INTO on_schema_migrations(version) VALUES(2)");
       }
+      const suppliers = await client.query("SELECT version FROM on_schema_migrations WHERE version=3");
+      if (!suppliers.rowCount) { await client.query(supplierMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(3)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }
@@ -82,6 +86,8 @@ export async function createSession(existingToken?: string, admissionScope = SES
   await migrate(); const tenantId = randomUUID(); const token = randomBytes(32).toString("base64url");
   const actor: Actor = { id: `producer:${randomUUID()}`, tenantId, roles: ["producer", "stage_manager", "department_lead", "foh"], personId: null };
   const show = createFixture(tenantId);
+  show.commercialProtocol = 2;
+  show.rentalExecutions = [];
   show.events[0]!.id = randomUUID();
   const client = await pool.connect();
   try {
@@ -144,9 +150,21 @@ export async function createSupplierCapability(actor: Actor) {
   const show = await getShow(actor.tenantId);
   const candidate = show.runs.flatMap(run => run.candidates).find(item => item.id === show.approvedPlan?.candidateId);
   const offer = show.offers.find(item => item.id === candidate?.patch.offerId);
-  if (!show.approvedPlan || offer?.supplierId !== "brightline") throw new DomainError("SUPPLIER_NOT_SELECTED", "Approve the Brightline offer before opening its controlled supplier portal.");
+  if (!show.approvedPlan || !offer || !supplierIds.includes(offer.supplierId as SupplierId) || show.commercialProtocol !== 2 && offer.supplierId !== "brightline") throw new DomainError("SUPPLIER_NOT_SELECTED", "Approve the selected enrolled supplier before opening its controlled portal.");
   const token = randomBytes(32).toString("base64url");
-  const supplier: Actor = { id: "supplier:brightline:" + randomUUID(), tenantId: actor.tenantId, roles: ["supplier"], personId: null };
+  const supplier: Actor = { id: "supplier:" + offer.supplierId + ":" + randomUUID(), tenantId: actor.tenantId, roles: ["supplier"], personId: null, supplierId: offer.supplierId as SupplierId };
   await pool.query("INSERT INTO on_sessions(token_hash,tenant_id,actor,expires_at) VALUES($1,$2,$3,now()+interval '1 day')", [tokenHash(token), actor.tenantId, supplier]);
   return token;
+}
+
+export async function createDeliveryCapability(actor: Actor, role: "driver" | "inspector") {
+  if (!actor.roles.includes("producer")) throw new DomainError("PRODUCER_REQUIRED", "The producer opens these controlled role-specific clients.", 403);
+  const show = await getShow(actor.tenantId); const execution = currentRentalExecution(show);
+  if (!execution || !["confirmed", "delivered", "accepted", "needs_attention", "returned"].includes(execution.state)) throw new DomainError("RESERVATION_CONFIRMATION_REQUIRED", "Confirm the rental reservation before opening its handoff clients.");
+  const inspector = show.resources.find(person => person.id === "priya" && person.skills.includes("lx_programming"));
+  if (role === "inspector" && (!inspector || !show.tasks.find(task => task.id === "lx-program")?.resources.includes(inspector.id))) throw new DomainError("QUALIFIED_INSPECTOR_REQUIRED", "The current plan needs its assigned qualified lighting lead.");
+  const token = randomBytes(32).toString("base64url");
+  const scoped: Actor = { id: role + ":" + randomUUID(), tenantId: actor.tenantId, roles: role === "driver" ? ["driver"] : ["department_lead"], personId: role === "inspector" ? inspector!.id : null, supplierId: execution.supplierId, executionId: execution.id };
+  await pool.query("INSERT INTO on_sessions(token_hash,tenant_id,actor,expires_at) VALUES($1,$2,$3,now()+interval '1 day')", [tokenHash(token), actor.tenantId, scoped]);
+  return { token, executionId: execution.id };
 }

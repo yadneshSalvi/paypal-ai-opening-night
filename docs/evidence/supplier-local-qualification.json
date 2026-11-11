@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-11T03:30:33.807180+00:00",
+  "source": "local_integration_and_http",
+  "commercialProtocol": 2,
+  "tests": {
+    "domain": 70,
+    "postgresBryntumSdk": 83,
+    "supplierIsolatedSchema": 30
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "packageProvenance": "core0.2.4 SHA-256 verified; APIMatic 2.29.0; Bryntum Enterprise 8.0.0",
+  "httpChecks": [
+    "health",
+    "supplier authentication",
+    "delivery authentication",
+    "foreign origin blocked",
+    "unsigned supplier blocked",
+    "new protocol 2 session",
+    "three signed quotes over actual HTTP",
+    "native Node engine proof",
+    "exact signed quote hold",
+    "hold replay retained identity",
+    "scoped supplier invitation",
+    "focused supplier projection",
+    "supplier full-show denied",
+    "handoff awaits actual authorization and reservation",
+    "streaming request bound",
+    "unused hold release",
+    "no payment intents"
+  ],
+  "localOriginChecks": [
+    {
+      "origin": "http://127.0.0.1:4205",
+      "status": 200
+    },
+    {
+      "origin": "http://localhost:4205",
+      "status": 403
+    },
+    {
+      "origin": "http://127.0.0.1:4105",
+      "status": 403
+    },
+    {
+      "origin": "https://outside.example",
+      "status": 403
+    }
+  ],
+  "deliveryPageCameraPolicy": "camera=(self), geolocation=()",
+  "otherPagesCameraPolicy": "camera=(), geolocation=()",
+  "migration": {
+    "version": 3,
+    "retainedExistingSnapshots": 5,
+    "allExistingSnapshotHashesUnchanged": true,
+    "retainedPaidSnapshots": 1
+  },
+  "providerFinancialWrites": 0,
+  "paymentIntentsInHttpRehearsal": 0,
+  "freshHostedProtocol2Qualified": false,
+  "authenticSignedDeliveryQualified": false,
+  "notes": [
+    "Supplier HTTP scopes are authenticated controlled services within this application, not physical companies or equipment.",
+    "SDK wire fixtures and assigned inspection fixtures are confined to disposable local database schemas.",
+    "The original Brightline 78000 authorization, 48000 capture and 30000 residual release were preserved.",
+    "Root owns browser, fixed-source deployment, hosted migration and fresh authorized sandbox qualification.",
+    "Full wallet, ticket/refund cohort, crew, AI/voice, settlement, broader production, evaluations and film remain active."
+  ]
+}

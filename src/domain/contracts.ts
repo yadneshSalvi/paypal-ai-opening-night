@@ -1,6 +1,7 @@
 /** Canonical Opening Night contract v1. Browser views are projections, never authority. */
+import type { RentalExecution, SupplierId, SupplierQuoteRef } from "./supplier-contracts";
 export type Provenance = "sample" | "modelled" | "live_sandbox" | "replay";
-export type Role = "producer" | "stage_manager" | "department_lead" | "foh" | "crew" | "supplier";
+export type Role = "producer" | "stage_manager" | "department_lead" | "foh" | "crew" | "supplier" | "driver";
 export type Lane = "lighting" | "audio" | "stage" | "people" | "commercial" | "house";
 export type CueScope = "DOORS" | "SUPPORT_START" | "HEADLINER_START";
 export type TaskState = "planned" | "blocked" | "complete";
@@ -26,6 +27,7 @@ export interface SupplierOffer {
   feeMinor: number; depositMinor: number; deliveryAt: string; expiresAt: string;
   compatible: boolean; qualifiedDriver: boolean | null; conditionVerified: boolean | null;
   terms: string; source: Provenance; status: "quoted" | "provisional" | "confirmed" | "expired";
+  serviceQuote?: SupplierQuoteRef;
 }
 export type ConstraintStage = "schema" | "graph" | "temporal" | "semantic" | "evidence" | "authority";
 export interface ConstraintIssue {
@@ -60,7 +62,7 @@ export interface PublishedRunSheet {
 export interface Acknowledgment { id: string; personId: string; sheetVersion: number; sheetDigest: string; receivedAt: string; source: "controlled_client"; offline: boolean }
 export interface FinancialEvidence {
   id: string; operationId: string; kind: "authorization" | "capture" | "refund" | "void" | "payout";
-  purpose: "rental" | "ticket" | "vip_remedy" | "deposit" | "crew"; status: "pending" | "completed" | "failed";
+  purpose: "rental" | "ticket" | "vip_remedy" | "deposit" | "rental_cancel" | "crew"; status: "pending" | "completed" | "failed";
   amountMinor: number; currency: "USD"; source: Provenance; verified: boolean; planVersion: number;
   providerResourceId: string; parentId: string | null; ticketId: string | null; recordedAt: string;
 }
@@ -96,9 +98,11 @@ export interface ShowSnapshot {
   financialEvidence: FinancialEvidence[]; tickets: Ticket[]; facts: OperationalFact[]; sources: EvidenceRef[]; events: DomainEvent[];
   financialObservations?: FinancialObservation[];
   financialChecks?: FinancialCheck[];
+  commercialProtocol?: 2;
+  rentalExecutions?: RentalExecution[];
   goReportId: string | null;
 }
-export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null }
+export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }
 export interface ConsoleData { show: ShowSnapshot; readiness: ReadinessReport[]; currentActor: Actor; serverAt: string }
 export class DomainError extends Error {
   constructor(public code: string, message: string, public status = 409) { super(message); this.name = "DomainError"; }

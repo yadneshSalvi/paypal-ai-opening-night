@@ -10,6 +10,25 @@ import type { DeliveryTransport } from "./payment-webhooks";
 const paymentPayload = z.object({ intentId: z.uuid() }).strict();
 const webhookPayload = z.object({ seller: z.enum(["venue", "brightline"]), eventId: z.string().min(3).max(128), rootIntentId: z.uuid() }).strict();
 export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResult> {
+  if (job.kind === "supplier_rfq") {
+    const parsed = z.object({ rfqId: z.uuid() }).strict().safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./supplier-rfq")).collectSupplierRfq(job.tenantId, parsed.data.rfqId, signal);
+  }
+  if (job.kind === "supplier_expire") {
+    const parsed = z.object({ executionId: z.uuid() }).strict().safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./supplier-service")).expireSupplierHold(job.tenantId, parsed.data.executionId);
+  }
+  if (job.kind === "supplier_confirm") {
+    const parsed = z.object({ executionId: z.uuid(), requestId: z.uuid() }).strict().safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    const { readRentalExecution } = await import("./supplier-storage");
+    const execution = await readRentalExecution(pool, job.tenantId, parsed.data.executionId);
+    const { callSupplierService } = await import("./supplier-protocol");
+    await callSupplierService(execution.supplierId, { version: 1, requestId: parsed.data.requestId, tenantId: job.tenantId, actorId: execution.producerId, action: { type: "confirm", executionId: execution.id } }, signal);
+    return { status: "complete" };
+  }
   const { reconcilePaymentIntent, providers } = await import("./payment-service");
   if (job.kind === "payment_reconcile") {
     const parsed = paymentPayload.safeParse(job.payload); if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
@@ -34,7 +53,7 @@ export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResul
 }
 
 function failure(error: unknown): JobResult {
-  if (error instanceof DomainError) return { status: "needs_attention", code: /^[A-Z0-9_]{1,80}$/.test(error.code) ? error.code : "AUTHORITY_CHECK_FAILED" };
+  if (error instanceof DomainError) return { status: error.status >= 500 ? "waiting" : "needs_attention", code: /^[A-Z0-9_]{1,80}$/.test(error.code) ? error.code : "AUTHORITY_CHECK_FAILED" };
   if (error instanceof PaymentError) return { status: error.httpStatus >= 500 || error.code === "OPERATION_CHANGED" ? "waiting" : "needs_attention", code: /^[A-Z0-9_]{1,80}$/.test(error.code) ? error.code : "PAYMENT_CHECK_FAILED" };
   if (error instanceof ProviderError) return { status: "waiting", code: "PROVIDER_" + error.kind.toUpperCase() };
   return { status: "waiting", code: "WORK_INTERRUPTED" };

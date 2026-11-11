@@ -13,7 +13,17 @@ export async function currentActor(request?: Request): Promise<Actor | null> {
 export async function requireActor(request?: Request) { const actor = await currentActor(request); if (!actor) throw new DomainError("SESSION_REQUIRED", "Open a rehearsal session to continue.", 401); return actor; }
 export function assertSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin || origin !== new URL(request.url).origin) throw new DomainError("ORIGIN_DENIED", "Changes require this app’s exact request origin.", 403);
+  const url = new URL(request.url); const host = request.headers.get("host");
+  let expected = url.origin;
+  // NextURL canonicalizes 127.0.0.1 to localhost. For local HTTP only, retain the
+  // actual loopback Host while requiring the same port; the two cookie hosts
+  // must never authorize each other's requests. Hosted comparisons stay exact.
+  if (!process.env.VERCEL && url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname) && host) {
+    const allowed = ["localhost", "127.0.0.1"].map(name => name + (url.port ? ":" + url.port : ""));
+    if (!allowed.includes(host)) throw new DomainError("ORIGIN_DENIED", "Changes require this app’s exact request origin.", 403);
+    expected = "http://" + host;
+  }
+  if (!origin || origin !== expected) throw new DomainError("ORIGIN_DENIED", "Changes require this app’s exact request origin.", 403);
 }
 export function consoleData(show: ShowSnapshot, currentActor: Actor): ConsoleData { return { show, currentActor, readiness: allReadiness(show), serverAt: new Date().toISOString() }; }
 export function errorResponse(error: unknown) {

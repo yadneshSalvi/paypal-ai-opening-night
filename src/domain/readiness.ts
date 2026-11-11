@@ -2,6 +2,7 @@ import type { CueScope, ReadinessGate, ReadinessReport, ShowSnapshot } from "./c
 import { financialSummary, currentActual } from "./finance";
 import { digest } from "./hash";
 import { atVenue, compareInstants } from "./time";
+import { deliveryIsAccepted, supplierIsConfirmed } from "./supplier-contracts";
 
 export function currentAcknowledgments(show: ShowSnapshot) {
   const sheet = show.sheets.at(-1)!;
@@ -18,13 +19,13 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
   const gate = (id: string, label: string, complete: boolean, value: string, reason: string, evidenceIds: string[], href = "/execution") => gates.push({ id, label, complete, value, reason, evidenceIds, href });
   const auth = actual.find(e => e.kind === "authorization" && e.purpose === "rental" && e.amountMinor === 78000);
   const capture = actual.find(e => e.kind === "capture" && e.purpose === "rental" && e.amountMinor === 48000 && e.parentId === auth?.providerResourceId);
-  const technical = Boolean(fact("focus_signed_off") && fact("cue_signed_off") && fact("delivery_accepted") && capture);
+  const technical = Boolean(fact("focus_signed_off") && fact("cue_signed_off") && deliveryIsAccepted(show) && capture);
   if (scope === "DOORS") {
     const approved = Boolean(show.approvedPlan && sheet.candidateId === show.approvedPlan.candidateId && fact("foh_contingency"));
     gate("plan", "Approved running order", approved, approved ? `Run sheet v${sheet.version}` : "Awaiting approval", "Publish the approved plan and record the support-first FOH contingency.", [show.approvedPlan?.digest, fact("foh_contingency")?.id].filter((s): s is string => Boolean(s)), "/recovery");
     gate("authorization", "Rental authorization", Boolean(auth), auth ? "$780 authorized" : "$780 required", "Verified supplier authorization for the $480 fee and $300 refundable hold.", auth ? [auth.id] : []);
-    gate("supplier", "Supplier confirmation", Boolean(fact("supplier_confirmed")), fact("supplier_confirmed") ? "Confirmed" : "Unconfirmed", "The supplier must confirm the selected equipment and delivery window.", fact("supplier_confirmed") ? [fact("supplier_confirmed")!.id] : []);
-    gate("delivery", "Console accepted", Boolean(fact("delivery_accepted")), fact("delivery_accepted") ? "Accepted" : "Delivery pending", "An authorized department lead records delivery and condition acceptance.", fact("delivery_accepted") ? [fact("delivery_accepted")!.id] : []);
+    gate("supplier", "Supplier confirmation", supplierIsConfirmed(show), supplierIsConfirmed(show) ? "Confirmed" : "Unconfirmed", "The supplier must confirm the selected equipment and delivery window.", fact("supplier_confirmed") ? [fact("supplier_confirmed")!.id] : []);
+    gate("delivery", "Console accepted", deliveryIsAccepted(show), deliveryIsAccepted(show) ? "Accepted" : "Delivery pending", "An authorized department lead records delivery and condition acceptance.", fact("delivery_accepted") ? [fact("delivery_accepted")!.id] : []);
     gate("capture", "Rental fee captured", Boolean(capture), capture ? "$480 captured" : "$480 pending", "Verified partial fee capture follows accepted delivery; the deposit remains separate.", capture ? [capture.id] : []);
     gate("technical", "Focus & cue checks", technical, technical ? "Signed off" : "Not cleared", "Current department sign-offs follow accepted console delivery and fee capture.", [fact("focus_signed_off")?.id, fact("cue_signed_off")?.id].filter((s): s is string => Boolean(s)));
     gate("refunds", "VIP remedies confirmed", finance.refundedVipCount === show.policy.refundCount, `${finance.refundedVipCount} / 38 refunded`, "All 38 original-capture $15 refunds must be verified; a pending request does not count.", finance.evidenceIds, "/box-office");

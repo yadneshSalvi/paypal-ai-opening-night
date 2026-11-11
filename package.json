@@ -14,7 +14,7 @@
     "start": "next start --port 4105",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/domain.test.ts tests/scheduling.test.ts tests/finance.test.ts tests/payments.test.ts tests/milestones.test.ts",
-    "test:integration": "tsx --test tests/store.test.ts tests/bryntum.test.ts tests/payment-wire.test.ts tests/session-admission.test.ts tests/durable-work.test.ts",
+    "test:integration": "tsx --test tests/store.test.ts tests/bryntum.test.ts tests/payment-wire.test.ts tests/session-admission.test.ts tests/durable-work.test.ts tests/supplier-work.test.ts",
     "worker:once": "tsx scripts/worker.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "verify:packages": "tsx scripts/verify-packages.ts"
@@ -32,9 +32,11 @@
     "@fracture/paypal-core": "file:vendor/fracture-paypal-core-0.2.4.tgz",
     "@js-temporal/polyfill": "0.5.1",
     "dotenv": "17.2.3",
+    "jsqr": "1.4.0",
     "lucide-react": "0.468.0",
     "next": "16.4.6",
     "pg": "8.16.3",
+    "qrcode": "1.5.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "zod": "4.6.7"
@@ -42,6 +44,7 @@
   "devDependencies": {
     "@types/node": "22.18.10",
     "@types/pg": "8.15.6",
+    "@types/qrcode": "1.5.6",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "tsx": "4.20.6",

@@ -13,7 +13,8 @@ export function uniqueActual(show: ShowSnapshot): FinancialEvidence[] {
 export function currentActual(show: ShowSnapshot): FinancialEvidence[] {
   const actual = uniqueActual(show);
   return actual.filter(entry => {
-    const seller = entry.purpose === "rental" || entry.purpose === "deposit" ? "brightline" : "venue";
+    if (entry.kind === "authorization" && actual.some(item => item.kind === "void" && item.purpose === "rental_cancel" && item.parentId === entry.providerResourceId)) return false;
+    const seller = ["rental", "deposit", "rental_cancel"].includes(entry.purpose) ? "brightline" : "venue";
     const kind = entry.kind === "void" ? "authorization" : entry.kind;
     const parentKind = entry.kind === "refund" ? "capture" : entry.kind === "void" || entry.kind === "capture" && entry.purpose === "rental" ? "authorization" : "order";
     if (show.financialChecks?.some(check => check.transport === "paypal_https" && check.seller === seller && check.status === "pending" && check.resources.some(resource => resource.kind === kind && resource.id === entry.providerResourceId || resource.kind === parentKind && resource.id === entry.parentId))) return false;
@@ -57,6 +58,7 @@ export function financialSummary(show: ShowSnapshot) {
     rentalCapturedMinor: sum(actual.filter(e => e.kind === "capture" && e.purpose === "rental")),
     authorizedMinor: sum(actual.filter(e => e.kind === "authorization" && e.purpose === "rental")),
     releasedMinor: sum(actual.filter(e => e.kind === "void" && e.purpose === "deposit")),
+    cancelledAuthorizationMinor: sum(actual.filter(e => e.kind === "void" && e.purpose === "rental_cancel")),
     remainingRentalAuthorizationMinor,
     crewPaidMinor: sum(actual.filter(e => e.kind === "payout" && e.purpose === "crew")),
     pendingCount: show.financialEvidence.filter(e => e.status === "pending").length,

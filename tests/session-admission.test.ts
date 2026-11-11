@@ -8,6 +8,13 @@ import { claimSessionAdmission, SessionCreationLimitError } from "../src/server/
 import { applyCommand } from "../src/domain/commands";
 import { assertSameOrigin, errorResponse } from "../src/server/http";
 
+test("Next loopback normalization retains the actual local host and rejects cross-host, foreign-host and cross-port requests", () => {
+  const request = (origin: string, host: string) => new Request("http://localhost:4205/api/session", { method: "POST", headers: { origin, host } });
+  assert.doesNotThrow(() => assertSameOrigin(request("http://127.0.0.1:4205", "127.0.0.1:4205")));
+  assert.doesNotThrow(() => assertSameOrigin(request("http://localhost:4205", "localhost:4205")));
+  for (const [origin, host] of [["http://localhost:4205", "127.0.0.1:4205"], ["http://127.0.0.1:4205", "localhost:4205"], ["http://localhost:4205", "outside.example:4205"], ["http://127.0.0.1:4105", "127.0.0.1:4105"], ["null", "localhost:4205"]]) assert.throws(() => assertSameOrigin(request(origin!, host!)), error => error instanceof Error && "code" in error && error.code === "ORIGIN_DENIED");
+});
+
 const scopes: string[] = [];
 const tenants: string[] = [];
 function isolatedScope() { const scope = `test:session-admission:${randomUUID()}`; scopes.push(scope); return scope; }

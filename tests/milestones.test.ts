@@ -8,6 +8,7 @@ import { currentActual, financialSummary, uniqueActual } from "../src/domain/fin
 import { readiness } from "../src/domain/readiness";
 import { atVenue } from "../src/domain/time";
 import type { FinancialObservation, ShowSnapshot } from "../src/domain/contracts";
+import { taskExecutionPresentation } from "../src/domain/task-presentation";
 
 function rental() {
   const { show } = approved();
@@ -67,4 +68,19 @@ test("an adverse signed wakeup blocks affected readiness until a fresh read reso
   assert.equal(state(show, "rental-captured"), "blocked"); assert.equal(financialSummary(show).rentalCapturedMinor, 48000);
   show.financialChecks[0]!.status = "resolved"; show.financialChecks[0]!.resolvedAt = "2026-11-11T12:02:00Z";
   assert.equal(state(show, "rental-captured"), "complete");
+});
+test("completed call labels preserve provider receipts, controlled acceptance, and sample preparation as distinct sources", () => {
+  const show = rental();
+  show.facts.push({ id: randomUUID(), kind: "delivery_accepted", planVersion: show.planVersion, actorId: "fixture:priya", role: "department_lead", recordedAt: new Date().toISOString(), fixtureAt: atVenue("17:15"), source: "sample", detail: "Controlled console acceptance fixture." });
+  const projected = projectExecutionMilestones(show);
+  assert.deepEqual(taskExecutionPresentation(projected, projected.tasks.find(task => task.id === "rental-authorized")!), { label: "Authorized", source: "Verified PayPal sandbox receipt", tone: "green" });
+  assert.equal(taskExecutionPresentation(projected, projected.tasks.find(task => task.id === "rental-captured")!).label, "Captured");
+  assert.deepEqual(taskExecutionPresentation(projected, projected.tasks.find(task => task.id === "rental-delivery")!), { label: "Accepted", source: "Controlled fixture record", tone: "green" });
+  const preparation = projected.tasks.find(task => task.state === "complete" && !["rental-authorized", "rental-captured", "rental-delivery"].includes(task.id))!;
+  assert.equal(taskExecutionPresentation(projected, preparation).source, "Sample preparation checklist");
+});
+test("a withdrawn capture is shown as blocked rather than retaining a completed receipt label", () => {
+  const show = rental(); show.financialObservations = [observation({ status: "REVERSED" })];
+  const projected = projectExecutionMilestones(show);
+  assert.equal(taskExecutionPresentation(projected, projected.tasks.find(task => task.id === "rental-captured")!).label, "Blocked");
 });

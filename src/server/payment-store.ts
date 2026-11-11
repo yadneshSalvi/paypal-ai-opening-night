@@ -8,6 +8,7 @@ import { projectExecutionMilestones } from "@/domain/milestones";
 import { digest } from "@/domain/hash";
 import { bindWaitingWebhooks, lockWebhookOwnership } from "./webhook-ownership";
 import { migrate, pool } from "./store";
+import { projectRentalPayment } from "./supplier-payment-projection";
 
 const shared = globalThis as typeof globalThis & { openingNightPayments?: Promise<SqlPaymentStore> };
 const connection = (client: Pick<PoolClient, "query">): SqlConnection => ({ dialect: "postgres", query: async <T extends Record<string, unknown>>(sql: string, params: unknown[] = []) => { const result = await client.query<T>(sql, params); return { rows: result.rows, rowCount: result.rowCount ?? 0 }; } });
@@ -100,6 +101,7 @@ export async function importPaymentOperation(intent: PaymentIntent, operation: P
     }
     const evidence = evidenceForOperation(intent, projected).filter(item => !show.financialEvidence.some(existing => existing.id === item.id));
     show.financialEvidence.push(...evidence);
+    await projectRentalPayment(client, show, intent, evidence);
     for (const item of evidence) {
       if (item.purpose === "ticket" && item.ticketId && intent.tier) {
         const existing = show.tickets.find(t => t.id === item.ticketId);

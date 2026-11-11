@@ -62,6 +62,8 @@ const admissionScope = `test:payment-wire:${randomUUID()}`;
 async function command(actor: Actor, action: Command) { const before = await getShow(actor.tenantId); return (await transactCommand(actor, randomUUID(), before.revision, action, current => applyCommand(current, actor, action))).show; }
 async function scenario() {
   const { actor } = await createSession(undefined, admissionScope); tenants.push(actor.tenantId);
+  // Preserve coverage of the already-paid legacy contract. Supplier tests separately exercise protocol2.
+  await pool.query("UPDATE on_shows SET snapshot=snapshot-'commercialProtocol'-'rentalExecutions' WHERE tenant_id=$1", [actor.tenantId]);
   const disrupted = await command(actor, { type: "load_incidents" });
   const candidates = enumerateCandidates(disrupted); for (const candidate of candidates) candidate.report.engine = testEngine(candidate);
   const generated = (await transactCommand(actor, randomUUID(), disrupted.revision, { type: "generate" }, current => recordRescueRun(current, actor, candidates))).show;

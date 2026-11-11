@@ -7,6 +7,7 @@ import { readiness } from "./readiness";
 import { affectedSubgraph, planningDigest, validatePatch } from "./scheduling";
 import { atVenue, compareInstants, localTime } from "./time";
 import { currentActual } from "./finance";
+import { supplierIsConfirmed } from "./supplier-contracts";
 
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("load_incidents") }).strict(),
@@ -63,7 +64,7 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       requireRole(actor, "producer", "stage_manager");
       if (!show.approvedPlan) throw new DomainError("PLAN_APPROVAL_REQUIRED", "Approve a current recovery plan before publishing.");
       const secured = currentActual(show).some(e => e.planVersion === show.planVersion && e.kind === "authorization" && e.purpose === "rental" && e.amountMinor === show.approvedPlan!.commercialCapMinor);
-      const confirmed = show.facts.some(f => f.kind === "supplier_confirmed" && f.planVersion === show.planVersion);
+      const confirmed = supplierIsConfirmed(show);
       if (!secured || !confirmed) throw new DomainError("COMMERCIAL_PENDING", "Publication waits for verified rental authorization and supplier confirmation.");
       if (show.sheets.at(-1)?.candidateId === show.approvedPlan.candidateId) throw new DomainError("ALREADY_PUBLISHED", "This approved plan is already published.");
       const previous = show.sheets.at(-1)!;
@@ -86,6 +87,7 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
     }
     case "fact": {
       if (!show.approvedPlan) throw new DomainError("PLAN_APPROVAL_REQUIRED", "Approve a current plan before recording execution evidence.");
+      if (show.commercialProtocol === 2 && ["supplier_confirmed", "delivery_accepted", "return_accepted"].includes(command.kind)) throw new DomainError("SIGNED_HANDOFF_REQUIRED", "Use the authenticated supplier reservation and signed delivery clients for this rental execution.");
       const role: Record<OperationalFact["kind"], Actor["roles"][number]> = { supplier_confirmed: "supplier", delivery_accepted: "department_lead", return_accepted: "supplier", focus_signed_off: "department_lead", cue_signed_off: "department_lead", foh_contingency: "foh", support_checkin: "stage_manager", support_ready: "department_lead", headliner_checkin: "stage_manager", quiet_prep: "department_lead", changeover: "stage_manager" };
       requireRole(actor, role[command.kind]);
       const earliest: Partial<Record<OperationalFact["kind"], string>> = { delivery_accepted: "17:15", return_accepted: "23:30", focus_signed_off: "18:15", cue_signed_off: "18:35", headliner_checkin: "19:35", quiet_prep: "20:10", changeover: "20:40" };

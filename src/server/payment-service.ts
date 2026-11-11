@@ -1,13 +1,15 @@
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { PaymentCore, SandboxPayPalProvider, PaymentError, payloadHash, type AuthorizationDecision, type PaymentAction, type PaymentCommand, type PaymentOperation, type ProviderResource, type ResourceReservation } from "@fracture/paypal-core";
+import { PaymentCore, SandboxPayPalProvider, PaymentError, type AuthorizationDecision, type PaymentCommand, type PaymentOperation, type ProviderResource, type ResourceReservation } from "@fracture/paypal-core";
 import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
 import { approvedRental, assertPaymentAuthority, safeApprovalUrl, type PaymentIntent, type PaymentPurpose, type PaymentSeller, type PublicPayment } from "@/domain/payment-authority";
 import { digest } from "@/domain/hash";
 import { getShow, pool } from "./store";
 import { env } from "./env";
 import { importPaymentOperation, needsParentReadback, listIntents, ownedResources, paymentStore, paymentTransaction, readIntent } from "./payment-store";
-import { enqueueJob, wakePaymentJob, type JobResult } from "./jobs";
+import { wakePaymentJob, type JobResult } from "./jobs";
+import { currentPaymentRole as currentRole, preparePaymentIntent, type IntentSpec } from "./payment-intents";
+import { saveSupplierSnapshot, supplierScope } from "./supplier-storage";
 import { merchantConfig } from "./payment-config";
 
 const shared = globalThis as typeof globalThis & { openingNightProviders?: Record<PaymentSeller, SandboxPayPalProvider> };
@@ -36,11 +38,6 @@ export function checkoutOrigin(input: string) {
   return url.origin;
 }
 function producer(actor: Actor) { if (!actor.roles.includes("producer")) throw new DomainError("PRODUCER_REQUIRED", "Only the production operator can approve this sandbox payment.", 403); }
-function currentRole(actor: Actor, purpose: PaymentPurpose) {
-  if (purpose === "rental_fee" && !actor.roles.some(r => ["producer", "supplier"].includes(r))) throw new DomainError("COMMERCIAL_ROLE_REQUIRED", "The producer or supplier must execute the accepted rental fee.", 403);
-  else if (purpose === "rental_release" && !actor.roles.some(r => ["producer", "supplier"].includes(r))) throw new DomainError("COMMERCIAL_ROLE_REQUIRED", "The producer or supplier must close the accepted return.", 403);
-  else if (!["rental_fee", "rental_release"].includes(purpose)) producer(actor);
-}
 
 async function resourceBudget(intent: PaymentIntent, signal: AbortSignal): Promise<ResourceReservation | undefined> {
   const action = intent.command.action;
@@ -74,7 +71,20 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
   if (intent.resourceIds.some(id => !owned.some(resource => resource.id === id))) throw new PaymentError("RESOURCE_NOT_GRANTED", "The payment resource is not owned by this approved execution.", 403);
   let reservation: ResourceReservation | undefined;
   try { reservation = await resourceBudget(intent, signal); } catch (error) { if (error instanceof DomainError) throw error; throw new PaymentError("BUDGET_READ_REQUIRED", "The current provider budget could not be verified. No payment was sent.", 503); }
-  if (command.action.kind === "void_authorization") { const action = command.action; const current = await providers[intent.seller].read("order", action.orderId!, signal); const auth = current.find(r => r.kind === "authorization" && r.id === action.authorizationId); const captures = current.filter(r => r.kind === "capture" && ["COMPLETED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(r.status)); if (!auth?.money || auth.status !== "PARTIALLY_CAPTURED" || captures.length !== 1 || captures[0]?.money?.minor !== intent.feeMinor || auth.money.minor - intent.feeMinor !== intent.depositMinor) throw new DomainError("HOLD_CLOSURE_PENDING", "The remaining damage hold could not be verified. Closure stays pending."); }
+  if (command.action.kind === "void_authorization") {
+    const action = command.action;
+    const current = await providers[intent.seller].read("order", action.orderId!, signal);
+    const auth = current.find(resource => resource.kind === "authorization" && resource.id === action.authorizationId);
+    if (intent.purpose === "rental_cancel") {
+      const direct = (await providers[intent.seller].read("authorization", action.authorizationId, signal)).find(resource => resource.kind === "authorization" && resource.id === action.authorizationId);
+      const captures = current.filter(resource => resource.kind === "capture" && !["FAILED", "CANCELLED", "DECLINED", "DENIED"].includes(resource.status));
+      const fee = await pool.query("SELECT 1 FROM on_payment_intents WHERE tenant_id=$1 AND document->>'parentId'=$2 AND document->>'purpose'='rental_fee' LIMIT 1", [intent.tenantId, intent.parentId]);
+      if (fee.rowCount || captures.length || !auth?.money || !direct?.money || auth.status !== "CREATED" || direct.status !== "CREATED" || auth.money.currency !== "USD" || direct.money.currency !== "USD" || auth.money.minor !== action.money.minor || direct.money.minor !== action.money.minor) throw new DomainError("UNCAPTURED_CANCELLATION_UNPROVEN", "The exact original authorization is not proved fully uncaptured. Cancellation remains pending for review.");
+    } else {
+      const captures = current.filter(resource => resource.kind === "capture" && ["COMPLETED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(resource.status));
+      if (!auth?.money || auth.status !== "PARTIALLY_CAPTURED" || captures.length !== 1 || captures[0]?.money?.minor !== intent.feeMinor || auth.money.minor - intent.feeMinor !== intent.depositMinor) throw new DomainError("HOLD_CLOSURE_PENDING", "The remaining damage hold could not be verified. Closure stays pending.");
+    }
+  }
   const action = command.action;
   return { allowed: true, reason: "Current production approval and owned resource verified.", resourceIds: intent.resourceIds, currency: "USD", maximumMinor: action.money.minor, approvalId: command.approval.id, approvalVersion: command.approval.version, approvalDigest: command.approval.digest, ...(reservation ? { reservation } : {}), ...(action.kind === "create_order" && action.experience ? { checkoutOrigins: [checkoutOrigin(action.experience.returnUrl)] } : {}) };
   } catch (error) { if (error instanceof DomainError) throw new PaymentError(error.code, error.message, error.status); throw error; }
@@ -96,24 +106,14 @@ async function executeIntent(intent: PaymentIntent, retry = false) {
   const operation = retry ? await core.retry(intent.command.scope, intent.command.operationId, signal) : await core.execute(intent.command, signal);
   await importConfirmedOperation(intent, operation, signal); return operation;
 }
-interface IntentSpec { purpose: PaymentPurpose; semanticKey: string; seller: PaymentSeller; parentId?: string; ticketId?: string; tier?: "standard" | "vip"; resourceIds?: string[]; expectedRevision?: number; build: (id: string, show: ShowSnapshot) => PaymentAction }
 async function prepare(actor: Actor, spec: IntentSpec): Promise<PaymentIntent> {
   currentRole(actor, spec.purpose); await paymentStore();
   return paymentTransaction(async client => {
     const locked = await client.query<{ snapshot: ShowSnapshot }>("SELECT snapshot FROM on_shows WHERE tenant_id=$1 FOR UPDATE", [actor.tenantId]);
     const show = locked.rows[0]?.snapshot; if (!show) throw new DomainError("SHOW_NOT_FOUND", "This production no longer exists.", 404);
-    const existing = await client.query<{ document: PaymentIntent }>("SELECT document FROM on_payment_intents WHERE tenant_id=$1 AND semantic_key=$2", [actor.tenantId, spec.semanticKey]);
-    if (existing.rows[0]) { const intent = existing.rows[0].document; if (intent.purpose !== spec.purpose || intent.seller !== spec.seller || intent.ticketId !== (spec.ticketId ?? null) || intent.tier !== (spec.tier ?? null)) throw new DomainError("PAYMENT_IDENTITY_CONFLICT", "This payment identity already has different approved terms."); return intent; }
-    if (spec.expectedRevision !== undefined && show.revision !== spec.expectedRevision) throw new DomainError("STALE_REVISION", "The production changed. Refresh before reviewing this commitment.");
-    const id = randomUUID(); const now = new Date().toISOString(); const action = spec.build(id, show);
-    const rental = spec.purpose.startsWith("rental_") ? approvedRental(show) : null;
-    const intent: PaymentIntent = { id, tenantId: actor.tenantId, seller: spec.seller, purpose: spec.purpose, semanticKey: spec.semanticKey, planVersion: show.planVersion, planDigest: show.approvedPlan?.digest ?? null, parentId: spec.parentId ?? null, ticketId: spec.ticketId ?? null, resourceIds: spec.resourceIds ?? [], approvedBy: actor.id, createdAt: now, feeMinor: rental?.offer.feeMinor ?? 0, depositMinor: rental?.offer.depositMinor ?? 0, tier: spec.tier ?? null, command: { scope: { tenantId: actor.tenantId, projectId: "opening-night:" + spec.seller }, operationId: id, businessKey: spec.semanticKey, intentId: id, providerRequestId: randomUUID(), payloadHash: payloadHash(action), action, approval: { id: "approval:" + id, version: show.planVersion, digest: digest({ actorId: actor.id, action, planDigest: show.approvedPlan?.digest ?? null }), expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() } } };
-    assertPaymentAuthority(show, intent);
-    if (spec.parentId && spec.purpose.startsWith("rental_")) { const parent = await readIntent(actor.tenantId, spec.parentId, client); if (parent.planVersion !== show.planVersion || parent.planDigest !== show.approvedPlan?.digest) throw new DomainError("STALE_RENTAL", "The rental belongs to an earlier recovery approval.", 403); }
-    if (spec.parentId) { const owned = await ownedResources(actor.tenantId, spec.seller, spec.parentId, client); if (intent.resourceIds.some(resource => !owned.some(item => item.id === resource))) throw new DomainError("PAYMENT_RESOURCE", "The referenced payment is not in this production’s owned set.", 403); }
-    await client.query("INSERT INTO on_payment_intents(id,tenant_id,seller,semantic_key,document) VALUES($1,$2,$3,$4,$5)", [id, actor.tenantId, spec.seller, spec.semanticKey, intent]);
-    await enqueueJob(client, { tenantId: actor.tenantId, kind: "payment_reconcile", semanticKey: id, payload: { intentId: id }, runAfter: new Date(Date.now() + 65000) });
-    return intent;
+    const result = await preparePaymentIntent(client, actor, spec, show);
+    if (result.created && result.intent.executionId) await saveSupplierSnapshot(client, show, actor.id, "payment.intent_approved", "Recorded the exact approved rental instruction and its durable recovery job. Provider confirmation is still required.");
+    return result.intent;
   });
 }
 
@@ -195,7 +195,7 @@ export async function paymentOverview(actor: Actor): Promise<PublicPayment[]> {
   const intents = await listIntents(actor.tenantId); const store = await paymentStore();
   const results: PublicPayment[] = [];
   for (const intent of intents) {
-    if (actor.roles.includes("supplier") && !actor.roles.includes("producer") && intent.seller !== "brightline") continue;
+    if (actor.roles.includes("supplier") && !actor.roles.includes("producer") && (intent.seller !== "brightline" || supplierScope(actor) !== "brightline")) continue;
     const operation = await store.get(intent.command.scope, intent.command.operationId);
     results.push({ id: intent.id, purpose: intent.purpose, seller: intent.seller, amountMinor: intent.command.action.money.minor, planVersion: intent.planVersion, status: operation?.status ?? "prepared", approvalUrl: operation?.status === "succeeded" && intent.command.action.kind === "create_order" ? safeApprovalUrl(operation.receipt?.resources ?? []) : null, error: operation?.error?.message ?? null, resources: (operation?.receipt?.resources ?? []).map(r => ({ kind: r.kind, reference: "••••" + r.id.slice(-6), status: r.status, amountMinor: r.money?.minor ?? null })), updatedAt: operation?.updatedAt ?? intent.createdAt, ticketId: intent.ticketId });
   }
