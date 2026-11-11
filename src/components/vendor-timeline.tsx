@@ -20,7 +20,7 @@ export default function NativeTimeline({ tasks, dependencies, resources, license
   const [ready, setReady] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const assistantRef = useRef(assistant); assistantRef.current = assistant;
-  const aiFeature = useMemo(() => assistant ? nativeProductionAssistant({ ...assistant, onRun: run => assistantRef.current?.onRun(run), onTool: result => assistantRef.current?.onTool(result) }) : false, [assistant?.tenantId, assistant?.initial?.id]);
+  const aiFeature = useMemo(() => assistant ? nativeProductionAssistant({ ...assistant, onRun: run => assistantRef.current?.onRun(run), onTool: result => assistantRef.current?.onTool(result), onVoiceSaved: () => assistantRef.current?.onVoiceSaved?.() }) : false, [assistant?.tenantId, assistant?.initial?.id]);
   useEffect(() => {
     let live = true;
     configureVenueAria(() => gantt.current?.instance?.visibleDateRange ?? scheduler.current?.instance?.visibleDateRange);

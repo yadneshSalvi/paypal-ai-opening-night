@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "unit": "reviewed-native-voice-and-production-sources",
+  "qualifiedAt": "2026-11-11T13:15:45.400Z",
+  "providerMode": "controlled_fixture",
+  "migrations": [
+    7,
+    8
+  ],
+  "checks": {
+    "existingUnit": 116,
+    "existingIntegration": 189,
+    "voiceAndSource": 35,
+    "additionalRealEngine": 3,
+    "http": 25,
+    "productionBuild": "passed",
+    "packageProvenance": "passed",
+    "productionAuditVulnerabilities": 0,
+    "privateFilesIn39ServerTraces": 0
+  },
+  "httpChecks": [
+    {
+      "name": "anonymous source read denied",
+      "passed": true
+    },
+    {
+      "name": "same-document microphone permission and dedicated-client denial",
+      "passed": true
+    },
+    {
+      "name": "cross-origin source mutation denied",
+      "passed": true
+    },
+    {
+      "name": "stale displayed production denied before upload",
+      "passed": true
+    },
+    {
+      "name": "explicit upload rights required",
+      "passed": true
+    },
+    {
+      "name": "mismatched source container refused",
+      "passed": true
+    },
+    {
+      "name": "source file bound enforced",
+      "passed": true
+    },
+    {
+      "name": "original upload, text locations and hash retained",
+      "passed": true
+    },
+    {
+      "name": "exact upload replay returns original version",
+      "passed": true
+    },
+    {
+      "name": "changed upload body cannot reuse identity",
+      "passed": true
+    },
+    {
+      "name": "original download is exact and private",
+      "passed": true
+    },
+    {
+      "name": "foreign production cannot read original source",
+      "passed": true
+    },
+    {
+      "name": "controlled transcription saves one plain-text draft result",
+      "passed": true
+    },
+    {
+      "name": "controlled AI read-aloud saves one stream and replays exact WAV",
+      "passed": true
+    },
+    {
+      "name": "voice scope and foreign media read denied",
+      "passed": true
+    },
+    {
+      "name": "source and audio alone preserve every canonical production field",
+      "passed": true
+    },
+    {
+      "name": "compiler stores a cited graph with real engine validation and explicit assumption",
+      "passed": true
+    },
+    {
+      "name": "compilation replay and recovery keep original identity",
+      "passed": true
+    },
+    {
+      "name": "assumptions and exact compilation digest require review",
+      "passed": true
+    },
+    {
+      "name": "exact producer review applies one working graph without operational approval",
+      "passed": true
+    },
+    {
+      "name": "source supporting an applied graph cannot be purged",
+      "passed": true
+    },
+    {
+      "name": "new source version preserves original evidence",
+      "passed": true
+    },
+    {
+      "name": "conflict remains visible and application is held",
+      "passed": true
+    },
+    {
+      "name": "explicit deletion purges uncommitted private bytes and retains tombstone",
+      "passed": true
+    },
+    {
+      "name": "durable records retain encrypted originals, one media identity, and no payment or planning request",
+      "passed": true
+    }
+  ],
+  "durableCounts": {
+    "voiceRequests": 2,
+    "sourceReviews": 1,
+    "planningRequests": 0,
+    "paymentIntents": 0,
+    "paymentStorageInitialized": false
+  },
+  "actualProviderRequests": 0,
+  "priorAttempts": [
+    {
+      "kind": "regression",
+      "outcome": "failed",
+      "cause": "Browser QA payment-disable flag also rejected injected SDK fixtures. Corrected invocation kept blank actual credentials and blocked network and passed all 189 cases."
+    },
+    {
+      "kind": "http",
+      "checksPassed": 24,
+      "outcome": "failed",
+      "cause": "Audit-only query used a nonexistent payment table name; corrected audit passed 25 checks."
+    }
+  ],
+  "pending": [
+    "native desktop/mobile/keyboard voice and source journey",
+    "actual microphone permission/capture behavior",
+    "actual transcription, Realtime voice and compiler provider qualification",
+    "hosted migration and deployment",
+    "broader production/roster admission, source corpus, incident/tour evaluation and full product scope"
+  ],
+  "claims": {
+    "humanStudy": false,
+    "physicalShow": false,
+    "actualMicrophone": false,
+    "actualModel": false,
+    "productionComplete": false
+  }
+}

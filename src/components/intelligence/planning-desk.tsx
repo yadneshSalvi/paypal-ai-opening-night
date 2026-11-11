@@ -8,6 +8,7 @@ import { formatMoney, localTime } from "@/domain/time";
 import { ProductionCanvas, type CanvasProps } from "../production-canvas";
 import { productionFetch } from "../production-fetch";
 import { Badge, Button, Modal } from "../ui";
+import { VoiceRecord } from "./voice-record";
 
 export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onData: (data: ConsoleData) => void; canvas: CanvasProps }) {
   const tenantId = data.show.tenantId;
@@ -15,6 +16,8 @@ export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onDa
   const [runs, setRuns] = useState<IntelligenceRunView[]>([]), [receipts, setReceipts] = useState<IntelligenceToolResult[]>([]);
   const [loading, setLoading] = useState(true), [error, setError] = useState<string | null>(null), [generation, setGeneration] = useState(0), [busy, setBusy] = useState<string | null>(null);
   const [reviewCommandId, setReviewCommandId] = useState<string | null>(null);
+  const [voiceRefresh, setVoiceRefresh] = useState(0);
+  const onVoiceSaved = useCallback(() => setVoiceRefresh(value => value + 1), []);
   const [review, setReview] = useState<IntelligenceProposal | null>(null), [consent, setConsent] = useState(false);
   const load = useCallback(async (conversationId?: string) => {
     const response = await productionFetch(tenantId, "/api/intelligence", { cache: "no-store" }), payload = await response.json();
@@ -58,7 +61,8 @@ export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onDa
     <div className="intelligence-heading"><div className="intelligence-mark"><Sparkles size={22} /></div><div><span className="eyebrow">THE PRODUCTION DESK</span><h2>Find the next safe move.</h2><p>Ask about a crew assignment. Compare the alternatives. Review the exact change.</p></div><Badge tone={workspace?.providerAvailable ? "blue" : "muted"}>{workspace?.providerMode === "controlled_fixture" ? "CONTROLLED AI INPUTS" : workspace?.providerAvailable ? "AI PLANNING" : "SAVED PLANNING"}</Badge></div>
     {loading ? <div className="intelligence-status" role="status">Restoring your private planning record…</div> : error && !workspace ? <div className="intelligence-status"><p role="alert">{error}</p><Button onClick={() => { setError(null); void load().catch(error => setError(error.message)); }}>Restore planning record</Button></div> : <div className="intelligence-guidance"><ShieldCheck size={16} /><span>The plan moves only after your review. Crew sign-offs, commercial approvals and cues stay with their assigned people.</span></div>}
     {workspace?.providerMode === "controlled_fixture" && <p className="intelligence-status">Controlled response fixtures exercise the native planning flow. No model or payment provider is called.</p>}
-    <ProductionCanvas key={`${generation}:${data.show.revision}`} {...canvas} {...(!loading && workspace ? { assistant: { tenantId, initial, onRun, onTool } } : {})} />
+    <ProductionCanvas key={`${generation}:${data.show.revision}`} {...canvas} {...(!loading && workspace ? { assistant: { tenantId, initial, onRun, onTool, onVoiceSaved } } : {})} />
+    <VoiceRecord tenantId={tenantId} refresh={voiceRefresh} />
     <section className="intelligence-record" aria-label="Saved planning decisions">
       <div className="intelligence-record-heading"><div><span className="eyebrow">DECISION RECORD</span><h3>{checked && !checked.allowedByQualification ? "A fast fix still needs the right skills." : "Every proposal keeps its evidence."}</h3></div><Button disabled={Boolean(busy) || pending} onClick={() => { setBusy("restore"); setError(null); void load(last?.conversationId).catch(error => setError(error.message)).finally(() => setBusy(null)); }}><RefreshCw size={14} />Restore saved conversation</Button></div>
       {checked && <div className={`intelligence-check ${checked.allowedByQualification ? "passed" : "rejected"}`}><ShieldCheck size={22} /><div><b>{checked.allowedByQualification ? "Qualification checked" : "Assignment rejected"} · {checked.taskName}</b>{checked.issues.map((issue, index) => <p key={index}>{issue.message} <a href="/evidence">{issue.sourceId}</a></p>)}{!checked.allowedByQualification && <p>Qualified alternative: {checked.qualifiedAlternatives.map(person => person.name).join(", ") || "No verified qualification on the roster"}.</p>}<small>No assignment changed.</small></div></div>}

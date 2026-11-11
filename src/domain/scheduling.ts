@@ -46,8 +46,14 @@ export function validatePatch(show: ShowSnapshot, patch: PlanPatch, offer: Suppl
   for (const task of patch.tasks) {
     if (minutesBetween(task.start, task.end) !== task.durationMinutes || task.durationMinutes < 0) add("DURATION_INVALID", "schema", "hard", `${task.name} has an invalid time interval.`, null, task.id);
     issues.push(...qualificationIssues(show, task));
+    if (task.sourceConstraints) {
+      const bounds = task.sourceConstraints;
+      if (bounds.earliestStart && compareInstants(task.start, bounds.earliestStart) < 0) add("SOURCE_EARLIEST_START", "temporal", "hard", `${task.name} begins before its reviewed source window.`, null, task.id, task.sourceId);
+      if (bounds.latestEnd && compareInstants(task.end, bounds.latestEnd) > 0) add("SOURCE_LATEST_END", "temporal", "hard", `${task.name} ends after its reviewed source window.`, null, task.id, task.sourceId);
+      if (bounds.amplified && compareInstants(task.end, show.curfewAt) > 0) add("SOURCE_AMPLIFIED_CURFEW", "semantic", "hard", `${task.name} extends beyond the reviewed amplified audio curfew.`, null, task.id, task.sourceId);
+    }
   }
-  const active = patch.tasks.filter(t => t.critical && t.state !== "complete" && t.durationMinutes > 0 && t.lane !== "people");
+  const active = patch.tasks.filter(t => t.critical && t.state !== "complete" && t.durationMinutes > 0 && (t.lane !== "people" || Boolean(t.sourceConstraints)));
   for (let i = 0; i < active.length; i++) for (let j = i + 1; j < active.length; j++) {
     const a = active[i], b = active[j];
     if (compareInstants(a.start, b.end) < 0 && compareInstants(b.start, a.end) < 0) for (const id of a.resources.filter(id => b.resources.includes(id))) add("RESOURCE_OVERLAP", "temporal", "hard", `${show.resources.find(r => r.id === id)?.name ?? id}: ${a.name} overlaps ${b.name}.`, id, b.id, "crew-policy-v1");

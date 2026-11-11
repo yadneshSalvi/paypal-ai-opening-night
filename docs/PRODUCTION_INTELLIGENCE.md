@@ -38,4 +38,6 @@ Preparation does not call the model. The actual run requires the existing server
 
 ## Remaining scope
 
-This unit is the native grounded planning foundation. Voice input/output, cited rider/PDF/spreadsheet compilation, broader incident/tour evaluation, practitioner and real-phone evidence remain separate unfinished work. A local passing result does not establish deployment or provider success; release records identify those independently.
+Native reviewed voice input/output and the cited text/PDF/spreadsheet source desk now have a separate implementation and local qualification unit. See [voice and production sources](VOICE_AND_SOURCES.md) for its authority, supported formats, current-production application boundary, and remaining native/provider gates. The planning provider protocol above is unchanged.
+
+Broader production admission, incident/tour evaluation, practitioner and real-phone evidence remain unfinished. A local passing result does not establish deployment or provider success; release records identify those independently.

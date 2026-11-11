@@ -10,6 +10,8 @@ import { supplierMigration } from "./migrations/suppliers-v3";
 import { commerceMigration } from "./migrations/commerce-v4";
 import { rehearsalsMigration } from "./migrations/rehearsals-v5";
 import { intelligenceMigration } from "./migrations/intelligence-v6";
+import { mediaMigration } from "./migrations/media-v7";
+import { sourcesMigration } from "./migrations/sources-v8";
 import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -81,6 +83,10 @@ export async function migrate() {
       if (!rehearsals.rowCount) { await client.query(rehearsalsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(5)"); }
       const intelligence = await client.query("SELECT version FROM on_schema_migrations WHERE version=6");
       if (!intelligence.rowCount) { await client.query(intelligenceMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(6)"); }
+      const media = await client.query("SELECT version FROM on_schema_migrations WHERE version=7");
+      if (!media.rowCount) { await client.query(mediaMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(7)"); }
+      const sources = await client.query("SELECT version FROM on_schema_migrations WHERE version=8");
+      if (!sources.rowCount) { await client.query(sourcesMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(8)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }

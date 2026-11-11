@@ -11,6 +11,8 @@ export interface Task {
   id: string; name: string; lane: Lane; start: string; end: string; durationMinutes: number;
   baselineStart: string; baselineEnd: string; resources: string[]; requiredSkill: string | null;
   state: TaskState; critical: boolean; affected: boolean; milestone: string | null; sourceId: string;
+  /** Source-reviewed planning constraints survive later recovery proposals. They establish no physical completion. */
+  sourceConstraints?: { amplified: boolean; earliestStart: string | null; latestEnd: string | null; compilationId: string };
 }
 export interface Dependency { id: string; from: string; to: string; lagMinutes: number; financial: boolean }
 export interface Resource {

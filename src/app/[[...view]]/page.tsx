@@ -9,7 +9,7 @@ import { WalletReturn } from "@/components/wallet-return";
 import { SupplierAccess } from "@/components/supplier-access";
 import { DeliveryAccess } from "@/components/delivery-access";
 export const dynamic = "force-dynamic";
-const views = ["show", "plan", "resources", "calendar", "recovery", "execution", "crew", "box-office", "wrap", "evidence"];
+const views = ["show", "plan", "sources", "resources", "calendar", "recovery", "execution", "crew", "box-office", "wrap", "evidence"];
 export default async function Page({ params }: { params: Promise<{ view?: string[] }> }) {
   const { view } = await params; const selected = view?.join("/") || "show";
   if (selected === "crew/access") return <CrewAccess licenseKey={env.bryntumLicense} />;
