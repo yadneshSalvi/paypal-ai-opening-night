@@ -8,6 +8,8 @@ import { currentRentalExecution, type RentalExecution } from "@/domain/supplier-
 import { enqueueJob } from "./jobs";
 import { ownedResources, readIntent } from "./payment-store";
 import { saveRentalExecution } from "./supplier-storage";
+import { readCohort, readRemedyBatch } from "./commerce-storage";
+import { linkCommerceIntent } from "./commerce-policy";
 
 export function currentPaymentRole(actor: Actor, purpose: PaymentPurpose) {
   if (["rental_fee", "rental_release"].includes(purpose)) {
@@ -18,6 +20,7 @@ export function currentPaymentRole(actor: Actor, purpose: PaymentPurpose) {
 export interface IntentSpec {
   purpose: PaymentPurpose; semanticKey: string; seller: PaymentSeller; parentId?: string; ticketId?: string;
   tier?: "standard" | "vip"; resourceIds?: string[]; expectedRevision?: number;
+  cohortId?: string; remedyBatchId?: string; remedyItemId?: string;
   approvedExecution?: RentalExecution; runAfter?: Date; build: (id: string, show: ShowSnapshot) => PaymentAction;
 }
 /** The caller owns the show lock and saves any execution snapshot before committing. No provider call occurs here. */
@@ -28,21 +31,26 @@ export async function preparePaymentIntent(client: PoolClient, actor: Actor, spe
   if (existing.rows[0]) {
     const intent = existing.rows[0].document;
     if (intent.purpose !== spec.purpose || intent.seller !== spec.seller || intent.ticketId !== (spec.ticketId ?? null) || intent.tier !== (spec.tier ?? null) || (intent.executionId ?? null) !== (execution?.id ?? null)) throw new DomainError("PAYMENT_IDENTITY_CONFLICT", "This payment identity already has different approved terms.");
+    if (spec.cohortId && intent.cohortId !== spec.cohortId || spec.remedyBatchId && intent.remedyBatchId && intent.remedyBatchId !== spec.remedyBatchId) throw new DomainError("PAYMENT_IDENTITY_CONFLICT", "This ticket instruction belongs to a different recorded approval.");
     return { intent, created: false };
   }
   if (spec.expectedRevision !== undefined && show.revision !== spec.expectedRevision) throw new DomainError("STALE_REVISION", "The production changed. Refresh before reviewing this commitment.");
   const id = randomUUID(); const now = new Date().toISOString(); const action = spec.build(id, show);
   const rental = spec.purpose.startsWith("rental_") && spec.purpose !== "rental_cancel" ? approvedRental(show) : null;
+  const cohort = spec.cohortId ? await readCohort(actor.tenantId, spec.cohortId, client, true) : null;
+  const remedyBatch = spec.remedyBatchId ? await readRemedyBatch(actor.tenantId, spec.remedyBatchId, client, true) : null;
   const planVersion = execution?.planVersion ?? show.planVersion; const planDigest = execution?.planDigest ?? show.approvedPlan?.digest ?? null;
-  const expiry = spec.purpose === "rental_fee" && execution ? Date.parse(execution.captureConsentAt) + 24 * 60 * 60 * 1000 : Date.now() + 24 * 60 * 60 * 1000;
+  const expiry = cohort ? Date.parse(cohort.expiresAt ?? "") : remedyBatch ? Date.parse(remedyBatch.expiresAt) : spec.purpose === "rental_fee" && execution ? Date.parse(execution.captureConsentAt) + 24 * 60 * 60 * 1000 : Date.now() + 24 * 60 * 60 * 1000;
+  if (!Number.isFinite(expiry)) throw new DomainError("COMMERCE_APPROVAL_REQUIRED", "Review and approve this exact commercial instruction first.", 403);
   if (expiry <= Date.now()) throw new DomainError("CAPTURE_CONSENT_EXPIRED", "The producer's capture consent expired. Review the current rental before authorizing another instruction.");
   const intent: PaymentIntent = {
     id, tenantId: actor.tenantId, seller: spec.seller, purpose: spec.purpose, semanticKey: spec.semanticKey, planVersion, planDigest,
     parentId: spec.parentId ?? null, ticketId: spec.ticketId ?? null, resourceIds: spec.resourceIds ?? [], approvedBy: actor.id, createdAt: now,
     feeMinor: execution?.feeMinor ?? rental?.offer.feeMinor ?? 0, depositMinor: execution?.depositMinor ?? rental?.offer.depositMinor ?? 0, tier: spec.tier ?? null,
     ...(execution ? { executionId: execution.id } : {}),
+    ...(cohort ? { cohortId: cohort.id } : {}), ...(remedyBatch && spec.remedyItemId ? { remedyBatchId: remedyBatch.id, remedyItemId: spec.remedyItemId } : {}),
     command: { scope: { tenantId: actor.tenantId, projectId: "opening-night:" + spec.seller }, operationId: id, businessKey: spec.semanticKey, intentId: id, providerRequestId: randomUUID(), payloadHash: payloadHash(action), action,
-      approval: { id: "approval:" + id, version: planVersion, digest: digest({ actorId: actor.id, action, planDigest, ...(execution ? { executionId: execution.id, captureConsentAt: execution.captureConsentAt } : {}) }), expiresAt: new Date(expiry).toISOString() } },
+      approval: { id: "approval:" + id, version: planVersion, digest: digest({ actorId: actor.id, action, planDigest, ...(execution ? { executionId: execution.id, captureConsentAt: execution.captureConsentAt } : {}), ...(cohort ? { cohortId: cohort.id, cohortDigest: cohort.digest } : {}), ...(remedyBatch ? { remedyBatchId: remedyBatch.id, remedyDigest: remedyBatch.digest } : {}) }), expiresAt: new Date(expiry).toISOString() } },
   };
   assertPaymentAuthority(show, intent);
   if (spec.parentId && spec.purpose.startsWith("rental_")) {
@@ -54,6 +62,7 @@ export async function preparePaymentIntent(client: PoolClient, actor: Actor, spe
     if (intent.resourceIds.some(resource => !owned.some(item => item.id === resource))) throw new DomainError("PAYMENT_RESOURCE", "The referenced payment is not in this production's owned set.", 403);
   }
   await client.query("INSERT INTO on_payment_intents(id,tenant_id,seller,semantic_key,document) VALUES($1,$2,$3,$4,$5)", [id, actor.tenantId, spec.seller, spec.semanticKey, intent]);
+  await linkCommerceIntent(client, intent);
   await enqueueJob(client, { tenantId: actor.tenantId, kind: "payment_reconcile", semanticKey: id, payload: { intentId: id }, runAfter: spec.runAfter ?? new Date(Date.now() + 65000) });
   if (execution) {
     if (spec.purpose === "rental_order") { execution.paymentRootId = intent.id; execution.state = "awaiting_payment"; }

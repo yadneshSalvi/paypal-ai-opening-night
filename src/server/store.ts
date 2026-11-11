@@ -7,6 +7,7 @@ import { env } from "./env";
 import { claimSessionAdmission, SESSION_ADMISSION_SCOPE } from "./session-admission";
 import { projectExecutionMilestones } from "@/domain/milestones";
 import { supplierMigration } from "./migrations/suppliers-v3";
+import { commerceMigration } from "./migrations/commerce-v4";
 import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -72,6 +73,8 @@ export async function migrate() {
       }
       const suppliers = await client.query("SELECT version FROM on_schema_migrations WHERE version=3");
       if (!suppliers.rowCount) { await client.query(supplierMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(3)"); }
+      const commerce = await client.query("SELECT version FROM on_schema_migrations WHERE version=4");
+      if (!commerce.rowCount) { await client.query(commerceMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(4)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }

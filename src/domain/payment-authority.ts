@@ -12,6 +12,9 @@ export interface PaymentIntent {
   resourceIds: string[]; approvedBy: string; createdAt: string; command: PaymentCommand;
   feeMinor: number; depositMinor: number; tier: "standard" | "vip" | null;
   executionId?: string;
+  cohortId?: string;
+  remedyBatchId?: string;
+  remedyItemId?: string;
 }
 export interface PublicPayment {
   id: string; purpose: PaymentPurpose; seller: PaymentSeller; amountMinor: number; planVersion: number;
@@ -33,6 +36,8 @@ export function approvedRental(show: ShowSnapshot) {
 export function assertPaymentAuthority(show: ShowSnapshot, intent: PaymentIntent, command = intent.command) {
   if (intent.tenantId !== show.tenantId || command.scope.tenantId !== show.tenantId || command.scope.projectId !== "opening-night:" + intent.seller || command.intentId !== intent.id || digest(command) !== digest(intent.command)) throw new DomainError("PAYMENT_OWNERSHIP", "This payment is outside the current production’s approved set.", 403);
   const action = command.action;
+  if (action.kind === "create_order" && action.savedWallet && (!intent.cohortId || intent.purpose !== "ticket_order" || intent.seller !== "venue")) throw new DomainError("BOUNDED_WALLET_CONSENT_REQUIRED", "A saved wallet may be used only by its exact approved ticket cohort.", 403);
+  if (intent.cohortId && !["ticket_order", "ticket_capture"].includes(intent.purpose) || intent.remedyBatchId && intent.purpose !== "vip_refund") throw new DomainError("COMMERCE_PURPOSE_MISMATCH", "This instruction has a different commercial purpose.", 403);
   if (action.money.currency !== "USD" || !Number.isSafeInteger(action.money.minor) || action.money.minor <= 0) throw new DomainError("PAYMENT_AMOUNT", "Payment authority requires an exact positive USD amount.", 400);
   const resourceIds = ["orderId" in action ? action.orderId : null, "authorizationId" in action ? action.authorizationId : null, "captureId" in action ? action.captureId : null].filter((id): id is string => Boolean(id));
   if (resourceIds.some(id => !intent.resourceIds.includes(id))) throw new DomainError("PAYMENT_RESOURCE", "The payment resource is not owned by this execution.", 403);

@@ -1,0 +1,74 @@
+{
+  "qualifiedAt": "2026-11-11T03:53:40.992Z",
+  "sourceCommit": "cd0dc628332c921212c693837a9b45c694021c8d",
+  "environment": "PayPal sandbox",
+  "method": "Root native browser execution followed by independent SDK GETs and a read-only hosted PostgreSQL transaction",
+  "scenario": "Fresh protocol 2 controlled supplier execution, separate from the original legacy paid rehearsal",
+  "money": {
+    "authorizationMinor": 78000,
+    "feeCaptureMinor": 48000,
+    "finalCapture": false,
+    "residualReleaseMinor": 30000,
+    "currency": "USD",
+    "authorizationState": "VOIDED",
+    "captureState": "COMPLETED",
+    "refunds": 0
+  },
+  "checks": {
+    "oneRoot": true,
+    "oneAuthorizationIntent": true,
+    "oneNonfinal480Fee": true,
+    "oneReleaseIntent": true,
+    "exactOrder": true,
+    "original780Voided": true,
+    "original480Completed": true,
+    "oneOrderCapture": true,
+    "historicalAuthorization780": true,
+    "historicalFee480": true,
+    "residualRelease300": true,
+    "oneAcceptedHandoff": true,
+    "returnedExecution": true,
+    "authenticDelivery": true,
+    "authenticatedEventsReconciled": true,
+    "noRefunds": true,
+    "noFinancialWrites": true
+  },
+  "delivery": {
+    "handoffCount": 1,
+    "scanCount": 1,
+    "acceptanceCount": 1,
+    "conditionReport": "explicit controlled fixture",
+    "physicalDeliveryQualified": false
+  },
+  "authenticSignedDeliveries": {
+    "count": 4,
+    "events": [
+      {
+        "type": "PAYMENT.AUTHORIZATION.CREATED",
+        "status": "processed"
+      },
+      {
+        "type": "CHECKOUT.ORDER.APPROVED",
+        "status": "processed"
+      },
+      {
+        "type": "PAYMENT.CAPTURE.COMPLETED",
+        "status": "processed"
+      },
+      {
+        "type": "PAYMENT.AUTHORIZATION.VOIDED",
+        "status": "processed"
+      }
+    ]
+  },
+  "verificationFinancialWrites": 0,
+  "remainingQualification": [
+    "80 ticket captures",
+    "38 original-capture VIP remedies",
+    "11 current controlled crew acknowledgments",
+    "actual AI and voice workflows",
+    "real camera scanning on a device",
+    "full-plan end-to-end and evaluation evidence"
+  ],
+  "privateEvidence": "The original resource identities, provider readbacks and scoped database proof are retained privately; credentials, capabilities and payer information are not included."
+}

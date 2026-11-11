@@ -24,6 +24,7 @@ export function assertSameOrigin(request: Request) {
     expected = "http://" + host;
   }
   if (!origin || origin !== expected) throw new DomainError("ORIGIN_DENIED", "Changes require this app’s exact request origin.", 403);
+  return expected;
 }
 export function consoleData(show: ShowSnapshot, currentActor: Actor): ConsoleData { return { show, currentActor, readiness: allReadiness(show), serverAt: new Date().toISOString() }; }
 export function errorResponse(error: unknown) {

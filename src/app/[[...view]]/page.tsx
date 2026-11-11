@@ -5,6 +5,7 @@ import { env } from "@/server/env";
 import { ProductionConsole } from "@/components/production-console";
 import { CrewAccess } from "@/components/crew-access";
 import { PaymentReturn } from "@/components/payment-return";
+import { WalletReturn } from "@/components/wallet-return";
 import { SupplierAccess } from "@/components/supplier-access";
 import { DeliveryAccess } from "@/components/delivery-access";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export default async function Page({ params }: { params: Promise<{ view?: string
   const { view } = await params; const selected = view?.join("/") || "show";
   if (selected === "crew/access") return <CrewAccess />;
   if (selected === "payments/return") return <PaymentReturn />;
+  if (selected === "wallet/return") return <WalletReturn />;
   if (selected === "supplier/access") return <SupplierAccess />;
   if (selected === "delivery/access") return <DeliveryAccess />;
   if (!views.includes(selected)) notFound();

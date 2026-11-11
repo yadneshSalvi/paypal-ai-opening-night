@@ -66,3 +66,7 @@ The isolated supplier suite proves signed request/quote scope, lost responses, p
 The local HTTP pass uses a fresh protocol-2 rehearsal, real supplier routes and real Bryntum commits through approval, hold, replay and unused release. It creates zero payment intents and makes no PayPal call. Fresh hosted protocol-2 provider qualification remains separate from the earlier qualified legacy rental.
 
 The full remaining ticket cohort, refunds, crew execution, model and voice integrations, second incident, settlement, broader production, evaluation and film scope stays active. This unit is not a full-product completion claim.
+
+## Fresh hosted protocol-2 evidence
+
+Root completed the separate hosted buyer, supplier, one-use driver handoff, assigned Priya acceptance and controlled return flow on source `cd0dc628332c921212c693837a9b45c694021c8d`. Independent read-only SDK and PostgreSQL checks confirmed one original $780 authorization, one nonfinal $480 capture, and the exact $300 residual release. Four authentic signed authorization/order/capture/void deliveries reconciled. The physical actions remain controlled fixture reports; a real camera/device qualification is separate. The [safe derived receipt](evidence/supplier-hosted-protocol2-qualification.json) records all 17 checks without private identities.

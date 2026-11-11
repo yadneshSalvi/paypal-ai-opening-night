@@ -3,13 +3,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { SandboxPayPalProvider } from "@fracture/paypal-core";
-import { createSession, createSupplierCapability, getActor, getShow, pool, transactCommand } from "../src/server/store";
-import { paymentStore, listIntents } from "../src/server/payment-store";
+import { isolatedDatabase } from "./isolated-database";
 import { applyCommand, recordRescueRun, type Command } from "../src/domain/commands";
 import { enumerateCandidates } from "../src/domain/scheduling";
 import { financialSummary } from "../src/domain/finance";
 import { testEngine } from "./helpers";
 import type { Actor } from "../src/domain/contracts";
+const database = await isolatedDatabase();
+const { createSession, createSupplierCapability, getActor, getShow, pool, transactCommand } = await import("../src/server/store");
+const { paymentStore, listIntents } = await import("../src/server/payment-store");
 
 type Money = { currency_code: string; value: string };
 type Payment = { id: string; status: string; amount: Money; custom_id?: string };
@@ -126,6 +128,6 @@ test("isolated PostgreSQL and actual SDK wire preserve rental, ticket and remedy
   } finally {
     for (const tenantId of tenants) { for (const table of ["paycore_operations", "paycore_resource_locks", "paycore_attempts", "paycore_webhook_events", "paycore_webhook_deliveries"]) await pool.query("DELETE FROM " + table + " WHERE tenant_id=$1", [tenantId]); await pool.query("DELETE FROM on_shows WHERE tenant_id=$1", [tenantId]); }
     await pool.query("DELETE FROM on_session_admissions WHERE scope=$1", [admissionScope]);
-    await pool.end();
+    await database.close();
   }
 });

@@ -1,0 +1,68 @@
+{
+  "project": "Opening Night",
+  "checkedAt": "2026-11-11",
+  "scope": "Controlled ticket commerce implementation and isolated local qualification",
+  "baseCommit": "cd0dc628332c921212c693837a9b45c694021c8d",
+  "environment": {
+    "nodeMajor": 22,
+    "next": "16.4.6",
+    "paypalSdk": "2.29.0",
+    "paypalCore": "0.2.4",
+    "bryntumEnterprise": "8.0.0",
+    "database": "disposable local PostgreSQL schemas"
+  },
+  "checks": {
+    "domainTests": 70,
+    "integrationTests": 129,
+    "newControlledCommerceChecks": 46,
+    "productionBuild": "passed, including TypeScript",
+    "packageProvenance": "passed",
+    "localHttpChecks": 37,
+    "originalSavedShowsPreserved": 9,
+    "originalSnapshotHashesUnchanged": true,
+    "originalSchemaVersions": [1, 2, 3],
+    "isolatedPreviewSchemaVersions": [1, 2, 3, 4],
+    "originalLocalServerPreserved": true
+  },
+  "controlledWireResults": {
+    "transport": "installed generated SDK with controlled test responses",
+    "separateWalletSaveAndChargeConsent": true,
+    "logicalTicketCount": 80,
+    "standardCaptures": 42,
+    "standardCaptureMinor": 3500,
+    "vipCaptures": 38,
+    "vipCaptureMinor": 5000,
+    "grossCapturedMinor": 337000,
+    "originalCaptureRefundCount": 38,
+    "refundPerCaptureMinor": 1500,
+    "totalRefundedMinor": 57000,
+    "retainedAdmissionMinor": 280000,
+    "currency": "USD",
+    "lostResponseRecovery": "original resource reads, no replacement unknown write",
+    "revocationAndExpiry": "unstarted work blocked; already authorized dispatch retained",
+    "tenantAndActorIsolation": "passed",
+    "currentAndHistoricalEvidence": "adverse current state blocks qualification while gross history is retained"
+  },
+  "localHttpResults": {
+    "providerTransport": "blocked by a private preview-only preload",
+    "providerWrites": 0,
+    "walletRecords": 0,
+    "paymentIntents": 0,
+    "paymentBindings": 0,
+    "durableJobs": 0,
+    "draftLogicalTickets": 80,
+    "exactOriginAndCallbackHost": "passed, including Next loopback normalization",
+    "strictCapsAndBoundedBody": "passed",
+    "producerAndCrewBoundaries": "passed"
+  },
+  "externalQualification": {
+    "nativeBrowserCommerceReview": "pending root review",
+    "hostedMigration4": "pending root release",
+    "actualWalletCapability": "not qualified by these tests",
+    "actualCohortCaptures": 0,
+    "actualCohortRefunds": 0,
+    "actualVenueSignedDeliveries": "not qualified by these tests",
+    "physicalAttendance": "not claimed",
+    "existingRentalCycles": "preserved separately; no replay, transfer or refund"
+  }
+}

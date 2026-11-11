@@ -4,7 +4,7 @@ import { DomainError } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
 import { migrate, pool } from "./store";
 
-export type JobKind = "payment_reconcile" | "webhook_reconcile" | "supplier_rfq" | "supplier_expire" | "supplier_confirm";
+export type JobKind = "payment_reconcile" | "webhook_reconcile" | "supplier_rfq" | "supplier_expire" | "supplier_confirm" | "wallet_setup" | "cohort_ticket" | "remedy_item";
 export type JobStatus = "queued" | "running" | "waiting" | "complete" | "needs_attention";
 export interface Job {
   id: string; tenantId: string; kind: JobKind; semanticKey: string; payload: Record<string, unknown>;

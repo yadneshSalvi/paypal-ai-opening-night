@@ -1,11 +1,13 @@
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { createSession, getActor, getShow, transactCommand, createCrewCapability, pool } from "../src/server/store";
+import { isolatedDatabase } from "./isolated-database";
 import { applyCommand } from "../src/domain/commands";
+const database = await isolatedDatabase();
+const { createSession, getActor, getShow, transactCommand, createCrewCapability, pool } = await import("../src/server/store");
 const tenants: string[] = [];
 const admissionScope = `test:store:${randomUUID()}`;
-after(async () => { if (tenants.length) await pool.query("DELETE FROM on_shows WHERE tenant_id=ANY($1::uuid[])", [tenants]); await pool.query("DELETE FROM on_session_admissions WHERE scope=$1", [admissionScope]); await pool.end(); });
+after(async () => { await database.close(); });
 test("PostgreSQL session preserves private tenant ownership", async () => { const session = await createSession(undefined, admissionScope); tenants.push(session.actor.tenantId); assert.equal((await getActor(session.token))?.tenantId, session.actor.tenantId); assert.equal((await getShow(session.actor.tenantId)).tasks.length, 82); assert.equal(await getActor("invalid-capability"), null); });
 test("concurrent duplicate claims commit one revision and preserve the initial event", async () => { const session = await createSession(undefined, admissionScope); tenants.push(session.actor.tenantId); const id = randomUUID(); const command = { type: "load_incidents" as const }; const results = await Promise.all(Array.from({ length: 5 }, () => transactCommand(session.actor, id, 1, command, show => applyCommand(show, session.actor, command)))); assert.equal(results.filter(r => !r.replayed).length, 1); const saved = await getShow(session.actor.tenantId); assert.equal(saved.revision, 2); assert.equal(saved.events.filter(e => e.type === "incident.confirmed").length, 1); const events = await pool.query("SELECT count(*)::int AS count FROM on_events WHERE tenant_id=$1", [session.actor.tenantId]); assert.equal(events.rows[0].count, 2); });
 test("changed idempotent payload fails closed", async () => { const session = await createSession(undefined, admissionScope); tenants.push(session.actor.tenantId); const id = randomUUID(); await transactCommand(session.actor, id, 1, { type: "load_incidents" }, show => applyCommand(show, session.actor, { type: "load_incidents" })); await assert.rejects(transactCommand(session.actor, id, 1, { type: "advance", time: "17:15" }, show => applyCommand(show, session.actor, { type: "advance", time: "17:15" })), /different instructions/); });

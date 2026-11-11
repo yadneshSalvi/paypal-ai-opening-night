@@ -3,15 +3,17 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { createSession, getActor, getShow, migrate, pool, transactCommand } from "../src/server/store";
+import { isolatedDatabase } from "./isolated-database";
 import { claimSessionAdmission, SessionCreationLimitError } from "../src/server/session-admission";
 import { applyCommand } from "../src/domain/commands";
-import { assertSameOrigin, errorResponse } from "../src/server/http";
+const database = await isolatedDatabase();
+const { createSession, getActor, getShow, migrate, pool, transactCommand } = await import("../src/server/store");
+const { assertSameOrigin, errorResponse } = await import("../src/server/http");
 
 test("Next loopback normalization retains the actual local host and rejects cross-host, foreign-host and cross-port requests", () => {
   const request = (origin: string, host: string) => new Request("http://localhost:4205/api/session", { method: "POST", headers: { origin, host } });
-  assert.doesNotThrow(() => assertSameOrigin(request("http://127.0.0.1:4205", "127.0.0.1:4205")));
-  assert.doesNotThrow(() => assertSameOrigin(request("http://localhost:4205", "localhost:4205")));
+  assert.equal(assertSameOrigin(request("http://127.0.0.1:4205", "127.0.0.1:4205")), "http://127.0.0.1:4205");
+  assert.equal(assertSameOrigin(request("http://localhost:4205", "localhost:4205")), "http://localhost:4205");
   for (const [origin, host] of [["http://localhost:4205", "127.0.0.1:4205"], ["http://127.0.0.1:4205", "localhost:4205"], ["http://localhost:4205", "outside.example:4205"], ["http://127.0.0.1:4105", "127.0.0.1:4105"], ["null", "localhost:4205"]]) assert.throws(() => assertSameOrigin(request(origin!, host!)), error => error instanceof Error && "code" in error && error.code === "ORIGIN_DENIED");
 });
 
@@ -21,7 +23,7 @@ function isolatedScope() { const scope = `test:session-admission:${randomUUID()}
 after(async () => {
   await pool.query("DELETE FROM on_session_admissions WHERE scope=ANY($1::text[])", [scopes]);
   await pool.query("DELETE FROM on_shows WHERE tenant_id=ANY($1::uuid[])", [tenants]);
-  await pool.end();
+  await database.close();
 });
 async function reserve(scope: string, commit = true) {
   await migrate();
@@ -106,7 +108,8 @@ test("a fresh app process skips applied schema DDL while a session admission tra
   try {
     await client.query("BEGIN");
     await claimSessionAdmission(client, scope);
-    const result = await promisify(execFile)(process.execPath, ["--import", "tsx", "--input-type=module", "-e", "const {migrate,pool}=await import('./src/server/store.ts'); await migrate(); await pool.end(); console.log('migration-ready');"], { cwd: process.cwd(), timeout: 6000 });
+    const child = "await import('./src/server/env.ts'); const {Pool}=await import('pg'); const schema=process.env.OPENING_TEST_SCHEMA; if(!/^on_test_[a-f0-9]{32}$/.test(schema??''))throw new Error('Disposable test schema required'); globalThis.openingNightPool=new Pool({connectionString:process.env.DATABASE_URL,options:'-c search_path='+schema}); const {migrate,pool}=await import('./src/server/store.ts'); await migrate(); await pool.end(); console.log('migration-ready');";
+    const result = await promisify(execFile)(process.execPath, ["--import", "tsx", "--input-type=module", "-e", child], { cwd: process.cwd(), timeout: 6000, env: { ...process.env, OPENING_TEST_SCHEMA: database.schema } });
     assert.equal(result.stdout.trim(), "migration-ready");
   } finally { await client.query("ROLLBACK"); client.release(); }
 });

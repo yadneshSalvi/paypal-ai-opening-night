@@ -6,10 +6,26 @@ import { listIntents, paymentTransaction, readIntent } from "./payment-store";
 import { pool } from "./store";
 import { observeOwnedPayment } from "./payment-observations";
 import type { DeliveryTransport } from "./payment-webhooks";
+import { WalletProviderError } from "./wallet-provider";
 
 const paymentPayload = z.object({ intentId: z.uuid() }).strict();
 const webhookPayload = z.object({ seller: z.enum(["venue", "brightline"]), eventId: z.string().min(3).max(128), rootIntentId: z.uuid() }).strict();
 export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResult> {
+  if (job.kind === "wallet_setup") {
+    const parsed = z.object({ setupId: z.uuid() }).strict().safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./wallet-service")).runWalletSetup(job.tenantId, parsed.data.setupId, signal);
+  }
+  if (job.kind === "cohort_ticket") {
+    const parsed = z.object({ cohortId: z.uuid(), ticketId: z.uuid() }).strict().safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./cohort-service")).runCohortTicket(job.tenantId, parsed.data.cohortId, parsed.data.ticketId, signal);
+  }
+  if (job.kind === "remedy_item") {
+    const parsed = z.object({ batchId: z.uuid(), itemId: z.uuid() }).strict().safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./remedy-service")).runRemedyItem(job.tenantId, parsed.data.batchId, parsed.data.itemId, signal);
+  }
   if (job.kind === "supplier_rfq") {
     const parsed = z.object({ rfqId: z.uuid() }).strict().safeParse(job.payload);
     if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
@@ -53,6 +69,7 @@ export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResul
 }
 
 function failure(error: unknown): JobResult {
+  if (error instanceof WalletProviderError) return { status: "waiting", code: error.code };
   if (error instanceof DomainError) return { status: error.status >= 500 ? "waiting" : "needs_attention", code: /^[A-Z0-9_]{1,80}$/.test(error.code) ? error.code : "AUTHORITY_CHECK_FAILED" };
   if (error instanceof PaymentError) return { status: error.httpStatus >= 500 || error.code === "OPERATION_CHANGED" ? "waiting" : "needs_attention", code: /^[A-Z0-9_]{1,80}$/.test(error.code) ? error.code : "PAYMENT_CHECK_FAILED" };
   if (error instanceof ProviderError) return { status: "waiting", code: "PROVIDER_" + error.kind.toUpperCase() };

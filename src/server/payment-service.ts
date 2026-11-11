@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { PaymentCore, SandboxPayPalProvider, PaymentError, type AuthorizationDecision, type PaymentCommand, type PaymentOperation, type ProviderResource, type ResourceReservation } from "@fracture/paypal-core";
+import { PaymentCore, PaymentError, type AuthorizationDecision, type PaymentCommand, type PaymentOperation, type ProviderResource, type ResourceReservation } from "@fracture/paypal-core";
 import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
 import { approvedRental, assertPaymentAuthority, safeApprovalUrl, type PaymentIntent, type PaymentPurpose, type PaymentSeller, type PublicPayment } from "@/domain/payment-authority";
 import { digest } from "@/domain/hash";
@@ -10,13 +10,10 @@ import { importPaymentOperation, needsParentReadback, listIntents, ownedResource
 import { wakePaymentJob, type JobResult } from "./jobs";
 import { currentPaymentRole as currentRole, preparePaymentIntent, type IntentSpec } from "./payment-intents";
 import { saveSupplierSnapshot, supplierScope } from "./supplier-storage";
-import { merchantConfig } from "./payment-config";
-
-const shared = globalThis as typeof globalThis & { openingNightProviders?: Record<PaymentSeller, SandboxPayPalProvider> };
-export const providers = shared.openingNightProviders ??= {
-  venue: new SandboxPayPalProvider(merchantConfig("venue")),
-  brightline: new SandboxPayPalProvider(merchantConfig("brightline")),
-};
+import { providers } from "./paypal-providers";
+import { withCommerceLock } from "./commerce-storage";
+import { authorizeCommerceIntent, recordCommerceOutcome } from "./commerce-policy";
+export { providers } from "./paypal-providers";
 const identifier = z.string().uuid();
 export const paymentRequest = z.discriminatedUnion("type", [
   z.object({ type: z.literal("rental_checkout"), expectedRevision: z.number().int().positive() }).strict(),
@@ -68,7 +65,8 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
   if (!active.rowCount) throw new PaymentError("AUTHORITY_REVOKED", "The approving session is no longer active.", 403);
   if (intent.parentId && intent.purpose.startsWith("rental_")) { const parent = await readIntent(intent.tenantId, intent.parentId); if (parent.planVersion !== intent.planVersion || parent.planDigest !== intent.planDigest) throw new DomainError("STALE_RENTAL", "The rental checkout belongs to an earlier recovery approval.", 403); }
   const owned = await ownedResources(intent.tenantId, intent.seller, intent.parentId ?? intent.id);
-  if (intent.resourceIds.some(id => !owned.some(resource => resource.id === id))) throw new PaymentError("RESOURCE_NOT_GRANTED", "The payment resource is not owned by this approved execution.", 403);
+  const walletResource = intent.cohortId && command.action.kind === "create_order" ? command.action.savedWallet?.vaultId : null;
+  if (intent.resourceIds.some(id => id !== walletResource && !owned.some(resource => resource.id === id))) throw new PaymentError("RESOURCE_NOT_GRANTED", "The payment resource is not owned by this approved execution.", 403);
   let reservation: ResourceReservation | undefined;
   try { reservation = await resourceBudget(intent, signal); } catch (error) { if (error instanceof DomainError) throw error; throw new PaymentError("BUDGET_READ_REQUIRED", "The current provider budget could not be verified. No payment was sent.", 503); }
   if (command.action.kind === "void_authorization") {
@@ -86,7 +84,8 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
     }
   }
   const action = command.action;
-  return { allowed: true, reason: "Current production approval and owned resource verified.", resourceIds: intent.resourceIds, currency: "USD", maximumMinor: action.money.minor, approvalId: command.approval.id, approvalVersion: command.approval.version, approvalDigest: command.approval.digest, ...(reservation ? { reservation } : {}), ...(action.kind === "create_order" && action.experience ? { checkoutOrigins: [checkoutOrigin(action.experience.returnUrl)] } : {}) };
+  const commerce = await authorizeCommerceIntent(intent, show, signal);
+  return { allowed: true, reason: "Current production approval and owned resource verified.", resourceIds: intent.resourceIds, currency: "USD", maximumMinor: action.money.minor, approvalId: command.approval.id, approvalVersion: command.approval.version, approvalDigest: command.approval.digest, ...commerce, ...(reservation ? { reservation } : {}), ...(action.kind === "create_order" && action.experience ? { checkoutOrigins: [checkoutOrigin(action.experience.returnUrl)] } : {}) };
   } catch (error) { if (error instanceof DomainError) throw new PaymentError(error.code, error.message, error.status); throw error; }
 }
 async function coreFor(intent: PaymentIntent, signal: AbortSignal) { return new PaymentCore({ store: await paymentStore(), provider: providers[intent.seller], policy: { authorize: command => authorizePayment(command, signal) } }); }
@@ -97,7 +96,16 @@ async function importConfirmedOperation(intent: PaymentIntent, operation: Paymen
   const resources = await providers[intent.seller].read("order", orderId, signal);
   return importPaymentOperation(intent, operation, { orderId, observedAt: new Date().toISOString(), resources });
 }
-async function executeIntent(intent: PaymentIntent, retry = false) {
+async function withIntentDispatch<T>(intent: PaymentIntent, work: () => Promise<T>): Promise<T> {
+  const scope = intent.cohortId ? "cohort:" + intent.tenantId + ":" + intent.cohortId : intent.remedyBatchId ? "remedy:" + intent.tenantId + ":" + intent.remedyBatchId : null;
+  if (!scope) return work();
+  return withCommerceLock(scope, async () => {
+    try { const result = await work(); await recordCommerceOutcome(intent, await (await paymentStore()).get(intent.command.scope, intent.id)); return result; }
+    catch (error) { await recordCommerceOutcome(intent, await (await paymentStore()).get(intent.command.scope, intent.id), error); throw error; }
+  });
+}
+async function executeIntent(intent: PaymentIntent, retry = false): Promise<PaymentOperation> { return withIntentDispatch(intent, () => executeIntentUnlocked(intent, retry)); }
+async function executeIntentUnlocked(intent: PaymentIntent, retry = false) {
   const signal = AbortSignal.timeout(55000); const store = await paymentStore();
   const previous = await store.get(intent.command.scope, intent.command.operationId);
   if (previous && !retry) { await importConfirmedOperation(intent, previous, signal); return previous; }
@@ -119,6 +127,10 @@ async function prepare(actor: Actor, spec: IntentSpec): Promise<PaymentIntent> {
 
 /** A durable intent is the authority. An event is only a read-only wakeup. */
 export async function reconcilePaymentIntent(tenantId: string, intentId: string, signal: AbortSignal, allowUndispatched = false): Promise<JobResult> {
+  const intent = await readIntent(tenantId, intentId);
+  return withIntentDispatch(intent, () => reconcileIntentUnlocked(tenantId, intentId, signal, allowUndispatched));
+}
+async function reconcileIntentUnlocked(tenantId: string, intentId: string, signal: AbortSignal, allowUndispatched: boolean): Promise<JobResult> {
   const intent = await readIntent(tenantId, intentId); const store = await paymentStore();
   const core = await coreFor(intent, signal);
   let operation = await store.get(intent.command.scope, intent.command.operationId);
@@ -146,7 +158,7 @@ export async function reconcilePaymentIntent(tenantId: string, intentId: string,
   if (operation.status === "refused" || operation.status === "not_sent") return { status: "needs_attention", code: "EXPLICIT_RETRY_REQUIRED" };
   return { status: "waiting", code: "PROVIDER_OUTCOME_UNKNOWN" };
 }
-function returnExperience(id: string, tenantId: string, origin: string, authorization: boolean) {
+export function returnExperience(id: string, tenantId: string, origin: string, authorization: boolean) {
   const route = origin + "/payments/return?intent=" + id + "&state=" + callbackState({ id, tenantId });
   return { returnUrl: route, cancelUrl: route + "&cancel=1", userAction: authorization ? "CONTINUE" as const : "PAY_NOW" as const, shippingPreference: "NO_SHIPPING" as const };
 }
@@ -168,6 +180,7 @@ export async function handlePayment(actor: Actor, request: PaymentRequest, rawOr
     const order = root.resources.find(r => r.kind === "order"); if (!order) throw new DomainError("ORDER_NOT_VERIFIED", "The original order is still awaiting provider reconciliation.");
     const authorize = root.intent.purpose === "rental_order";
     if (!authorize && root.intent.purpose !== "ticket_order") throw new DomainError("CHECKOUT_NOT_EXPECTED", "This operation is not a checkout.");
+    if (root.intent.cohortId) return (await import("./cohort-service")).finishCohortCheckout(actor, root.intent);
     const existing = await (await paymentStore()).get(root.intent.command.scope, root.intent.command.operationId);
     if (existing?.receipt?.resources.some(r => r.kind === "capture" && r.status === "COMPLETED")) { await importPaymentOperation(root.intent, existing); return existing; }
     intent = await prepare(actor, { purpose: authorize ? "rental_authorize" : "ticket_capture", semanticKey: root.intent.id + (authorize ? ":authorize" : ":capture"), seller: root.intent.seller, parentId: root.intent.id, resourceIds: [order.id], ...(root.intent.ticketId ? { ticketId: root.intent.ticketId } : {}), ...(root.intent.tier ? { tier: root.intent.tier } : {}), build: () => ({ kind: authorize ? "authorize_order" : "capture_order", orderId: order.id, money: root.intent.command.action.money }) });
@@ -194,9 +207,12 @@ export async function paymentOverview(actor: Actor): Promise<PublicPayment[]> {
   if (!actor.roles.some(r => ["producer", "supplier"].includes(r))) throw new DomainError("COMMERCIAL_ROLE_REQUIRED", "This client does not have access to financial operations.", 403);
   const intents = await listIntents(actor.tenantId); const store = await paymentStore();
   const results: PublicPayment[] = [];
+  const sellers = actor.roles.includes("producer") ? ["venue", "brightline"] as const : ["brightline"] as const;
+  const groups = await Promise.all(sellers.map(seller => store.list({ tenantId: actor.tenantId, projectId: "opening-night:" + seller })));
+  const operations = new Map(groups.flat().map(operation => [operation.command.intentId, operation]));
   for (const intent of intents) {
     if (actor.roles.includes("supplier") && !actor.roles.includes("producer") && (intent.seller !== "brightline" || supplierScope(actor) !== "brightline")) continue;
-    const operation = await store.get(intent.command.scope, intent.command.operationId);
+    const operation = operations.get(intent.id);
     results.push({ id: intent.id, purpose: intent.purpose, seller: intent.seller, amountMinor: intent.command.action.money.minor, planVersion: intent.planVersion, status: operation?.status ?? "prepared", approvalUrl: operation?.status === "succeeded" && intent.command.action.kind === "create_order" ? safeApprovalUrl(operation.receipt?.resources ?? []) : null, error: operation?.error?.message ?? null, resources: (operation?.receipt?.resources ?? []).map(r => ({ kind: r.kind, reference: "••••" + r.id.slice(-6), status: r.status, amountMinor: r.money?.minor ?? null })), updatedAt: operation?.updatedAt ?? intent.createdAt, ticketId: intent.ticketId });
   }
   return results;
