@@ -17,7 +17,7 @@ createServer(async(req,res)=>{
     if(ownCookie) req.headers.cookie=[...(req.headers.cookie??"").split(";").map(value=>value.trim()).filter(value=>!value.startsWith("opening-night-ai-qa-session=")),"opening-night-ai-qa-session="+ownCookie.slice(cookieName.length+1)].join("; ");
     const originalSetHeader=res.setHeader;res.setHeader=function(name,value){if(name.toLowerCase()==="set-cookie")value=Array.isArray(value)?value.map(item=>String(item).replace(/^opening-night-ai-qa-session=/,cookieName+"=")):String(value).replace(/^opening-night-ai-qa-session=/,cookieName+"=");return originalSetHeader.call(this,name,value);};
     if(req.url?.split('?')[0]!=="/__wrap_fixture")return handler(req,res);
-    res.setHeader("Cache-Control","private, no-store");res.setHeader("Referrer-Policy","no-referrer");res.setHeader("X-Frame-Options","DENY");res.setHeader("Content-Security-Policy","default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'");
+    res.setHeader("Cache-Control","private, no-store");res.setHeader("Referrer-Policy","same-origin");res.setHeader("X-Frame-Options","DENY");res.setHeader("Content-Security-Policy","default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'");
     if(req.headers.host!==`${hostname}:${port}`){res.writeHead(403);return res.end("Exact loopback origin required");}
     if(req.method==="GET"){res.setHeader("Content-Type","text/html; charset=utf-8");return res.end(page);}
     if(req.method!=="POST"||req.headers.origin!==origin){res.writeHead(403);return res.end("Same-origin form required");}
