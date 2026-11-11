@@ -32,6 +32,8 @@ Before a browser POST, the exact envelope is retained and verified in session st
 
 ## Local verification
 
+Recovery file version 2 applies the same strict command schema as the server before hashing and sending, including trimming review notes. Existing version-1 files are supported: their untouched original envelope hash is verified first, then the same server normalization is applied to find the retained receipt. Changing a saved body without its original hash still blocks recovery. This compatibility does not edit a server record or resend an action. **Recover a saved request file** opens a bounded file for the same actor, person/production and scope, then checks the original receipt through a read; a separate manual action is required for any retry.
+
 Use Node 22. `npm run test:settlement` disables actual providers before environment loading and runs the domain, disposable-PostgreSQL and browser-recovery contract tests. These cover integer rounding, unpaid breaks, daily overtime, rate boundaries, positive/negative/zero corrections, cross-day overlaps, exact review identity, concurrency, replay, session revocation, person isolation and immutable encrypted records. The PostgreSQL tests create and remove only unique local test schemas.
 
 The full local suite also covers the existing payment, crew, source, voice and real-engine paths. Root-owned native qualification should exercise personal reporting → producer rate agreement → three-check payable review → correction → retained adjustment, reload, keyboard access and a narrow viewport. Controlled browser interaction is separate from a practitioner study, microphone capture, physical phone test or actual-provider payout qualification.

@@ -88,12 +88,23 @@ export function useSettlement<T extends SettlementData>(identity: SettlementIden
     finally { preparing.current = false; if (activeKey.current === key && !writing.current && reading.current === null) setBusy(null); }
   }, [key, damaged, storageError, transmit]);
   const retry = useCallback(() => retained.current ? transmit(retained.current) : Promise.resolve(false), [transmit]);
+  const restore = useCallback(async (raw: string) => {
+    if (activeKey.current !== key || recoveryReady.current !== key || retained.current || damaged || storageError || writing.current || preparing.current) return false;
+    preparing.current = true; setBusy("read"); setError(null);
+    try {
+      const value = await parsePendingSettlement(raw, identityRef.current);
+      if (activeKey.current !== key) return false;
+      persist(value); setNotice("The saved request was opened for an original-receipt check. No instruction was resent.");
+      preparing.current = false; await refresh(); return true;
+    } catch (cause) { if (activeKey.current === key) setError(message(cause)); return false; }
+    finally { preparing.current = false; if (activeKey.current === key && reading.current === null && !writing.current) setBusy(null); }
+  }, [key, damaged, storageError, persist, refresh]);
   const downloadRecovery = useCallback(() => {
     try { const raw = sessionStorage.getItem(key); if (!raw) return; const url = URL.createObjectURL(new Blob([raw], { type: "application/json" })), link = document.createElement("a"); link.href = url; link.download = "opening-night-settlement-request.json"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
     catch (cause) { setStorageError(message(cause)); }
   }, [key]);
   const clearDamaged = useCallback(async () => { const latest = await refresh(); if (!latest) return; try { persist(null); setDamaged(false); setNotice("The unreadable local draft was cleared after checking server history. Existing receipts remain unchanged."); } catch (cause) { setStorageError(message(cause)); } }, [refresh, persist]);
   const fresh = Boolean(data && connected && clock - Date.parse(data.serverAt) < 60000);
-  return { data, pending, busy, error, notice, storageError, damaged, fresh, refresh, submit, retry, downloadRecovery, clearDamaged, blocked: !fresh || Boolean(busy || pending || storageError || damaged) };
+  return { data, pending, busy, error, notice, storageError, damaged, fresh, refresh, submit, retry, restore, downloadRecovery, clearDamaged, blocked: !fresh || Boolean(busy || pending || storageError || damaged) };
 }
 export type SettlementClient<T extends SettlementData = SettlementData> = ReturnType<typeof useSettlement<T>>;

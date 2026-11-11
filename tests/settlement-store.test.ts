@@ -2,7 +2,8 @@ import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { isolatedDatabase } from "./isolated-database";
-import type { PersonalSettlementData, ProductionSettlementData, SettlementCommand, SettlementEnvelope } from "../src/domain/settlement/contracts";
+import { settlementEnvelopeSchema, type PersonalSettlementData, type ProductionSettlementData, type SettlementCommand, type SettlementEnvelope } from "../src/domain/settlement/contracts";
+import { parsePendingSettlement, recoveredSettlement } from "../src/components/settlement/recovery";
 import { atVenue } from "../src/domain/time";
 import { digest } from "../src/domain/hash";
 import { sourceApplicationBlock } from "../src/server/sources/validation";
@@ -51,6 +52,16 @@ test("competing reviews serialize and a definite stale rejection has no command 
   assert.equal(results.filter(result => result.status === "fulfilled").length, 1); const rejected = results.findIndex(result => result.status === "rejected");
   assert.equal((results[rejected] as PromiseRejectedResult).reason.code, "SETTLEMENT_REVIEW_STALE");
   assert.equal((await database.pool.query("SELECT command_id FROM on_commands WHERE tenant_id=$1 AND command_id=$2", [value.session.actor.tenantId, rejected === 0 ? envelope.idempotencyKey : second.idempotencyKey])).rowCount, 0);
+});
+test("an existing whitespace-normalized payable recovers from its untouched legacy file using reads only", async () => {
+  const value = await fresh(); await command(value, rate()); await command(value, report(value));
+  const before = await service.readSettlement(value.producer) as ProductionSettlementData, preview = before.people.find(person => person.person.id === "priya")!.reports[0].preview!;
+  const envelope: SettlementEnvelope = { idempotencyKey: randomUUID(), expectedRevision: before.revision, expectedShowRevision: before.productionRevision, command: { type: "approve_payable", reportId: preview.reportId, rateId: preview.rateId, reviewDigest: preview.digest, detail: "  Reviewed these exact hours, rate and payable. ", reviewedHours: true, reviewedRate: true, reviewedAdjustment: true } };
+  const identity = { scope: "production" as const, actorId: value.producer.actor.id, ownerId: value.producer.actor.tenantId }, legacy = JSON.stringify({ schemaVersion: 1, ...identity, createdAt: new Date().toISOString(), requestDigest: digest(envelope), envelope });
+  const saved = await service.executeSettlement(value.producer, envelope), pending = await parsePendingSettlement(legacy, identity), data = await service.readSettlement(value.producer) as ProductionSettlementData;
+  assert.notEqual(saved.receipt.requestDigest, digest(envelope)); assert.equal(saved.receipt.requestDigest, digest(settlementEnvelopeSchema.parse(envelope))); assert.deepEqual(recoveredSettlement(data, pending), saved.receipt);
+  assert.equal(data.totals.approvedBalanceMinor, 3500); assert.equal(data.revision, 3); assert.equal((await database.pool.query("SELECT count(*)::int AS count FROM on_settlement_records WHERE tenant_id=$1", [identity.ownerId])).rows[0].count, 3);
+  assert.equal(JSON.parse(legacy).envelope.command.detail.endsWith(" "), true);
 });
 test("original encrypted requests and records resist mutation and use tenant-bound context", async () => {
   const value = await fresh(), saved = await command(value, report(value)), row = (await database.pool.query("SELECT * FROM on_settlement_records WHERE id=$1", [saved.result.receipt.id])).rows[0];

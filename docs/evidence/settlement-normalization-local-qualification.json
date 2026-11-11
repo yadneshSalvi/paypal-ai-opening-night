@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-11-11T15:31:04.931Z",
+  "sourceBase": "11405cea64048f55dfd04772e33a8e0e67fee6b3",
+  "mode": "controlled_local_qualification",
+  "finding": "A native payable with trailing whitespace was stored correctly, but browser recovery hashed the untrimmed note before the server schema normalized it. Reload repeated that mismatch. No duplicate payable was submitted.",
+  "correction": {
+    "newRecoveryFileVersion": 2,
+    "normalizeBeforeHashAndSend": true,
+    "legacyRawDigestVerifiedBeforeNormalization": true,
+    "fullActorOwnerCommandAndDigestMatchRetained": true,
+    "strictSchemaValidationRetained": true,
+    "boundedRecoveryFileImport": true,
+    "importChecksReceiptWithReadsOnly": true,
+    "backendAndSchemaUnchanged": true
+  },
+  "local": {
+    "fullTestsPassed": 372,
+    "focusedSettlementTestsPassed": 25,
+    "failed": 0,
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "targetedHttpChecks": 7,
+    "buildTraces": 43,
+    "privatePathsFound": 0
+  },
+  "originalNativeReceiptAudit": {
+    "observedAt": "2026-11-11T15:28:23.313Z",
+    "mode": "read_only_native_fixture_audit",
+    "legacyRawEnvelopeHashVerified": true,
+    "serverNormalizedReceiptMatched": true,
+    "originalFileUnchanged": true,
+    "originalRequestResent": false,
+    "originalApprovedMinor": 3500,
+    "pendingCorrectionMinutes": 30,
+    "records": 4,
+    "encryptedRequestsAndRecords": 4,
+    "showRevision": 5,
+    "settlementRevision": 4,
+    "operationalAndFinancialFieldsUnchangedDuringRead": true,
+    "financialEvidence": 0,
+    "crewAcknowledgments": 0,
+    "crewAttestations": 0,
+    "crewCues": 0,
+    "providerRequests": 0,
+    "counts": {
+      "on_intelligence_runs": 0,
+      "on_voice_runs": 0,
+      "on_source_compilations": 0,
+      "on_jobs": 0,
+      "on_payment_intents": "not_initialized",
+      "on_payment_imports": "not_initialized"
+    }
+  },
+  "rootNativeObservedBeforeCorrection": {
+    "personalReportWithExplicitReview": true,
+    "uncheckedSubmitDisabled": true,
+    "producerRateVersionRecorded": true,
+    "originalPayableRetainedMinor": 3500,
+    "personalCorrectionReportedMinutes": 30,
+    "personal390Fits": true,
+    "personalKeyboardTabsPassed": true,
+    "otherPersonalCapabilityHadNoRatesHoursOrLiabilities": true
+  },
+  "pendingQualification": [
+    "Native original-file import and retained receipt recovery on the corrected build",
+    "Native producer credit adjustment and reload"
+  ],
+  "limitations": [
+    "No actual payout, provider call, microphone, human participation or physical-phone claim.",
+    "The original frozen source, session, records and downloaded recovery file were preserved."
+  ]
+}
