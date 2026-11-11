@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "opening-night.intelligence-live-qualification.v1",
+  "scope": "One fictional-production case, two separately identified actual-model attempts, automated scripted preference. This is not an independent human review, broad evaluation corpus, or live-model browser test.",
+  "model": "gpt-6.1-sol",
+  "reasoningEffort": "max",
+  "attempts": [
+    {
+      "attempt": 1,
+      "sourceRevision": "640166b838b4b82b0ff0060e7155584d9cdca2ae",
+      "protocolHash": "3d39075900128805c41ba63ece1e484e9ad0e54012652f3f1f4c5fbdc9a52894",
+      "observedAt": "2026-11-11T11:15:32.912Z",
+      "terminalReason": "unavailable",
+      "responses": 4,
+      "toolReceipts": 3,
+      "criteria": {
+        "tomRejected": false,
+        "preferenceRequested": false,
+        "priyaQualified": false,
+        "realEngineProposal": false,
+        "checklistProven": false,
+        "originalFixtureUnchanged": true,
+        "noFinancialOrCrewAction": true
+      },
+      "passed": false,
+      "reportSha256": "2de067b499149c0d52379b8ab53476129c6d326143f2427a634d5ccc934aadb9"
+    },
+    {
+      "attempt": 2,
+      "sourceRevision": "640166b838b4b82b0ff0060e7155584d9cdca2ae",
+      "protocolHash": "3d39075900128805c41ba63ece1e484e9ad0e54012652f3f1f4c5fbdc9a52894",
+      "observedAt": "2026-11-11T11:42:30.120Z",
+      "terminalReason": "assistant_finished",
+      "responses": 12,
+      "toolReceipts": 11,
+      "criteria": {
+        "tomRejected": true,
+        "preferenceRequested": true,
+        "priyaQualified": true,
+        "realEngineProposal": true,
+        "checklistProven": true,
+        "originalFixtureUnchanged": true,
+        "noFinancialOrCrewAction": true
+      },
+      "passed": true,
+      "reportSha256": "c9869d400d0ece343ce68f3f62ff742fca837a4b00ee9d73b794b2540eb6e702"
+    }
+  ],
+  "limitations": [
+    "The first attempt retained an unavailable fourth response after approximately ten minutes of provider polling. It was not resubmitted.",
+    "Provider metadata on completed first-attempt responses reported store:false despite requested store:true. No account retention setting was changed.",
+    "The second attempt passed all seven criteria. Active production, financial actions and crew actions stayed unchanged.",
+    "Controlled native browser qualification is documented separately. Voice, source compilation and full product qualification remain separate work."
+  ],
+  "providerSecretsIncluded": false
+}
