@@ -24,6 +24,14 @@ export function affectedSubgraph(dependencies: Dependency[], starting: string[])
   while (queue.length) { const id = queue.shift(); for (const edge of dependencies) if (edge.from === id && !affected.has(edge.to)) { affected.add(edge.to); queue.push(edge.to); } }
   return [...affected];
 }
+/** Shared by whole-plan validation and the AI assignment tool; one policy source. */
+export function qualificationIssues(show: Pick<ShowSnapshot, "resources">, task: Task): ConstraintIssue[] {
+  if (!task.requiredSkill) return [];
+  return task.resources.flatMap(id => {
+    const resource = show.resources.find(item => item.id === id);
+    return resource?.skills.includes(task.requiredSkill!) ? [] : [{ code: "QUALIFICATION", stage: "semantic" as const, severity: "hard" as const, message: `${resource?.name ?? id} lacks ${task.requiredSkill!.replaceAll("_", " ")}.`, resourceId: id, taskId: task.id, sourceId: "crew-policy-v1" }];
+  });
+}
 export function validatePatch(show: ShowSnapshot, patch: PlanPatch, offer: SupplierOffer): ConstraintReport {
   const issues: ConstraintIssue[] = [];
   const add = (code: string, stage: ConstraintIssue["stage"], severity: ConstraintIssue["severity"], message: string, resourceId: string | null = null, taskId: string | null = null, sourceId = "venue-policy-v1") => issues.push({ code, stage, severity, message, resourceId, taskId, sourceId });
@@ -37,7 +45,7 @@ export function validatePatch(show: ShowSnapshot, patch: PlanPatch, offer: Suppl
   }
   for (const task of patch.tasks) {
     if (minutesBetween(task.start, task.end) !== task.durationMinutes || task.durationMinutes < 0) add("DURATION_INVALID", "schema", "hard", `${task.name} has an invalid time interval.`, null, task.id);
-    if (task.requiredSkill) for (const id of task.resources) { const resource = show.resources.find(r => r.id === id); if (!resource?.skills.includes(task.requiredSkill)) add("QUALIFICATION", "semantic", "hard", `${resource?.name ?? id} lacks ${task.requiredSkill.replaceAll("_", " ")}.`, id, task.id, "crew-policy-v1"); }
+    issues.push(...qualificationIssues(show, task));
   }
   const active = patch.tasks.filter(t => t.critical && t.state !== "complete" && t.durationMinutes > 0 && t.lane !== "people");
   for (let i = 0; i < active.length; i++) for (let j = i + 1; j < active.length; j++) {

@@ -55,7 +55,7 @@ export interface Candidate {
   digest: string; sourceDigest: string; generatedAt: string; patch: PlanPatch; approvals: ApprovalRequirement[];
   report: ConstraintReport; cost: { rentalMinor: number; overtimeMinor: number; remedyMinor: number; totalMinor: number };
 }
-export interface RescueRun { id: string; baseRevision: number; createdAt: string; completedAt: string; candidates: Candidate[]; source: "modelled"; strategySource: "deterministic_enumerator" }
+export interface RescueRun { id: string; baseRevision: number; createdAt: string; completedAt: string; candidates: Candidate[]; source: "modelled"; strategySource: "deterministic_enumerator" | "model_assisted_proposal" }
 export interface PublishedRunSheet {
   id: string; version: number; planRevision: number; candidateId: string | null; digest: string;
   publishedAt: string; tasks: Task[]; changes: { taskId: string; name: string; before: string; after: string; reason: string; resourceIds: string[] }[];
@@ -109,7 +109,7 @@ export interface ShowSnapshot {
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }
-export interface ConsoleData { show: ShowSnapshot; readiness: ReadinessReport[]; currentActor: Actor; serverAt: string; crew?: CrewProductionOverview; controlledQa?: boolean }
+export interface ConsoleData { show: ShowSnapshot; readiness: ReadinessReport[]; currentActor: Actor; serverAt: string; crew?: CrewProductionOverview; controlledQa?: boolean; controlledPlanningQa?: boolean }
 export class DomainError extends Error {
   constructor(public code: string, message: string, public status = 409) { super(message); this.name = "DomainError"; }
 }

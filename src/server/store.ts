@@ -9,6 +9,7 @@ import { projectExecutionMilestones } from "./crew/readiness";
 import { supplierMigration } from "./migrations/suppliers-v3";
 import { commerceMigration } from "./migrations/commerce-v4";
 import { rehearsalsMigration } from "./migrations/rehearsals-v5";
+import { intelligenceMigration } from "./migrations/intelligence-v6";
 import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -78,6 +79,8 @@ export async function migrate() {
       if (!commerce.rowCount) { await client.query(commerceMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(4)"); }
       const rehearsals = await client.query("SELECT version FROM on_schema_migrations WHERE version=5");
       if (!rehearsals.rowCount) { await client.query(rehearsalsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(5)"); }
+      const intelligence = await client.query("SELECT version FROM on_schema_migrations WHERE version=6");
+      if (!intelligence.rowCount) { await client.query(intelligenceMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(6)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }

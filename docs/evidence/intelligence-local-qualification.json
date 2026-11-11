@@ -1,0 +1,46 @@
+{
+  "observedAt": "2026-11-11T11:04:13.700Z",
+  "fixture": "controlled planning QA",
+  "actualProviderCalls": 0,
+  "runs": 12,
+  "receipts": 11,
+  "reviewed": 1,
+  "revision": 4,
+  "approvedPlan": null,
+  "financialEvidence": 0,
+  "crewAcknowledgments": 0,
+  "activeCalls": 82,
+  "unchangedCriticalCalls": [
+    {
+      "id": "lx-program",
+      "start": "2026-11-14T22:15:00Z",
+      "end": "2026-11-14T22:35:00Z"
+    },
+    {
+      "id": "headliner-check",
+      "start": "2026-11-14T22:15:00Z",
+      "end": "2026-11-14T23:15:00Z"
+    },
+    {
+      "id": "vip",
+      "start": "2026-11-14T23:30:00Z",
+      "end": "2026-11-15T00:00:00Z"
+    }
+  ],
+  "browser": {
+    "native": "Bryntum 8 AI",
+    "savedPlan": "4/4",
+    "reviewShowsRemovedCalls": true,
+    "reviewShowsDependencyChanges": true,
+    "reviewRequiresCheckbox": true,
+    "mobileViewport": 390,
+    "mobileDocumentWidth": 390,
+    "escapeReturnsFocus": "Plan the next move",
+    "reloadCreatedNoNewResponses": true
+  },
+  "limitations": [
+    "Controlled provider inputs, not live model qualification",
+    "No independent human, real phone or physical production claim",
+    "Original financial/crew tenant untouched"
+  ]
+}
