@@ -5,7 +5,7 @@ import DefaultGanttAgent, { type NativeTool, type NativeToolInput } from "@brynt
 import GanttToolHost from "@bryntum/gantt-enterprise/lib/Gantt/feature/ai/toolhosts/GanttToolHost.js";
 import { intelligenceToolDefinitions, intelligenceTools, type IntelligenceConversation, type IntelligenceRunView, type IntelligenceTool, type IntelligenceToolResult } from "@/domain/intelligence";
 import { productionFetch } from "../production-fetch";
-import { ReviewedNativeChatPopup } from "./native-voice";
+import { nativeAudioTrigger, ReviewedNativeChatPopup } from "./native-voice";
 
 export interface NativePlanningOptions {
   tenantId: string; initial: IntelligenceConversation | null;
@@ -139,9 +139,11 @@ export function nativeProductionAssistant(options: NativePlanningOptions) {
       animateTyping: !matchMedia("(prefers-reduced-motion: reduce)").matches, formatText: (text: string) => StringHelper.encodeHtml(text).replaceAll("\n", "<br>"),
       messages: savedNativeMessages(options.initial), tools: { settingsTool: false, clearChat: false },
       items: {
+        messageField: { triggers: { mic: nativeAudioTrigger("Record a planning draft"), send: nativeAudioTrigger("Send planning request"), stop: nativeAudioTrigger("Stop audio or planning response") } },
         openingVoiceStatus: { type: "widget", weight: 190, cls: "opening-native-voice-status", html: '<p role="status" aria-live="polite">Record when ready. Review the editable transcript, then Send. Playback is an AI-generated voice.</p>' },
-        openingCancelRecording: { type: "button", weight: 191, text: "Cancel recording", cls: "opening-native-voice-cancel", hidden: true, onAction: "up.cancelVoice" },
-        openingClearDraft: { type: "button", weight: 192, text: "Clear draft", cls: "opening-native-voice-clear", onAction: "up.clearVoiceDraft" },
+        openingStopReadAloud: { type: "button", weight: 191, text: "Stop AI read-aloud", cls: "opening-native-voice-stop", hidden: true, onAction: "up.stopReadAloud" },
+        openingCancelRecording: { type: "button", weight: 192, text: "Cancel recording", cls: "opening-native-voice-cancel", hidden: true, onAction: "up.cancelVoice" },
+        openingClearDraft: { type: "button", weight: 193, text: "Clear draft", cls: "opening-native-voice-clear", onAction: "up.clearVoiceDraft" },
         openingPlan: { type: "widget", weight: -100, cls: "opening-native-plan", hidden: !plan,
         html: plan ? `<section aria-label="Production planning checklist"><div><strong>${StringHelper.encodeHtml(plan.goal)}</strong><span>${plan.steps.filter(step => step.completed).length}/${plan.steps.length}</span></div><ol>${plan.steps.map(step => `<li data-complete="${step.completed}"><b>${step.completed ? "✓" : step.id}</b><span>${StringHelper.encodeHtml(step.description === "Prepare a reviewed alternative" ? "Prepare an alternative for review" : step.description)}<small>${step.completed ? "Saved tool evidence" : "Pending"}</small></span></li>`).join("")}</ol></section>` : "" } },
     } },

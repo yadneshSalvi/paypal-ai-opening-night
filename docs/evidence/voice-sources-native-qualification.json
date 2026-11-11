@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "78eafbf7f2fc34583538b3248c113aab0d050540",
+  "qualification": "root-operated native browser with controlled provider inputs",
+  "status": "source-journey-passed-with-ui-findings",
+  "nativeSource": {
+    "desktopWidth": 1280,
+    "mobileWidth": 390,
+    "ownedTextUpload": true,
+    "exactOriginalDownloadHash": true,
+    "verifiedQuotes": 23,
+    "explicitAssumptions": 1,
+    "engineIntervals": 83,
+    "nativeGanttWindow": "16:40–17:00 America/Chicago",
+    "line2Citation": true,
+    "escapeFocusReturn": true,
+    "allThreeReviewGatesRequired": true,
+    "reviewAppliedRevision": 2,
+    "receiptRetainedAfterReload": true
+  },
+  "nativeVoice": {
+    "oneSavedReadAloud": true,
+    "providerMode": "controlled_fixture",
+    "microphoneCaptureClaimed": false,
+    "staleCompletionMessageObserved": true,
+    "unnamedSpeakerAndMicrophoneControlsObserved": true,
+    "stopControlNeedsCorrection": true
+  },
+  "findings": [
+    {
+      "id": "voice-status",
+      "finding": "Preparing copy remained after read-aloud completed.",
+      "correction": "Explicit preparing, playing, completed, stopped and failed UI states.",
+      "verified": false
+    },
+    {
+      "id": "voice-controls",
+      "finding": "Read-aloud and microphone controls lacked accessible names; microphone used an unlabeled div.",
+      "correction": "Named native buttons with keyboard semantics and a visible Stop AI read-aloud action.",
+      "verified": false
+    },
+    {
+      "id": "compile-pending",
+      "finding": "Normal Compile initially displayed a connection-ended message.",
+      "correction": "Neutral original-request saving and recovery wording.",
+      "verified": false
+    },
+    {
+      "id": "applied-source-retention",
+      "finding": "A known applied source still offered an enabled final deletion action.",
+      "correction": "Disabled deletion with visible applied-graph retention explanation.",
+      "verified": false
+    }
+  ],
+  "readOnlyInvariantAudit": {
+    "checkedAt": "2026-11-11T13:32:30.106Z",
+    "readOnly": true,
+    "sourceCommit": "78eafbf7f2fc34583538b3248c113aab0d050540",
+    "showRevision": 2,
+    "planVersion": 1,
+    "sourceVersions": 1,
+    "sourceHash": "6cb65ff927796b139df7078a348d916f7a91bfa7d63dd3d78c642c18de640664",
+    "sourceReviews": 1,
+    "verifiedQuotes": 23,
+    "acceptedAssumptions": 1,
+    "engineIntervals": 83,
+    "workingTasks": 83,
+    "protectedFieldsUnchanged": [
+      "sheets",
+      "acknowledgments",
+      "financialEvidence",
+      "facts",
+      "state",
+      "goReportId",
+      "tickets",
+      "approvedPlan",
+      "crewCues",
+      "crewAttestations",
+      "crewNextCalls",
+      "crewAdoption",
+      "rentalExecutions",
+      "financialObservations",
+      "financialChecks"
+    ],
+    "existingTasksUnchanged": true,
+    "completedTaskCountUnchanged": true,
+    "voiceRequests": 1,
+    "voiceState": "completed",
+    "voiceKind": "speak",
+    "voiceProvider": "controlled_fixture",
+    "waveBytes": 48044,
+    "waveHash": "e0957d33ebced2c1ba7a354bd559f6f4f67c1d645153db0023782e522173b6f7",
+    "storedChunks": 1,
+    "planningRequests": 0,
+    "paymentIntents": 0,
+    "financialEvidence": 0,
+    "crewAcknowledgments": 0,
+    "crewAttestations": 0,
+    "crewCues": 0
+  },
+  "claims": {
+    "independentHumanReview": false,
+    "participantStudy": false,
+    "physicalMicrophone": false,
+    "actualProvider": false,
+    "wholeProductComplete": false
+  },
+  "privateScreenshotSha256": "87645c68574bc6ac62dfdf1ee92a81e9a23bde2bf93e54353e081b51904acdb7",
+  "remaining": "Retest corrections on an independent frozen runtime; preserve the original 4516 build and all actual-provider attempts."
+}

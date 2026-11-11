@@ -12,6 +12,16 @@ export interface VoiceRunView {
   text: string | null; message: string; byteLength: number | null; durationSeconds: number | null;
 }
 export interface VoiceWorkspace { available: boolean; mode: "live_model" | "controlled_fixture"; runs: VoiceRunView[] }
+export type VoicePlaybackState = "idle" | "preparing" | "playing" | "completed" | "stopped" | "failed";
+export function finishVoicePlayback(state: VoicePlaybackState): VoicePlaybackState { return state === "preparing" || state === "playing" ? "completed" : state; }
+export const voicePlaybackText: Record<VoicePlaybackState, string> = {
+  idle: "Record when ready. Review the editable transcript, then Send. Playback is an AI-generated voice.",
+  preparing: "Preparing an AI-generated read-aloud. Choose Stop AI read-aloud to cancel playback.",
+  playing: "Playing an AI-generated read-aloud. Choose Stop AI read-aloud to end playback.",
+  completed: "AI read-aloud finished. The text and original saved audio remain available.",
+  stopped: "AI read-aloud stopped. The text remains available. Stopping playback does not send a planning request.",
+  failed: "The AI read-aloud could not finish. The original attempt is retained; the text remains available.",
+};
 export const voiceStateText: Record<VoiceState, string> = {
   connecting: "Preparing the original audio request.",
   dispatching: "The original audio request is saved and processing.",

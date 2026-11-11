@@ -3,7 +3,18 @@ import { EventHelper, StringHelper } from "@bryntum/core-enterprise";
 import AudioManager from "@bryntum/core-enterprise/lib/Core/util/AudioManager.js";
 import AIChatPopup from "@bryntum/core-enterprise/lib/Core/widget/chat/AIChatPopup.js";
 import Promissory from "@bryntum/core-enterprise/lib/Core/helper/util/Promissory.js";
-import { transcriptDraft, voiceLimits } from "@/domain/voice";
+import { finishVoicePlayback, transcriptDraft, voiceLimits, voicePlaybackText, type VoicePlaybackState } from "@/domain/voice";
+
+/** Preserve the installed trigger handler, with a real keyboard-operable button. */
+export function nativeAudioTrigger(label: string) {
+  return { tag: "button", ariaLabel: label, compose(this: { ariaLabel?: string; disabled?: boolean }, config: { tag?: string; type?: string; title?: string; tabIndex?: number; disabled?: boolean; listeners: Record<string, unknown>; "aria-hidden"?: boolean; "aria-label"?: string }) {
+    delete config["aria-hidden"]; delete config.listeners.keypress;
+    config.tag = "button"; config.type = "button"; config.tabIndex = 0; config.disabled = Boolean(this.disabled);
+    config["aria-label"] = config.title = this.ariaLabel || label;
+    // The textarea's Enter keymap must not also send while a trigger has focus.
+    config.listeners.keydown = (event: KeyboardEvent) => { if (event.key === "Enter" || event.key === " ") event.stopPropagation(); };
+  } };
+}
 
 /** Keeps native analysis/recording/playback; guards its asynchronous permission and file-player seams. */
 class ReviewedAudioManager extends AudioManager {
@@ -53,10 +64,11 @@ class ReviewedAudioManager extends AudioManager {
     catch (error) { this.$playbackPromise?.resolve(undefined); this.$playbackPromise = null; this.$audioElement?.pause(); throw error; }
     finally { URL.revokeObjectURL(url); }
   }
-  cancelAll() {
-    this.playbackGeneration++; this.stopRecording(true);
+  cancelPlayback() {
+    this.playbackGeneration++;
     if (this.isPlaying) void this.stopPlayback();
   }
+  cancelAll() { this.stopRecording(true); this.cancelPlayback(); }
   override doDestroy() { this.cancelAll(); void this.context?.close().catch(() => undefined); super.doDestroy(); }
 }
 
@@ -69,10 +81,11 @@ export class ReviewedNativeChatPopup extends AIChatPopup {
   private declare visibilityChanged: (() => void) | undefined;
   private declare receiveDraft: ((event: Event) => void) | undefined;
   private declare discardTranscript: boolean | undefined;
+  private declare playbackState: VoicePlaybackState | undefined;
   override updateAudioController(controller: NonNullable<AIChatPopup["audioController"]>) {
     if (controller && !(controller.$audioManager instanceof ReviewedAudioManager)) { controller.$audioManager.destroy(); controller.$audioManager = new ReviewedAudioManager({ debugMode: false }); }
     super.updateAudioController(controller);
-    controller?.ion({ transcriptionError: () => this.notice("Transcription could not finish. Its saved request remains in the audio record. You can continue by typing."), speakError: () => this.notice("The AI read-aloud could not finish. The original attempt is retained; the text remains available."), noAudioDetected: () => this.notice("No speech was detected. Type your request or choose Record to try another recording."), thisObj: this });
+    controller?.ion({ transcriptionError: () => this.notice("Transcription could not finish. Its saved request remains in the audio record. You can continue by typing."), playbackStart: () => this.showPlayback("playing"), speakError: () => this.showPlayback("failed"), noAudioDetected: () => this.notice("No speech was detected. Type your request or choose Record to try another recording."), thisObj: this });
     this.visibilityChanged ??= () => { if (document.hidden) this.cancelVoice(); };
     this.receiveDraft ??= (event: Event) => {
       const value = (event as CustomEvent<{ production: string; text: string }>).detail;
@@ -86,6 +99,16 @@ export class ReviewedNativeChatPopup extends AIChatPopup {
     if (widget && !this.isDestroyed) widget.html = `<p role="status" aria-live="polite">${StringHelper.encodeHtml(text)}</p>`;
     this.onVoiceSaved?.();
   }
+  private showPlayback(state: VoicePlaybackState) {
+    this.playbackState = state;
+    const control = this.widgetMap.openingStopReadAloud;
+    if (control) control.hidden = !["preparing", "playing"].includes(state);
+    this.notice(voicePlaybackText[state]);
+  }
+  override onBeforeRenderMessage(event: { messageTools: Record<string, Record<string, unknown>> }) {
+    super.onBeforeRenderMessage(event);
+    if (event.messageTools.readAloud) Object.assign(event.messageTools.readAloud, { type: "button", "aria-label": "Read this message aloud with an AI-generated voice", title: "Read this message aloud with an AI-generated voice" });
+  }
   override onControllerTranscription({ text }: { text: string }) {
     if (this.discardTranscript || this.isDestroyed || !this.isVisible || document.hidden) { this.onVoiceSaved?.(); return; }
     this.messageField.value = transcriptDraft(this.messageField.value ?? "", text);
@@ -94,11 +117,11 @@ export class ReviewedNativeChatPopup extends AIChatPopup {
   }
   override onControllerRecordingStart() {
     this.discardTranscript = false;
-    super.onControllerRecordingStart(); this.widgetMap.openingCancelRecording.hidden = false;
+    super.onControllerRecordingStart(); this.widgetMap.openingCancelRecording.hidden = false; this.micButton.ariaLabel = "Finish recording and review transcript";
     this.notice("Recording · up to one minute. Choose the microphone again to finish, or Cancel recording to discard it.");
   }
   override onControllerRecordingStop() {
-    super.onControllerRecordingStop(); this.widgetMap.openingCancelRecording.hidden = true;
+    super.onControllerRecordingStop(); this.widgetMap.openingCancelRecording.hidden = true; this.micButton.ariaLabel = "Record a planning draft";
   }
   override async toggleRecording() {
     if (!this.audioController || this.isDestroyed) return;
@@ -109,13 +132,16 @@ export class ReviewedNativeChatPopup extends AIChatPopup {
   }
   cancelVoice() {
     this.discardTranscript = true;
+    if (["preparing", "playing"].includes(this.playbackState ?? "idle")) this.playbackState = "stopped";
     this.audioController?.stopAll(true); (this.audioController?.$audioManager as ReviewedAudioManager | undefined)?.cancelAll();
+    if (this.widgetMap.openingStopReadAloud) this.widgetMap.openingStopReadAloud.hidden = true;
     this.notice("Audio stopped. Your editable text remains available; no transcript was automatically sent.");
   }
   clearVoiceDraft() { this.discardTranscript = true; this.messageField.clear(); this.onTextFieldInput({ source: this.messageField }); this.notice("Draft cleared. Type a request or choose Record when ready."); }
-  override onControllerSpeakStart() { super.onControllerSpeakStart(); this.notice("Preparing an AI-generated read-aloud. Use Stop to end playback."); }
-  override onControllerSpeakEnd() { super.onControllerSpeakEnd(); this.onVoiceSaved?.(); }
-  override onStopClick() { (this.audioController?.$audioManager as ReviewedAudioManager | undefined)?.cancelAll(); super.onStopClick(); }
+  stopReadAloud() { this.showPlayback("stopped"); (this.audioController?.$audioManager as ReviewedAudioManager | undefined)?.cancelPlayback(); this.audioController?.stopSpeaking(); }
+  override onControllerSpeakStart() { super.onControllerSpeakStart(); this.showPlayback("preparing"); }
+  override onControllerSpeakEnd() { super.onControllerSpeakEnd(); this.showPlayback(finishVoicePlayback(this.playbackState ?? "idle")); }
+  override onStopClick() { if (this.audioController?.isSpeaking || this.audioController?.isWaitingForAudio) this.stopReadAloud(); else super.onStopClick(); }
   override onMessageEnter(...args: unknown[]) { super.onMessageEnter(...args); if (!this.messageField.value) this.notice("Request sent for planning. Any resulting proposal still needs its separate review."); }
   override afterHide(...args: unknown[]) { super.afterHide(...args); this.cancelVoice(); }
   override doDestroy() { if (this.visibilityChanged) document.removeEventListener("visibilitychange", this.visibilityChanged); if (this.receiveDraft) window.removeEventListener("opening-night-voice-draft", this.receiveDraft); this.audioController?.stopAll(true); super.doDestroy(); }
