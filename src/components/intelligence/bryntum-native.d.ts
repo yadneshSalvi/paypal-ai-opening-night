@@ -76,5 +76,6 @@ declare module "@bryntum/core-enterprise/lib/Core/widget/chat/ChatButton.js" {
     constructor(config?: Record<string, unknown>);
     static $name: string; static type: string; static initClass(): void;
     changeChatPanel(config: Record<string, unknown> | null, old: unknown): unknown;
+    open(): Promise<void>;
   }
 }

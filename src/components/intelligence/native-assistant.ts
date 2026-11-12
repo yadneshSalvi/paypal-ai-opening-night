@@ -7,7 +7,7 @@ import { intelligenceToolDefinitions, intelligenceTools, type IntelligenceConver
 import { productionFetch } from "../production-fetch";
 import { nativeAudioTrigger } from "./native-voice";
 import { clearExactPlanningRequest, dispatchPlanningInstruction } from "./planning-dispatch";
-import { ReadablePlanningChatButton, ReadablePlanningChatPopup } from "./planning-chat";
+import { readablePlanningChatPanel, ReadablePlanningChatPopup } from "./planning-chat";
 import { planningChecklistHtml, planningPopupBounds } from "./chat-layout";
 import { safePlanningMessageHtml } from "./safe-message";
 
@@ -128,7 +128,7 @@ export function nativeProductionAssistant(options: NativePlanningOptions) {
     timeout: 15 * 60_000, debugMode: false, showNoConnectionIcon: false, undo: false, redo: false, mentions: false,
     autoReadAloud: false, autoRecord: false, stopAudioOnHide: true, voiceOnly: false, availableApis: [],
     transcribeUrl: `${base}/voice/transcribe?${voiceQuery}`, textToSpeechUrl: `${base}/voice/speak?${voiceQuery}`,
-    chatButton: { type: ReadablePlanningChatButton.type, text: "Plan the next move", cls: "opening-native-assistant", tooltip: "Open the production planning desk", chatPanel: {
+    chatButton: { changeChatPanel: readablePlanningChatPanel, text: "Plan the next move", cls: "opening-native-assistant", tooltip: "Open the production planning desk", chatPanel: {
       type: ReadablePlanningChatPopup.type, voiceProduction: options.tenantId, onVoiceSaved: options.onVoiceSaved,
       showRecordButton: true, showReadAloud: true,
       title: "The next safe move", cls: "opening-native-planner", ...planningPopupBounds({ width: window.visualViewport?.width || window.innerWidth, height: window.visualViewport?.height || window.innerHeight }),

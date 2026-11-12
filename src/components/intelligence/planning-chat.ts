@@ -1,6 +1,6 @@
 "use client";
 import { Widget } from "@bryntum/core-enterprise";
-import ChatButton from "@bryntum/core-enterprise/lib/Core/widget/chat/ChatButton.js";
+import type ChatButton from "@bryntum/core-enterprise/lib/Core/widget/chat/ChatButton.js";
 import { ReviewedNativeChatPopup } from "./native-voice";
 import { planningPopupBounds } from "./chat-layout";
 
@@ -32,13 +32,8 @@ export class ReadablePlanningChatPopup extends ReviewedNativeChatPopup {
 }
 ReadablePlanningChatPopup.initClass();
 
-/** The installed mobile ChatButton substitutes a drawer type; keep the reviewed popup at every width. */
-export class ReadablePlanningChatButton extends ChatButton {
-  static $name = "OpeningNightReadablePlanningButton";
-  static type = "openingnightreadableplanningbutton";
-  override changeChatPanel(config: Record<string, unknown> | null, old: unknown) {
-    const api = Widget as typeof Widget & { reconfigure(old: unknown, config: Record<string, unknown> | null): unknown };
-    return api.reconfigure(old, config ? { ...config, type: ReadablePlanningChatPopup.type, owner: this, showCloseButton: true, draggable: false, autoShow: false, showAnimation: false, hideAnimation: false, scrollAction: "realign", internalListeners: { visibilityChange: "up.onVisibilityChange", unreveal: "up.onVisibilityChange", reveal: "up.onVisibilityChange", ...(config.internalListeners as Record<string, unknown> ?? {}) } } : null);
-  }
+/** AIBase constructs ChatButton directly. Its supported instance changer hook keeps the reviewed popup. */
+export function readablePlanningChatPanel(this: ChatButton, config: Record<string, unknown> | null, old: unknown) {
+  const api = Widget as typeof Widget & { reconfigure(old: unknown, config: Record<string, unknown> | null): unknown };
+  return api.reconfigure(old, config ? { ...config, type: ReadablePlanningChatPopup.type, owner: this, showCloseButton: true, draggable: false, autoShow: false, showAnimation: false, hideAnimation: false, scrollAction: "realign", internalListeners: { visibilityChange: "up.onVisibilityChange", unreveal: "up.onVisibilityChange", reveal: "up.onVisibilityChange", ...(config.internalListeners as Record<string, unknown> ?? {}) } } : null);
 }
-ReadablePlanningChatButton.initClass();

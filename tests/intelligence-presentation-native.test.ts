@@ -3,7 +3,8 @@ import test, { after, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { dom, pause, viewport } from "./intelligence-presentation-dom";
 import type { IntelligenceConversation } from "../src/domain/intelligence";
-const { ReadablePlanningChatButton, ReadablePlanningChatPopup } = await import("../src/components/intelligence/planning-chat"), { ReviewedNativeChatPopup } = await import("../src/components/intelligence/native-voice"), { nativeProductionAssistant, savedNativeMessages } = await import("../src/components/intelligence/native-assistant");
+const { ReadablePlanningChatPopup } = await import("../src/components/intelligence/planning-chat"), { ReviewedNativeChatPopup } = await import("../src/components/intelligence/native-voice"), { nativeProductionAssistant, savedNativeMessages } = await import("../src/components/intelligence/native-assistant");
+const { default: ChatButton } = await import("@bryntum/core-enterprise/lib/Core/widget/chat/ChatButton.js");
 const { planningPopupBounds } = await import("../src/components/intelligence/chat-layout");
 let button: any = null, sends = 0;
 function saved() {
@@ -12,7 +13,7 @@ function saved() {
 }
 async function open(width = 1280, height = 720, initial = saved()) {
   viewport(width, height); const original = JSON.stringify(initial), config = nativeProductionAssistant({ tenantId: "00000000-0000-4000-8000-000000000010", initial, sessionExpiresAt: "2030-01-01T00:00:00.123456Z", sessionAccessId: "b".repeat(64), onRun: () => { sends++; }, onTool: () => { sends++; } }) as any;
-  button = new ReadablePlanningChatButton({ ...config.chatButton, appendTo: document.body }); const popup = button.chatPanel; assert.ok(popup instanceof ReadablePlanningChatPopup); assert.ok(popup instanceof ReviewedNativeChatPopup); button.element.focus(); await popup.showBy({ target: button.element }); await pause(); assert.equal(JSON.stringify(initial), original); return { popup, config, initial, original };
+  button = new ChatButton({ ...config.chatButton, appendTo: document.body }); const popup = button.chatPanel; assert.ok(popup instanceof ReadablePlanningChatPopup); assert.ok(popup instanceof ReviewedNativeChatPopup); button.element.focus(); await button.open(); await pause(); assert.equal(JSON.stringify(initial), original); return { popup, config, initial, original };
 }
 afterEach(async () => { button?.destroy(); button = null; await pause(); Object.defineProperty(dom.window, "visualViewport", { configurable: true, value: undefined }); document.body.replaceChildren(); sessionStorage.clear(); assert.equal(sends, 0); const guard = (globalThis as any).openingModelPresentationGuard; assert.equal(guard.counts.blocked, 0, JSON.stringify(guard.events)); });
 after(() => { console.log(JSON.stringify({ qualification: "installed_native_display_only", transport: (globalThis as any).openingModelPresentationGuard.counts, modelCalls: sends, databaseAccess: false, browserGeometry: "pending_root" })); dom.window.close(); });
@@ -32,3 +33,10 @@ test("visual viewport changes keep finite sizes and exact visible-area offsets",
   visual.width = 320; visual.height = 400; visual.offsetTop = 240; visual.dispatchEvent(new Event("resize")); await pause(); assert.equal(popup.width, 296); assert.equal(popup.height, 376); assert.deepEqual(positions.at(-1), [12, 252]);
 });
 test("long editable drafts keep the native composer bounded and touch controls at44px", async () => { const { popup } = await open(320, 568); popup.messageField.value = "Controlled editable line\n".repeat(100); popup.onTextFieldInput({ source: popup.messageField }); await pause(); assert.equal(popup.messageField.maxHeight, 112); assert.equal(popup.widgetMap.openingClearDraft.hidden, false); assert.equal(getComputedStyle(popup.widgetMap.openingClearDraft.element).minHeight, "44px"); const trigger = popup.element.querySelector(".b-field-trigger"); assert.ok(trigger); assert.equal(getComputedStyle(trigger).minWidth, "44px"); });
+test("real Gantt AIBase constructs and opens the reviewed popup through its hard-coded button path", async () => {
+  viewport(390, 844); const initial = saved(), before = JSON.stringify(initial), config = nativeProductionAssistant({ tenantId: "00000000-0000-4000-8000-000000000010", initial, sessionExpiresAt: "2030-01-01T00:00:00.123456Z", sessionAccessId: "b".repeat(64), onRun: () => { sends++; }, onTool: () => { sends++; } });
+  const { Gantt, ProjectModel } = await import("@bryntum/gantt-enterprise"), project = new ProjectModel({ timeZone: "America/Chicago", startDate: "2026-11-14T16:00:00Z", calendars: [{ id: "all-hours", unspecifiedTimeIsWorking: true }], calendar: "all-hours", tasks: [{ id: "synthetic-call", name: "Controlled native planning call", startDate: "2026-11-14T16:00:00Z", duration: 30, durationUnit: "minute", manuallyScheduled: true }] }); await project.commitAsync();
+  let gantt: any;
+  try { gantt = new Gantt({ appendTo: document.body, width: 390, height: 480, readOnly: true, detectCSSCompatibilityIssues: false, project, columns: [{ type: "name", width: 150 }], features: { ai: config } }); const ai = gantt.features.ai, installedButton = ai.chatButton; assert.equal(installedButton.constructor, ChatButton); assert.ok(installedButton.chatPanel instanceof ReadablePlanningChatPopup); await installedButton.open(); await pause(); assert.equal(ai.chatPanel.height, 760); assert.equal(ai.chatPanel.width, 366); assert.ok(ai.chatPanel.element.querySelector("table")); assert.match(ai.chatPanel.element.textContent, /crew-policy-v1/); assert.equal(JSON.stringify(initial), before); }
+  finally { gantt?.destroy(); if (!project.isDestroyed) project.destroy(); }
+});

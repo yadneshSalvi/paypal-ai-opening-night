@@ -1,6 +1,6 @@
 # Readable saved planning conversations
 
-The native planning popup keeps its reviewed audio and request controls at desktop and mobile widths. Its registered button adapter preserves that popup instead of the installed SDK's narrow-screen drawer substitution. Numeric bounds come from the current visual viewport, including keyboard offsets, and update on resize. Height and width animations are disabled. Escape, close, focus return and destruction remain native behavior.
+The native planning popup keeps its reviewed audio and request controls at desktop and mobile widths. Its button uses the installed Base configuration's instance changer hook to preserve that popup instead of the narrow-screen drawer substitution. AIBase constructs its ChatButton class directly, so changing the button's registered type does not replace that constructor. Numeric bounds come from the current visual viewport, including keyboard offsets, and update on resize. Height and width animations are disabled. Escape, close, focus return and destruction remain native behavior.
 
 The planning checklist opens as a compact summary with its real saved-step and pending counts. Its full goal and every step remain in bounded, expandable detail. Checklist completion is planning evidence, never approval or execution. Voice instructions are expandable; an actual recording, permission or playback notice remains visible. Clear draft appears only when editable text exists. The composer is bounded, and the transcript keeps its own scrolling area. Actual native field triggers use44px target styles.
 
@@ -12,7 +12,7 @@ The separately reviewed voice-history fix reads first and avoids a stale-cleanup
 
 ## Checks
 
-The new deterministic corpus has43 checks:27 formatting/security/bounds,12 installed Enterprise8.0.0 popup/factory/lifecycle and4 mounted React history checks. Another6 saved-history and7 pure voice checks passed. All use explicitly synthetic inputs. The native suite keeps the installed SDK and reviewed popup, with DOM geometry shims; those results are not a real-browser pixel measurement.
+The new deterministic corpus has44 checks:27 formatting/security/bounds,13 installed Enterprise8.0.0 popup/factory/lifecycle and4 mounted React history checks. Another6 saved-history and7 pure voice checks passed. All use explicitly synthetic inputs. The native suite covers the exact AIBase constructor and button-open path inside an actual Gantt feature, plus the reviewed popup. It uses DOM geometry shims with CSS-compatibility fallback disabled; those results are not a real-browser pixel measurement.
 
 Run the self-contained display suite with Node22 and a private, approved Bryntum-license-only configuration:
 
@@ -27,7 +27,7 @@ node --env-file=/absolute/private/engine-only.env \
 
 The test preload refuses hosted execution, clears provider/database credentials and blocks network/database transport. Its only tooling exception suppresses an unconnected attempt to the exact optional parent IPC pipe from the two pinned tsx4.20.6 clients; no socket is opened. That tooling count is kept separate from transport attempts.
 
-The original native desktop/mobile failures remain retained. Subsequent strict test failures also remain retained: the first tooling guard intercepted optional tsx startup IPC; the initial geometry shim omitted the native layout's offset parent; test setup assumed an incorrect config shape and native empty/visible defaults. The added44px check then found the real field-trigger selector defect. These corrections do not change declared outcomes or saved response data.
+The original native desktop/mobile failures remain retained. Subsequent strict test failures also remain retained: the first tooling guard intercepted optional tsx startup IPC; the initial geometry shim omitted the native layout's offset parent; test setup assumed an incorrect config shape and native empty/visible defaults. The added44px check then found the real field-trigger selector defect. A final probe of AIBase's hard-coded constructor found that the initial registered-button approach was invalid; its source, compiled build and failed probe remain retained separately. The corrected instance hook is tested through the actual Gantt AI feature before rebuilding. A separate closure tool initially tried to read a traced directory as a file; directory closure handling was corrected without accepting private or missing inputs. These corrections do not change declared outcomes or saved response data.
 
 Final source, dependency and production-build manifests, offline compiler-IPC audit, original font hashes and privacy closure are recorded with the isolated handoff. The offline build uses only the already approved public font bytes and a nonconnectable build-only module descriptor under strict egress denial. It is not a database/session configuration for a running application.
 
