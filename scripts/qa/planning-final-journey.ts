@@ -14,14 +14,18 @@ import {rentalHarness} from '../../tests/rental-closeout-harness';
 import {createPayoutWireFixture} from './payout-wire-fixture.mjs';
 
 const caseName=process.argv[2];assert.ok(['doors','tour','soundcheck'].includes(caseName??''));
-const origin='http://127.0.0.1:4623',directory=path.resolve('.private/planning-workbench/journeys',`hero-${caseName}-v1`);
+const resume=process.argv[3]==='--resume-v1',originalDirectory=path.resolve('.private/planning-workbench/journeys',`hero-${caseName}-v1`);
+const originalIntent=resume?JSON.parse(fs.readFileSync(path.join(originalDirectory,'intent.json'),'utf8')):null;
+if(resume)assert.equal(JSON.parse(fs.readFileSync(path.join(originalDirectory,'failure.private.json'),'utf8')).code,'PLAN_CONSENT_INTEGRITY');
+const originalSession=resume?JSON.parse(fs.readFileSync(path.join(originalDirectory,'0001-session.private.json'),'utf8')).value:null;
+const origin='http://127.0.0.1:4623',directory=path.resolve('.private/planning-workbench/journeys',`hero-${caseName}-${resume?'v2':'v1'}`);
 fs.mkdirSync(directory,{recursive:true,mode:0o700});
 const put=(name:string,value:unknown)=>fs.writeFileSync(path.join(directory,name),JSON.stringify(value,null,2)+'\n',{flag:'wx',mode:0o600});
 const guard=(globalThis as any).openingNightModelControlledGuard;assert.equal(guard.database,'opening_planning_final');assert.equal(guard.role,'opening_planning_final_app');
-const schema=`planning_hero_${caseName}_${randomUUID().replaceAll('-','').slice(0,12)}`;
-put('intent.json',{at:new Date().toISOString(),caseName,schema,database:guard.database,role:guard.role,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),singleAttempt:true,actualProviders:false,humanParticipation:false,physicalEvidence:false,scope:'Full actual-service journey with installed SDK controlled transport, original per-action receipts and no replacement plan snapshot'});
+const schema=resume?originalIntent.schema:`planning_hero_${caseName}_${randomUUID().replaceAll('-','').slice(0,12)}`;assert.match(schema,/^planning_hero_(doors|tour|soundcheck)_[a-f0-9]{12}$/);
+put('intent.json',{at:new Date().toISOString(),caseName,schema,database:guard.database,role:guard.role,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),singleAttempt:true,resumesDefiniteSourceIntegrityRefusal:resume,originalIntentDigest:originalIntent?digest(originalIntent):null,actualProviders:false,humanParticipation:false,physicalEvidence:false,scope:'Full actual-service journey with installed SDK controlled transport, original per-action receipts and no replacement plan snapshot'});
 const admin=new pg.Pool({connectionString:process.env.DATABASE_URL,max:1});
-await admin.query(`CREATE SCHEMA "${schema}"`);await admin.end();
+if(!resume)await admin.query(`CREATE SCHEMA "${schema}"`);await admin.end();
 const url=new URL(process.env.DATABASE_URL!);url.searchParams.delete('options');
 const pool=new pg.Pool({connectionString:url.href,options:'-c search_path='+schema,max:8});
 assert.equal((await pool.query('SELECT current_schema() AS schema')).rows[0].schema,schema);
@@ -41,6 +45,7 @@ async function makeLibrary(session:any,personId:string){
  return{template,production,tour:view.tours.find(row=>row.id===route.receipt.records[0]!.id)!,mapping:[{callId:'programming-call',taskId:'lx-program'}]};
 }
 async function preparePlan(session:any,show:any){
+ if(resume){assert.deepEqual(await h.store.getActor(session.token),session.actor);assert.equal((await pool.query('SELECT count(*)::int AS n FROM paycore_operations')).rows[0].n,0);const kind=caseName==='doors'?'doors_window':caseName==='tour'?'set_length':'stage_soundcheck',minutes=caseName==='doors'?15:caseName==='tour'?75:20;if(caseName==='tour'){programmer=show.resources.find((row:any)=>row.name==='Controlled Mira').id;const view=await(await import('../../src/server/tour/service')).readTourWorkspace(authority(session));library={production:view.productions[0],tour:view.tours[0],template:view.templates[0]};}const candidate=show.runs.at(-1).candidates.find((row:any)=>row.strategy?.kind===kind&&row.strategy.parameters.minutes===minutes);assert.ok(candidate);journal('original-refusal-continuation',{tenantId:session.actor.tenantId,revision:show.revision,candidateId:candidate.id,candidateDigest:candidate.digest,quoteDeadlines:show.offers.map((row:any)=>({id:row.id,validUntil:row.serviceQuote?.validUntil??null})),financialOperationsBefore:0});return approveCandidate(session,candidate);}
  if(caseName==='tour'){
   const rows=await(await import('../../src/server/engine')).generateCandidates(show);show=(await h.store.transactCommand(session.actor,randomUUID(),show.revision,{type:'controlled-original-engine'},(old:any)=>recordRescueRun(old,session.actor,rows))).show;
   const baseline=rows.find(row=>row.family==='doors'&&row.patch.offerId.includes('brightline'))!;show=await command(session.actor,{type:'approve',candidateId:baseline.id,candidateDigest:baseline.digest,approvals:baseline.approvals.map(row=>row.id)});
@@ -59,6 +64,9 @@ async function preparePlan(session:any,show:any){
  const reviewed=await work(session,{type:'strategies.preview',request:{kinds:[kind],offerIds:[show.offers.find((row:any)=>row.supplierId==='brightline').id],substitutions:[]}});
  await work(session,{type:'strategies.admit',reviewId:reviewed.receipt.result.reviewId,reviewDigest:reviewed.receipt.result.digest,reviewed:true});show=await current(session.actor);
  const candidate=show.runs.at(-1).candidates.find((row:any)=>row.strategy.kind===kind&&row.strategy.parameters.minutes===minutes);assert.ok(candidate);assert.equal(candidate.report.status,'feasible_with_approval');assert.equal(candidate.report.engine.status,'passed');
+ return approveCandidate(session,candidate);
+}
+async function approveCandidate(session:any,candidate:any){
  const consent=await import('../../src/server/plan-consents/service');
  async function producer(value:any){const state=await consent.consentWorkspace(authority(session)),envelope={version:1 as const,commandId:randomUUID(),scope:state.scope,expectedRevision:state.revision,approvalRevision:state.approvalRevision,command:value};journal('producer-consent-intent',envelope);const result=await consent.executeProducerConsent(authority(session),envelope);journal('producer-consent-receipt',result);return result;}
  for(const requirement of candidate.approvals.filter((row:any)=>row.role==='artist_representative')){
@@ -71,7 +79,7 @@ async function preparePlan(session:any,show:any){
 
 try{
  h=await rentalHarness({database:{schema,pool,close:async()=>pool.end()},realEngine:true,appOrigin:origin,preparePlan,onStep:async(name,value)=>journal(name,value)});
- const rental=await h.accepted({replacePlan:false,captureFee:true}),producer=authority(rental),crew=await import('../../src/server/crew/service'),crewPolicy=await import('../../src/domain/crew/policy'),signatures=await import('../../src/server/crew/signatures');
+ const rental=await h.accepted({replacePlan:false,captureFee:true,...(originalSession?{existingSession:originalSession}:{})}),producer=authority(rental),crew=await import('../../src/server/crew/service'),crewPolicy=await import('../../src/domain/crew/policy'),signatures=await import('../../src/server/crew/signatures');
  await command(rental.actor,{type:'adopt_crew'});await command(rental.actor,{type:'publish'});
  const tickets:any[]=[];
  for(let index=0;index<80;index++){

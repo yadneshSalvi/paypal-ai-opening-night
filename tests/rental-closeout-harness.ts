@@ -47,12 +47,15 @@ export async function rentalHarness(options: { database?: Awaited<ReturnType<typ
   const signal = () => AbortSignal.timeout(10000);
   const transport: import("../src/server/supplier-protocol").SupplierTransport = request => rpc.POST(request, { params: Promise.resolve({ supplier: new URL(request.url).pathname.split("/").at(-2)! }) });
   async function command(actor: Actor, value: Command) { const show = await store.getShow(actor.tenantId); return (await store.transactCommand(actor, randomUUID(), show.revision, value, current => applyCommand(current, actor, value))).show; }
-  async function accepted({ replacePlan = true, captureFee = true } = {}) {
-    const session = await store.createSession(undefined, "retained-rental-controlled:" + randomUUID()), actor = session.actor;
+  async function accepted({ replacePlan = true, captureFee = true, existingSession }: {replacePlan?: boolean;captureFee?: boolean;existingSession?:Awaited<ReturnType<typeof store.createSession>>} = {}) {
+    const session = existingSession ?? await store.createSession(undefined, "retained-rental-controlled:" + randomUUID()), actor = session.actor;
     await options.onStep?.("session", session);
-    await options.prepareProduction?.(session);
-    let show = await command(actor, { type: "load_incidents" }); const rfqId = randomUUID(); await options.onStep?.("rfq-intent", { rfqId, tenantId: actor.tenantId, revision: show.revision }); await rfq.beginSupplierRfq(actor, rfqId, show.revision);
+    if (!existingSession) await options.prepareProduction?.(session);
+    let show = await store.getShow(actor.tenantId);
+    if (!existingSession) {
+    show = await command(actor, { type: "load_incidents" }); const rfqId = randomUUID(); await options.onStep?.("rfq-intent", { rfqId, tenantId: actor.tenantId, revision: show.revision }); await rfq.beginSupplierRfq(actor, rfqId, show.revision);
     assert.equal((await rfq.collectSupplierRfq(actor.tenantId, rfqId, signal(), transport)).status, "complete");
+    } else if (!options.preparePlan) throw new Error("Original-session continuation requires an explicit current-plan review callback");
     show = await store.getShow(actor.tenantId);
     if (options.preparePlan) show = await options.preparePlan(session, show);
     else {

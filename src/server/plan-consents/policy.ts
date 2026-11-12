@@ -1,6 +1,7 @@
 import { DomainError, type Candidate, type ShowSnapshot } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
 import { planningDigest, validatePatch } from "@/domain/scheduling";
+import { strategyScopeDigest } from "@/domain/planning-workbench/strategies";
 import type { ConsentReview } from "@/domain/plan-consents";
 
 export function consentFail(code: string, message: string, status = 409): never { throw new DomainError(code,message,status); }
@@ -8,7 +9,9 @@ export function currentConsentCandidate(show: ShowSnapshot, candidateId: string,
   if (expectedRevision !== undefined && expectedRevision !== show.revision) consentFail("PLAN_CONSENT_SOURCE_CHANGED", "The production changed after this review. Keep its history and review a current alternative.");
   const candidate = show.runs.at(-1)?.candidates.find(item => item.id === candidateId);
   if (!candidate || candidate.digest !== candidateDigest || candidate.sourceDigest !== planningDigest(show)) consentFail("PLAN_CONSENT_SOURCE_CHANGED", "This exact candidate is no longer the current production proposal.");
-  if (digest({ patch:candidate.patch, approvals:candidate.approvals.map(item=>({...item,grantedBy:null})), cost:candidate.cost }) !== candidate.digest) consentFail("PLAN_CONSENT_INTEGRITY", "The saved proposal no longer matches its exact content.",503);
+  if (digest({ patch:candidate.patch, approvals:candidate.approvals.map(item=>({...item,grantedBy:null})), cost:candidate.cost, ...(candidate.strategy ? {strategy:candidate.strategy} : {}) }) !== candidate.digest) consentFail("PLAN_CONSENT_INTEGRITY", "The saved proposal no longer matches its exact content.",503);
+  if (candidate.strategy && candidate.strategy.sourceDigest !== strategyScopeDigest(show)) consentFail("PLAN_CONSENT_SOURCE_CHANGED", "The exact strategy clock, roster, next-call or venue constraints changed. Review a current proposal.");
+  if (candidate.strategy && !["feasible","feasible_with_approval"].includes(candidate.report.status)) consentFail("PLAN_CONSENT_NOT_FEASIBLE", "This typed strategy retains hard constraints or an unknown cue policy. Separate consent cannot clear them.");
   const offer=show.offers.find(item=>item.id===candidate.patch.offerId);
   if (!offer) consentFail("PLAN_CONSENT_SOURCE_CHANGED", "The original supplier offer is no longer available for this review.");
   const engine=candidate.report.engine;
