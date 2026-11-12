@@ -213,3 +213,17 @@ export async function applySourceCompilation(authority: IntelligenceAuthority, r
     await db.query("UPDATE on_source_compilations SET applied_at=now(),applied_revision=$1,apply_command_id=$2,updated_at=now() WHERE tenant_id=$3 AND id=$4", [command.expectedRevision + 1, command.commandId, current.tenant_id, current.id]);
   });
 }
+
+/** Narrow admission bridge: exact retained graph, exact current source versions, no model dispatch. */
+export async function compilationForProductionAdmission(db: PoolClient, authority: IntelligenceAuthority, id: string, expectedDigest: string) {
+  await requirePlanningAuthority(db, authority);
+  // Serialize the new immutable library pin with the existing source deletion/replacement protocol.
+  await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [`source-upload:${authority.actor.tenantId}`]);
+  const row = await ownedCompilation(db, authority, id, true), review = reviewOf(row);
+  if (row.state !== "completed" || !review || row.result_digest !== expectedDigest) planningFail("COMPILATION_ADMISSION_CHANGED", "Open the exact completed compiler review before creating a production.");
+  const show = await planningShow(db, authority.actor, true);
+  if (show.revision !== row.base_revision || compilationBaseDigest(show) !== row.base_digest || !await bindingsCurrent(db, row.tenant_id, row.source_bindings, true)) planningFail("COMPILATION_ADMISSION_STALE", "The production or source edition changed. Review a new source compilation before admission.");
+  if (review.citations.some(citation => !citation.valid)) planningFail("COMPILATION_CITATION_INVALID", "A proposed source citation cannot be verified. It cannot enter the reusable library.");
+  const request = openIntelligence<SavedRequest>(row.tenant_id, context(row.id, "request"), row.request_cipher!);
+  return { review, documents: request.documents, binding: { id: row.id, digest: row.result_digest!, baseRevision: row.base_revision, sources: row.source_bindings.map(source => ({ id: source.id, version: source.version, hash: source.hash, extractionDigest: source.extractionDigest })) } };
+}

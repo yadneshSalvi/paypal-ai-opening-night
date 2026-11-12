@@ -1,0 +1,5 @@
+import type { PlannedProduction, ProductionCall } from "@/domain/tour/contracts";
+export interface TourSelection { productionId: string; callId: string | null; resourceId: string | null; pinId: string | null }
+export const canonicalCallId = (productionId: string, callId: string) => `${productionId}:${callId}`;
+export function callResources(production: PlannedProduction, call: ProductionCall) { return call.slotIds.flatMap(slot => { const id = production.assignmentOverrides[call.id]?.[slot] ?? production.allocations[slot]; return id ? [id] : []; }); }
+export function selectCanonical(productions: PlannedProduction[], id: string, resourceId: string | null = null): TourSelection | null { for (const production of productions) { const call = production.calls.find(call => canonicalCallId(production.id, call.id) === id); if (call) { const pin = production.stage.pins.find(pin => pin.callId === call.id || pin.slotId && call.slotIds.includes(pin.slotId)); return { productionId: production.id, callId: call.id, resourceId: resourceId ?? callResources(production, call)[0] ?? null, pinId: pin?.id ?? null }; } } return null; }

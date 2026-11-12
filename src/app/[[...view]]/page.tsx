@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { currentActor, consoleData, isProductionActor } from "@/server/http";
 import { getShow } from "@/server/store";
 import { env } from "@/server/env";
+import { TourConsole } from "@/components/tour/tour-console";
+import { PersonalTourConsole } from "@/components/tour/personal-tour";
 import { ProductionConsole } from "@/components/production-console";
 import { CrewAccess } from "@/components/crew-access";
 import { PaymentReturn } from "@/components/payment-return";
@@ -12,6 +14,8 @@ export const dynamic = "force-dynamic";
 const views = ["show", "plan", "sources", "resources", "calendar", "recovery", "execution", "crew", "box-office", "wrap", "evidence"];
 export default async function Page({ params }: { params: Promise<{ view?: string[] }> }) {
   const { view } = await params; const selected = view?.join("/") || "show";
+  if (selected === "tour") return <TourConsole licenseKey={env.bryntumLicense} />;
+  if (selected === "tour/crew") return <PersonalTourConsole licenseKey={env.bryntumLicense} />;
   if (selected === "crew/access") return <CrewAccess licenseKey={env.bryntumLicense} />;
   if (selected === "payments/return") return <PaymentReturn tenantId={(await currentActor())?.tenantId ?? null} />;
   if (selected === "wallet/return") return <WalletReturn tenantId={(await currentActor())?.tenantId ?? null} />;

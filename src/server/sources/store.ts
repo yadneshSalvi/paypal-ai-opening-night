@@ -118,6 +118,8 @@ export async function deleteSource(authority: IntelligenceAuthority, id: string,
     const row = await sourceRow(db, authority.actor.tenantId, id);
     if (row.content_hash !== expectedHash) planningFail("SOURCE_CHANGED", "This deletion review belongs to different source bytes.");
     if (row.state === "deleted") return sourceView(row);
+    const retained = await db.query("SELECT record_id FROM on_tour_source_bindings WHERE tenant_id=$1 AND source_id=$2 LIMIT 1", [row.tenant_id, row.id]);
+    if (retained.rowCount) planningFail("SOURCE_IN_LIBRARY", "This immutable source supports a retained production or template edition. Upload a replacement; its original evidence remains available.");
     const related = (await db.query<{ id: string; state: string; applied_at: Date | null }>("SELECT id,state,applied_at FROM on_source_compilations WHERE tenant_id=$1 AND source_bindings @> $2::jsonb FOR UPDATE", [row.tenant_id, JSON.stringify([{ id }])])).rows;
     if (related.some(run => run.applied_at)) planningFail("SOURCE_IN_APPROVED_GRAPH", "This source supports an applied production graph. Its evidence is retained with that reviewed graph; upload a replacement version to supersede it.");
     if (related.some(run => ["dispatching", "running", "validating"].includes(run.state))) planningFail("SOURCE_COMPILATION_ACTIVE", "An original compilation is still processing this source. Read its saved outcome before deleting the private input.");

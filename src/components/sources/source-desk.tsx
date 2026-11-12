@@ -34,10 +34,24 @@ export function SourceDesk({ data, onData, licenseKey }: ViewProps) {
     return next;
   }, [tenantId]);
   useEffect(() => {
+    let live = true; const controller = new AbortController();
     mounted.current = true; setLoading(true); setError(null); setRun(null); const heldCompile = stored(compileKey), heldUpload = stored(uploadKey); setPendingCompile(heldCompile); setPendingUpload(heldUpload);
-    void load().then(async next => { const original = next.compilations.find(item => pending(item)) ?? next.compilations[0]; if (original && mounted.current) await readRun(original.id); }).catch(error => { if (mounted.current) setError(error.message); }).finally(() => { if (mounted.current) setLoading(false); });
-    return () => { mounted.current = false; };
-  }, [compileKey, uploadKey, load, readRun]);
+    void load().then(async next => {
+      const query = new URLSearchParams(globalThis.location.search), requested = query.get("document");
+      if (requested && live) {
+        const listed = next.documents.find(value => value.id === requested && value.state !== "deleted");
+        if (listed) {
+          const source = await responseJson<SourceDocument>(await productionFetch(tenantId, `/api/sources?sourceId=${encodeURIComponent(requested)}`, { cache: "no-store", signal: controller.signal }));
+          if (!live) return;
+          const requestedUnit = query.get("unit"), unit = requestedUnit && source.extraction?.units.some(value => value.id === requestedUnit) ? requestedUnit : null;
+          setDocument({ source, ...(unit ? { unit } : {}) }); if (!source.current) setShowHistory(true);
+          if (requestedUnit && !unit) setError("The linked citation unit is not present in this retained source edition. The original document is available for inspection.");
+        } else setError("The linked source is not available in this exact production session.");
+      }
+      const original = next.compilations.find(item => pending(item)) ?? next.compilations[0]; if (original && live) await readRun(original.id);
+    }).catch(error => { if (live) setError(error.message); }).finally(() => { if (live) setLoading(false); });
+    return () => { live = false; controller.abort(); mounted.current = false; };
+  }, [compileKey, uploadKey, load, readRun, tenantId]);
   useEffect(() => {
     if (!run || !["dispatching", "running", "validating"].includes(run.state)) return;
     let active = true, inFlight = false;

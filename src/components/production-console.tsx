@@ -21,6 +21,7 @@ export interface ViewProps { data: ConsoleData; onData: (data: ConsoleData) => v
 const navigation = [
   { id: "show", label: "Show control", icon: Radio, href: "/" },
   { id: "plan", label: "Production plan", icon: ListTree, href: "/plan" },
+  { id: "tour", label: "Library & tour", icon: Layers3, href: "/tour" },
   { id: "sources", label: "Production sources", icon: FileCheck2, href: "/sources" },
   { id: "resources", label: "Crew & equipment", icon: Users, href: "/resources" },
   { id: "calendar", label: "Calendar", icon: CalendarDays, href: "/calendar" },
