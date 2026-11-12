@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowUpRight, AudioLines, CalendarDays, Check, ChevronDown, CircleDot, Clock3, Clapperboard, FileCheck2, LayoutGrid, Layers3, ListTree, Menu, Radio, Search, ShieldAlert, ShieldCheck, Sparkles, Ticket, Users, WalletCards, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, AudioLines, CalendarDays, Check, ChevronDown, CircleDot, Clock3, Clapperboard, FileCheck2, LayoutGrid, Layers3, ListTree, Menu, PackageCheck, Radio, Search, ShieldAlert, ShieldCheck, Sparkles, Ticket, Users, WalletCards, X } from "lucide-react";
 import type { ConsoleData } from "@/domain/contracts";
 import type { Command } from "@/domain/commands";
 import { countdown, formatMoney, localTime } from "@/domain/time";
@@ -16,6 +16,7 @@ import { PlanView, ResourcesView, CalendarView } from "./planning-views";
 import { ExecutionView, CrewView, BoxOfficeView, WrapView, EvidenceView } from "./operations-views";
 import { SourceDesk } from "./sources/source-desk";
 import { DisruptionDesk } from "./disruptions/disruption-desk";
+import { RentalCloseoutDesk } from "./rental-closeout/rental-desk";
 
 export type RunCommand = (command: Command) => Promise<ConsoleData | null>;
 export interface ViewProps { data: ConsoleData; onData: (data: ConsoleData) => void; run: RunCommand; busy: string | null; licenseKey: string }
@@ -31,6 +32,7 @@ const navigation = [
   { id: "execution", label: "Execution", icon: Clapperboard, href: "/execution" },
   { id: "crew", label: "Crew readback", icon: AudioLines, href: "/crew" },
   { id: "box-office", label: "Box office", icon: Ticket, href: "/box-office" },
+  { id: "rentals", label: "Rental closeout", icon: PackageCheck, href: "/rentals" },
   { id: "wrap", label: "Wrap desk", icon: WalletCards, href: "/wrap" },
   { id: "evidence", label: "Evidence room", icon: FileCheck2, href: "/evidence" },
 ];
@@ -88,7 +90,7 @@ export function ProductionConsole({ initial, view, licenseKey }: { initial: Cons
       {data.controlledQa && <div className="crew-warning qa-fixture-notice"><strong>{data.controlledPlanningQa ? "ISOLATED PLANNING QA · CONTROLLED AI INPUTS" : "ISOLATED CREW QA · CONTROLLED READINESS INPUTS"}</strong><p>{data.controlledPlanningQa ? "Fictional production sources and controlled response fixtures exercise the real planning services. Model and payment providers are disabled. No financial or crew completion is established by this rehearsal." : "Supplier confirmation, accepted delivery, rental authorization and fee capture, and 38 refund outcomes are controlled test inputs. Provider actions are disabled. Actual provider qualification remains separate."}</p></div>}
       {error && <div className="notification error" role="alert"><span>{error}</span><button className="icon-button" aria-label="Dismiss error" onClick={() => setError(null)}><X size={16} /></button></div>}
       {notice && <div className="notification" role="status"><Check size={16} /><span>{notice}</span><button className="icon-button" aria-label="Dismiss notification" onClick={() => setNotice(null)}><X size={16} /></button></div>}
-      {view === "show" && <ShowControl {...props} />}{view === "recovery" && <RecoveryView {...props} />}{view === "disruptions" && <DisruptionDesk {...props} />}{view === "plan" && <PlanView {...props} />}{view === "sources" && <SourceDesk {...props} />}{view === "resources" && <ResourcesView {...props} />}{view === "calendar" && <CalendarView {...props} />}{view === "execution" && <ExecutionView {...props} />}{view === "crew" && <CrewView {...props} />}{view === "box-office" && <BoxOfficeView {...props} />}{view === "wrap" && <WrapView {...props} />}{view === "evidence" && <EvidenceView {...props} />}
+      {view === "show" && <ShowControl {...props} />}{view === "recovery" && <RecoveryView {...props} />}{view === "disruptions" && <DisruptionDesk {...props} />}{view === "plan" && <PlanView {...props} />}{view === "sources" && <SourceDesk {...props} />}{view === "resources" && <ResourcesView {...props} />}{view === "calendar" && <CalendarView {...props} />}{view === "execution" && <ExecutionView {...props} />}{view === "crew" && <CrewView {...props} />}{view === "box-office" && <BoxOfficeView {...props} />}{view === "rentals" && <RentalCloseoutDesk {...props} />}{view === "wrap" && <WrapView {...props} />}{view === "evidence" && <EvidenceView {...props} />}
     </main><footer className="workspace-footer"><span>OPENING NIGHT<span className="amber-text">.</span> <span className="footer-dash">/</span> All the way to the last cue.</span><Link href="/evidence">Fictional production · evidence-led rehearsal <ArrowUpRight size={12} /></Link></footer></div>
     <RehearsalManager data={data} open={rehearsals && !sessionChanged} onClose={() => setRehearsals(false)} onCurrentLabel={setRehearsalLabel} fallbackFocus={() => matchMedia("(max-width: 760px)").matches ? navigationTrigger.current : rehearsalTrigger.current} />
     {sessionChanged && <Modal title="Another rehearsal is selected." dismissible={false} onClose={() => undefined}><div className="rehearsal-session-change"><Layers3 size={32} /><p>This tab still shows the previous production. Its actions are paused so they cannot change the rehearsal now selected in this browser.</p><p>All plans, receipts and approved work stay with their original shows.</p><button autoFocus type="button" className="button primary" onClick={() => location.reload()}>Open the selected rehearsal <ArrowRight size={16} /></button></div></Modal>}

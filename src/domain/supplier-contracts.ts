@@ -1,5 +1,6 @@
 import type { ShowSnapshot, SupplierOffer } from "./contracts";
 import { selectedInterruption } from "./disruptions";
+import type { RentalReturnRef } from "./rental-closeout";
 
 export const supplierIds = ["brightline", "northside", "sister"] as const;
 export type SupplierId = typeof supplierIds[number];
@@ -22,6 +23,7 @@ export interface RentalExecution {
   captureIntentId: string | null; compensationIntentId: string | null; cancellationApprovedAt: string | null;
   deliveryId: string | null; deliveryVersion: number; acceptedAt: string | null; lastCode: string | null;
   rejectedReturn?: { deliveryId: string; deliveryVersion: number; recordedAt: string; actorId: string; detail: string };
+  returnInspection?: RentalReturnRef;
   source: "controlled_fixture";
 }
 export interface DeliveryReceipt {

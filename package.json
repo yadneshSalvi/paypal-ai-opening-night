@@ -35,7 +35,13 @@
     "qa:disruptions:prepare": "node --import ./scripts/qa/disruption-disabled-providers.mjs --import tsx scripts/qa/disruption-prepare-native.ts",
     "qa:disruptions:http": "node --import ./scripts/qa/disruption-disabled-providers.mjs --import tsx scripts/qa/disruption-http-qa.ts",
     "qa:disruptions:serve": "node scripts/qa/disruption-review-server.mjs",
-    "qa:disruptions:full": "node scripts/qa/disruption-regressions.mjs"
+    "qa:disruptions:full": "node scripts/qa/disruption-regressions.mjs",
+    "test:rental-closeout": "node --import ./scripts/qa/rental-closeout-native-test-runtime.mjs --import tsx --test --test-concurrency=3 tests/rental-closeout-recovery.test.ts tests/rental-closeout-ui.test.tsx tests/rental-closeout-native-faults.test.ts",
+    "test:rental-closeout:payments": "node --import ./scripts/qa/rental-closeout-controlled-wire-runtime.mjs --import tsx --test tests/rental-closeout-store.test.ts tests/rental-closeout-api.test.ts",
+    "qa:rental-closeout:prepare": "node --import ./scripts/qa/rental-closeout-controlled-wire-runtime.mjs --import tsx scripts/qa/rental-closeout-prepare-native.ts",
+    "qa:rental-closeout:http": "node --import ./scripts/qa/rental-closeout-disabled-providers.mjs --import tsx scripts/qa/rental-closeout-http-qa.ts",
+    "qa:rental-closeout:serve": "node scripts/qa/rental-closeout-review-server.mjs",
+    "qa:rental-closeout:full": "node scripts/qa/rental-closeout-regressions.mjs"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",

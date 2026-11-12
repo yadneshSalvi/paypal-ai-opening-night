@@ -19,6 +19,7 @@ import { ProductionConsole } from "../src/components/production-console";
 import { createFixture } from "../src/domain/fixture";
 import { allReadiness } from "../src/domain/readiness";
 import { disruptionPreviewFixture, disruptionResultFixture, disruptionUiFixture } from "./disruptions-ui-fixture";
+import { rentalCardFixture, rentalResultFixture, rentalUiFixture } from "./rental-closeout-ui-fixture";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://127.0.0.1:4564/disruptions", pretendToBeVisual: true });
 for (const name of ["window", "self", "document", "HTMLElement", "HTMLButtonElement", "HTMLInputElement", "HTMLTextAreaElement", "HTMLSelectElement", "HTMLDialogElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "FocusEvent", "StorageEvent", "location", "history", "localStorage", "sessionStorage", "MutationObserver"] as const) Object.defineProperty(globalThis, name, { configurable: true, value: dom.window[name] });
@@ -58,6 +59,7 @@ async function mount(workspace: DisruptionWorkspace, route?: Route, node?: React
     const call: Call = { path, method: init?.method ?? "GET", body: init?.body ? JSON.parse(String(init.body)) : null, headers: new Headers(init?.headers), credentials: init?.credentials }; calls.push(call);
     const routed = route?.(call); if (routed) return routed;
     if (path === "/api/disruptions") return Response.json(workspace);
+    if (path === "/api/rental-closeout") return Response.json(rentalUiFixture({ tenantId: workspace.tenantId, actorId: workspace.actorId, sessionFingerprint: workspace.sessionFingerprint, access: workspace.access === "supplier" ? "supplier" : "producer", supplierId: workspace.access === "supplier" ? "brightline" : null, rentals: [] }));
     if (path === "/api/disruptions/preview") return Response.json(disruptionPreviewFixture(workspace, call.body.mode, call.body.admissionRefundMinor));
     if (path === "/api/show") { headerReads++; return Response.json(consoleData(workspace)); }
     throw new Error(`Unexpected controlled request ${call.method} ${path}`);
@@ -82,19 +84,22 @@ test("the supplier portal can report its own availability before a current renta
   assert.ok(calls.filter(call => call.path === "/api/disruptions").every(call => call.headers.get("authorization") === "Bearer controlled-original-supplier"));
 });
 
-test("an accepted rental disrupted after capture uses ordinary attributed return, preserving its fee", async () => {
+test("an accepted rental disrupted after capture uses a separate exact original-unit return, preserving its fee", async () => {
   const workspace = disruptionUiFixture({ access: "supplier", actorId: "supplier:brightline:controlled", assessments: [], assessmentIsCurrent: false, obligations: [], rentalCommitments: [] }); workspace.offers = workspace.offers.slice(0, 1);
   const show = createFixture(workspace.tenantId), projection = { revision: workspace.revision, planVersion: 3, planDigest: "e".repeat(64), show: show.title, venue: show.venue, clock: workspace.clock, offer: show.offers[0], facts: [], payments: [{ purpose: "rental_fee", status: "succeeded" }], protocol: 2, operatingMode: "cancel_show", execution: { id: workspace.offers[0]!.executionId, state: "needs_attention", deliveryAt: show.offers[0]!.deliveryAt, acceptedAt: "2026-11-12T04:00:00Z", lastCode: "SUPPLIER_DISRUPTION" } };
+  const rental = rentalUiFixture({ tenantId: workspace.tenantId, actorId: workspace.actorId, sessionFingerprint: workspace.sessionFingerprint, access: "supplier", supplierId: "brightline", rentals: [rentalCardFixture({ id: workspace.offers[0]!.executionId! })] });
   history.replaceState(null, "", "/supplier/access#controlled-original-supplier");
-  await mount(workspace, call => call.path === "/api/supplier" ? Response.json(call.method === "POST" ? { ...projection, execution: { ...projection.execution, state: "returned" } } : projection) : undefined, <SupplierAccess />);
-  await until(() => container.textContent?.includes("Record the controlled return.") ?? false);
-  assert.doesNotMatch(container.textContent!, /Receive the rejected console|Condition rejected/); assert.match(container.textContent!, /Rental fee captured/); assert.match(container.textContent!, /original accepted fee stays recorded/);
-  await fill(field("Controlled return condition note"), "Controlled UI fixture: inspect the original accepted unit on return; preserve its captured fee.");
-  await click(field("I reviewed these current terms"));
-  await until(() => !button("Record controlled undamaged return").disabled);
-  await click(button("Record controlled undamaged return"));
-  await until(() => calls.some(call => call.method === "POST" && call.path === "/api/supplier"));
-  assert.equal(calls.find(call => call.method === "POST" && call.path === "/api/supplier")!.body.fact, "return_accepted");
+  await mount(workspace, call => call.path === "/api/supplier" ? Response.json(projection) : call.path === "/api/rental-closeout" ? Response.json(rental) : call.path === "/api/rental-closeout/commands" ? rentalResultFixture(rental, call.body).then(value => Response.json(value)) : undefined, <SupplierAccess />);
+  await until(() => Boolean(container.querySelector(".rental-card")) && !button("Inspect original return").disabled);
+  assert.doesNotMatch(container.textContent!, /Receive the rejected console|Condition rejected|Record controlled undamaged return/); assert.match(container.textContent!, /Rental fee captured/);
+  await click(button("Inspect original return")); const dialog = dialogs().at(-1)!;
+  await click(field("Returned undamaged", dialog));
+  await fill(field("Inspection and condition note", dialog), "Controlled UI fixture: inspect the original accepted unit on return; preserve its captured fee.");
+  await click(field("I reviewed this original unit", dialog));
+  await until(() => !button("Record return inspection", dialog).disabled); await click(button("Record return inspection", dialog));
+  await until(() => calls.some(call => call.method === "POST" && call.path === "/api/rental-closeout/commands"));
+  assert.equal(calls.find(call => call.method === "POST" && call.path === "/api/rental-closeout/commands")!.body.command.type, "record_return");
+  assert.ok(!calls.some(call => call.method === "POST" && call.path === "/api/supplier"));
 });
 
 test("the desk separates attributed evidence, bounded search and an explicit operating decision", async () => {

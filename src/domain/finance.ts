@@ -13,6 +13,10 @@ export function uniqueActual(show: ShowSnapshot): FinancialEvidence[] {
 export function currentActual(show: ShowSnapshot): FinancialEvidence[] {
   const actual = uniqueActual(show);
   return actual.filter(entry => {
+    if (entry.rentalCloseoutId) {
+      const check = show.rentalCloseoutChecks?.find(value => value.grantId === entry.rentalCloseoutId && value.intentId === entry.operationId);
+      if (!check?.verified || check.residualMinor !== entry.amountMinor) return false;
+    }
     if (entry.kind === "authorization" && actual.some(item => item.kind === "void" && item.purpose === "rental_cancel" && item.parentId === entry.providerResourceId)) return false;
     const seller = ["rental", "deposit", "rental_cancel"].includes(entry.purpose) ? "brightline" : "venue";
     const kind = entry.kind === "void" ? "authorization" : entry.kind;

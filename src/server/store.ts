@@ -17,6 +17,8 @@ import { payoutsMigration } from "./migrations/payouts-v10";
 import { wrapMigration } from "./migrations/wrap-v11";
 import { tourMigration } from "./migrations/tour-v12";
 import { disruptionsMigration } from "./migrations/disruptions-v13";
+import { rentalCloseoutMigration } from "./migrations/rental-closeout-v14";
+import { rentalCloseoutReadsMigration } from "./migrations/rental-closeout-reads-v15";
 import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -102,6 +104,10 @@ export async function migrate() {
       if (!tour.rowCount) { await client.query(tourMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(12)"); }
       const disruptions = await client.query("SELECT version FROM on_schema_migrations WHERE version=13");
       if (!disruptions.rowCount) { await client.query(disruptionsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(13)"); }
+      const closeout = await client.query("SELECT version FROM on_schema_migrations WHERE version=14");
+      if (!closeout.rowCount) { await client.query(rentalCloseoutMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(14)"); }
+      const closeoutReads = await client.query("SELECT version FROM on_schema_migrations WHERE version=15");
+      if (!closeoutReads.rowCount) { await client.query(rentalCloseoutReadsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(15)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }

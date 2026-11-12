@@ -23,6 +23,8 @@ export async function POST(request: Request) {
     if (before.commercialProtocol === 2) {
       const execution = currentRentalExecution(before);
       if (!execution || execution.supplierId !== supplierScope(actor) || before.approvedPlan?.digest !== input.planDigest) throw new DomainError("STALE_SUPPLIER_OFFER", "The current owned supplier execution changed.");
+      // The enrolled service replays any saved legacy return receipt. Every new
+      // accepted return is directed to the exact original-unit closeout review.
       await callSupplierService(execution.supplierId, { version: 1, requestId: input.idempotencyKey, tenantId: actor.tenantId, actorId: actor.id, action: input.fact === "supplier_confirmed" ? { type: "confirm", executionId: execution.id, expectedRevision: input.expectedRevision } : { type: input.fact === "rejected_returned" ? "return_rejected" : "return", executionId: execution.id, expectedRevision: input.expectedRevision, detail: input.detail } }, AbortSignal.timeout(20000));
       return Response.json(await projection(await getShow(actor.tenantId), actor), { headers: { "Cache-Control": "private, no-store" } });
     }

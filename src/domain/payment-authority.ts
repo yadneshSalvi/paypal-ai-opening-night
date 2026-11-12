@@ -4,6 +4,7 @@ import { digest } from "./hash";
 import { atVenue, compareInstants } from "./time";
 import { currentRentalExecution, deliveryIsAccepted, supplierIsConfirmed } from "./supplier-contracts";
 import { hasCurrentSupportOnlyPlan, selectedInterruption } from "./disruptions";
+import { rentalExecutionDigest } from "./rental-closeout";
 
 export type PaymentSeller = "venue" | "brightline";
 export type PaymentPurpose = "rental_order" | "rental_authorize" | "rental_fee" | "rental_release" | "rental_cancel" | "ticket_order" | "ticket_capture" | "vip_refund" | "event_refund";
@@ -21,6 +22,9 @@ export interface PaymentIntent {
   approvedSessionHash?: string;
   approvedActor?: Actor;
   refundAllocation?: { admissionMinor: number; perkMinor: number };
+  rentalCloseoutId?: string;
+  rentalReturnId?: string;
+  rentalExecutionDigest?: string;
 }
 export interface PublicPayment {
   id: string; purpose: PaymentPurpose; seller: PaymentSeller; amountMinor: number; planVersion: number;
@@ -44,10 +48,14 @@ export function assertPaymentAuthority(show: ShowSnapshot, intent: PaymentIntent
   const action = command.action;
   if (action.kind === "create_order" && action.savedWallet && (!intent.cohortId || intent.purpose !== "ticket_order" || intent.seller !== "venue")) throw new DomainError("BOUNDED_WALLET_CONSENT_REQUIRED", "A saved wallet may be used only by its exact approved ticket cohort.", 403);
   if (intent.cohortId && !["ticket_order", "ticket_capture"].includes(intent.purpose) || intent.remedyBatchId && intent.purpose !== "vip_refund") throw new DomainError("COMMERCE_PURPOSE_MISMATCH", "This instruction has a different commercial purpose.", 403);
+  if (intent.rentalCloseoutId && intent.purpose !== "rental_release") throw new DomainError("RENTAL_CLOSEOUT_PURPOSE", "This approval closes only its original remaining authorization.", 403);
   if (action.money.currency !== "USD" || !Number.isSafeInteger(action.money.minor) || action.money.minor <= 0) throw new DomainError("PAYMENT_AMOUNT", "Payment authority requires an exact positive USD amount.", 400);
   const resourceIds = ["orderId" in action ? action.orderId : null, "authorizationId" in action ? action.authorizationId : null, "captureId" in action ? action.captureId : null].filter((id): id is string => Boolean(id));
   if (resourceIds.some(id => !intent.resourceIds.includes(id))) throw new DomainError("PAYMENT_RESOURCE", "The payment resource is not owned by this execution.", 403);
-  if (intent.purpose === "rental_cancel") {
+  if (intent.purpose === "rental_release" && intent.rentalCloseoutId) {
+    const execution = show.rentalExecutions?.find(value => value.id === intent.executionId);
+    if (!execution || execution.state !== "returned" || !execution.acceptedAt || !execution.returnInspection || execution.returnInspection.condition !== "undamaged" || execution.returnInspection.id !== intent.rentalReturnId || rentalExecutionDigest(execution) !== intent.rentalExecutionDigest || execution.planVersion !== intent.planVersion || execution.planDigest !== intent.planDigest || execution.paymentRootId !== intent.parentId || execution.supplierId !== "brightline" || intent.seller !== "brightline" || intent.feeMinor !== execution.feeMinor || intent.depositMinor !== execution.depositMinor || !intent.approvedSessionHash || !intent.approvedActor?.roles.includes("producer") || action.kind !== "void_authorization" || action.authorizationId !== execution.authorizationId || action.money.minor !== execution.feeMinor + execution.depositMinor || !show.financialEvidence.some(value => value.kind === "capture" && value.purpose === "rental" && value.source === "live_sandbox" && value.verified && value.status === "completed" && value.operationId === execution.captureIntentId && value.planVersion === execution.planVersion && value.parentId === execution.authorizationId && value.amountMinor === execution.feeMinor)) throw new DomainError("ORIGINAL_RENTAL_CLOSEOUT_REQUIRED", "This closure must match the original accepted unit, current undamaged-return review and exact producer approval.", 403);
+  } else if (intent.purpose === "rental_cancel") {
     const execution = show.rentalExecutions?.find(item => item.id === intent.executionId);
     if (!execution || execution.state !== "compensation_pending" || !execution.cancellationApprovedAt || execution.planVersion !== intent.planVersion || execution.planDigest !== intent.planDigest || intent.seller !== "brightline" || execution.supplierId !== "brightline" || intent.parentId !== execution.paymentRootId || execution.authorizationId === null || action.kind !== "void_authorization" || action.authorizationId !== execution.authorizationId || action.money.minor !== execution.feeMinor + execution.depositMinor || intent.feeMinor !== execution.feeMinor || intent.depositMinor !== execution.depositMinor || show.financialEvidence.some(item => item.kind === "capture" && item.source === "live_sandbox" && item.verified && item.parentId === execution.authorizationId)) throw new DomainError("UNCAPTURED_CANCELLATION_REQUIRED", "Cancellation requires explicit approval for this exact uncaptured rental authorization.", 403);
   } else if (intent.purpose.startsWith("rental_")) {
@@ -61,6 +69,7 @@ export function assertPaymentAuthority(show: ShowSnapshot, intent: PaymentIntent
       if (["rental_order", "rental_authorize"].includes(intent.purpose) && (!["held", "awaiting_payment", "authorized"].includes(execution.state) || Date.parse(execution.holdExpiresAt) <= Date.now())) throw new DomainError("SUPPLIER_HOLD_EXPIRED", "The real-time equipment hold is no longer available. Reconfirm capacity before another payment instruction.");
       if (intent.purpose === "rental_fee" && (!execution.captureConsentAt || !deliveryIsAccepted(show) || !supplierIsConfirmed(show))) throw new DomainError("SIGNED_ACCEPTANCE_REQUIRED", "The exact signed handoff and assigned department acceptance are required before capturing the approved fee.");
       if (intent.purpose === "rental_release" && execution.state !== "returned") throw new DomainError("SIGNED_RETURN_REQUIRED", "The owned supplier execution needs its authenticated return inspection.");
+      if (intent.purpose === "rental_release") throw new DomainError("RENTAL_CLOSEOUT_REVIEW_REQUIRED", "Review this exact original return and remaining hold in the rental closeout desk.", 403);
     }
     const expectedKind = { rental_order: "create_order", rental_authorize: "authorize_order", rental_fee: "capture_authorization", rental_release: "void_authorization" }[intent.purpose as "rental_order" | "rental_authorize" | "rental_fee" | "rental_release"];
     const expectedAmount = intent.purpose === "rental_fee" ? offer.feeMinor : plan.commercialCapMinor;
@@ -116,6 +125,6 @@ export function evidenceForOperation(intent: PaymentIntent, operation: PaymentOp
     if (["ticket_order", "ticket_capture"].includes(intent.purpose) && resource.kind === "capture" && ["COMPLETED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(resource.status) && amount === action.money.minor && receipt.resources.some(r => r.kind === "order" && r.id === parentId)) { kind = "capture"; purpose = "ticket"; }
     if (intent.purpose === "vip_refund" && resource.kind === "refund" && resource.status === "COMPLETED" && amount === 1500 && action.kind === "refund_capture" && parentId === action.captureId) { kind = "refund"; purpose = "vip_remedy"; }
     if (intent.purpose === "event_refund" && intent.refundAllocation && intent.eventDecisionId && resource.kind === "refund" && resource.status === "COMPLETED" && amount === action.money.minor && amount === intent.refundAllocation.admissionMinor + intent.refundAllocation.perkMinor && action.kind === "refund_capture" && parentId === action.captureId) { kind = "refund"; purpose = "event_remedy"; }
-    return kind ? [{ id: "provider:" + intent.seller + ":" + kind + ":" + resource.id, operationId: operation.command.operationId, kind, purpose, status: "completed" as const, amountMinor: amount, currency: "USD" as const, source: "live_sandbox" as const, verified: true, planVersion: intent.planVersion, providerResourceId: resource.id, parentId, ticketId: intent.ticketId, recordedAt: receipt.observedAt, ...(purpose === "event_remedy" ? { allocation: { decisionId: intent.eventDecisionId!, ...intent.refundAllocation! } } : {}) }] : [];
+    return kind ? [{ id: "provider:" + intent.seller + ":" + kind + ":" + resource.id, operationId: operation.command.operationId, kind, purpose, status: "completed" as const, amountMinor: amount, currency: "USD" as const, source: "live_sandbox" as const, verified: true, planVersion: intent.planVersion, providerResourceId: resource.id, parentId, ticketId: intent.ticketId, recordedAt: receipt.observedAt, ...(purpose === "event_remedy" ? { allocation: { decisionId: intent.eventDecisionId!, ...intent.refundAllocation! } } : {}), ...(intent.rentalCloseoutId ? { rentalCloseoutId: intent.rentalCloseoutId } : {}) }] : [];
   });
 }

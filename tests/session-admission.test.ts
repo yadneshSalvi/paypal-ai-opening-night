@@ -108,7 +108,7 @@ test("a fresh app process skips applied schema DDL while a session admission tra
   try {
     await client.query("BEGIN");
     await claimSessionAdmission(client, scope);
-    const child = "await import('./src/server/env.ts'); const {Pool}=await import('pg'); const schema=process.env.OPENING_TEST_SCHEMA; if(!/^on_test_[a-f0-9]{32}$/.test(schema??''))throw new Error('Disposable test schema required'); globalThis.openingNightPool=new Pool({connectionString:process.env.DATABASE_URL,options:'-c search_path='+schema}); const {migrate,pool}=await import('./src/server/store.ts'); await migrate(); await pool.end(); console.log('migration-ready');";
+    const child = "await import('./src/server/env.ts'); const {Pool}=await import('pg'); const schema=process.env.OPENING_TEST_SCHEMA; if(!/^on_test_[a-f0-9]{32}$/.test(schema??''))throw new Error('Disposable test schema required'); const url=new URL(process.env.DATABASE_URL); url.searchParams.delete('options'); globalThis.openingNightPool=new Pool({connectionString:url.href,options:'-c search_path='+schema}); if((await globalThis.openingNightPool.query('SELECT current_schema() AS name')).rows[0]?.name!==schema)throw new Error('Owned migration schema mismatch'); const {migrate,pool}=await import('./src/server/store.ts'); await migrate(); await pool.end(); console.log('migration-ready');";
     const result = await promisify(execFile)(process.execPath, ["--import", "tsx", "--input-type=module", "-e", child], { cwd: process.cwd(), timeout: 6000, env: { ...process.env, OPENING_TEST_SCHEMA: database.schema } });
     assert.equal(result.stdout.trim(), "migration-ready");
   } finally { await client.query("ROLLBACK"); client.release(); }

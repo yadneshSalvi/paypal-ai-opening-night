@@ -88,11 +88,9 @@ async function changeReservation(client: PoolClient, show: ShowSnapshot, actor: 
     execution.state = "returned_unaccepted"; execution.lastCode = null;
     await client.query("UPDATE on_resource_holds SET status='returned',updated_at=now() WHERE id=$1", [execution.id]);
   } else if (action.type === "return") {
-    currentSupplierPlan(show, execution, true);
-    if (execution.state !== "accepted" && !disruptedReturn || !execution.acceptedAt || !show.cancellationDecision && compareInstants(show.clock, atVenue("23:30")) < 0) throw new DomainError("RETURN_NOT_READY", "An accepted delivery and the scheduled return step, or an approved program cancellation, are required for this attributed inspection.");
-    execution.state = "returned";
-    appendSupplierFact(show, actor, "return_accepted", "Authenticated controlled supplier return inspection: " + action.detail);
-    await client.query("UPDATE on_resource_holds SET status='returned',updated_at=now() WHERE id=$1", [execution.id]);
+    // Already-committed RPC receipts are replayed before this transition. New
+    // accepted returns need the exact capability and original-unit inspection.
+    throw new DomainError("ORIGINAL_RETURN_REVIEW_REQUIRED", "Use the original rental closeout desk to record this unit's return condition under your current exact supplier access.", 403);
   } else {
     currentSupplierPlan(show, execution);
     const authorization = currentActual(show).find(item => item.kind === "authorization" && item.purpose === "rental" && item.providerResourceId === execution.authorizationId && item.planVersion === execution.planVersion && item.amountMinor === execution.feeMinor + execution.depositMinor);

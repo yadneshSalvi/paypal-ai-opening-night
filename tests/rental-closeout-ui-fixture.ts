@@ -1,0 +1,26 @@
+/** Browser-state fixtures only. They establish no physical return or actual provider result. */
+import { randomUUID } from "node:crypto";
+import type { CloseoutEnvelope, CloseoutPreview, CloseoutResult, CloseoutWorkspace, RentalCloseoutCard } from "../src/server/rental-closeout/contracts";
+import { closeoutRequestDigest } from "../src/components/rental-closeout/recovery";
+export function rentalCardFixture(overrides: Partial<RentalCloseoutCard> = {}): RentalCloseoutCard {
+  return { id: randomUUID(), executionDigest: "e".repeat(64), supplierId: "brightline", supplier: "Brightline Rentals", unitId: "LX-204", originalPlanVersion: 2, currentPlan: false, state: "accepted", acceptedAt: new Date(Date.now() - 3600000).toISOString(), originalDeliveryAt: "2026-11-14T17:15:00-06:00", feeMinor: 48000, depositMinor: 30000, verifiedFeeMinor: 48000, historicalFeeMinor: 48000, releasedMinor: 0, historicalReleasedMinor: 0, feeReference: "••••FEE123", authorizationReference: "••••AUTH12", originalFeeIntentId: randomUUID(), originalFeeState: "succeeded", canRecordReturn: true, returnBlocker: null, latestReturnId: null, returns: [], canReviewClosure: false, closureBlockers: ["An undamaged original return is required before a producer hold review."], closeout: null, evidenceBoundary: "controlled_fixture", ...overrides };
+}
+export function rentalUiFixture(overrides: Partial<CloseoutWorkspace> = {}): CloseoutWorkspace {
+  return { tenantId: randomUUID(), actorId: "producer:controlled-retained-rental", sessionFingerprint: "a".repeat(64), expiresAt: new Date(Date.now() + 86400000).toISOString(), revision: 20, clock: "2026-11-14T17:15:00-06:00", access: "producer", supplierId: null, providerActionsEnabled: false, rentals: [rentalCardFixture({ canRecordReturn: false })], history: [], ...overrides };
+}
+export function returnedRentalFixture(overrides: Partial<RentalCloseoutCard> = {}): RentalCloseoutCard {
+  const id = randomUUID(), now = new Date().toISOString();
+  return rentalCardFixture({ state: "returned", canRecordReturn: false, latestReturnId: id, canReviewClosure: true, closureBlockers: [], returns: [{ id, previousId: null, condition: "undamaged", detail: "Controlled original-unit observation for UI review; no actual handoff is claimed.", actorLabel: "Brightline Rentals · test", observedAt: now, recordedAt: now, fixtureAt: "2026-11-14T17:15:00-06:00", planVersion: 2, source: "attributed_controlled_supplier", current: true }], ...overrides });
+}
+export function rentalPreviewFixture(workspace: CloseoutWorkspace, executionId = workspace.rentals[0]!.id): CloseoutPreview {
+  const rental = workspace.rentals.find(value => value.id === executionId)!;
+  return { executionId, executionDigest: rental.executionDigest, revision: workspace.revision, digest: "b".repeat(64), ready: rental.canReviewClosure, supplier: rental.supplier, unitId: rental.unitId, originalPlanVersion: rental.originalPlanVersion, currentPlan: rental.currentPlan, authorizationMinor: rental.feeMinor + rental.depositMinor, acceptedFeeMinor: rental.feeMinor, residualMinor: rental.depositMinor, orderReference: "••••ORDER1", authorizationReference: rental.authorizationReference, captureReference: rental.feeReference, returnId: rental.latestReturnId, returnCondition: rental.returns.at(-1)?.condition ?? null, blockers: rental.closureBlockers, existingIntentId: rental.closeout?.intentId ?? null, providerActionsEnabled: workspace.providerActionsEnabled };
+}
+export async function rentalResultFixture(source: CloseoutWorkspace, envelope: CloseoutEnvelope): Promise<CloseoutResult> {
+  const workspace = structuredClone(source), command = envelope.command, now = new Date().toISOString(), recordId = randomUUID(); workspace.revision++;
+  const rental = workspace.rentals.find(value => "executionId" in command ? value.id === command.executionId : value.closeout?.id === command.grantId);
+  if (rental && command.type === "record_return") { rental.latestReturnId = recordId; rental.state = "returned"; rental.returns.forEach(item => item.current = false); rental.returns.push({ id: recordId, previousId: command.previousInspectionId, condition: command.condition, detail: command.detail, actorLabel: "Brightline Rentals · controlled", observedAt: command.observedAt, recordedAt: now, fixtureAt: workspace.clock, planVersion: rental.originalPlanVersion, source: "attributed_controlled_supplier", current: true }); rental.canReviewClosure = workspace.access === "producer" && command.condition === "undamaged"; rental.closureBlockers = command.condition === "undamaged" ? [] : ["Reported damage needs separate resolution."]; }
+  if (rental && command.type === "approve_closeout") { rental.canReviewClosure = false; rental.closeout = { id: recordId, intentId: randomUUID(), state: "prepared", code: "PROVIDER_QA_DISABLED", approvedAt: now, expiresAt: workspace.expiresAt, stoppedAt: null, historical: false, canRetry: false, canStop: true, sessionMatches: true, residualMinor: rental.depositMinor }; }
+  const receipt = { commandId: envelope.commandId, action: command.type, requestDigest: await closeoutRequestDigest(envelope), recordId, revision: workspace.revision, at: now, message: "Controlled original instruction saved; actual provider and physical proof remain separate." };
+  workspace.history.unshift(receipt); return { workspace, receipt, replayed: false };
+}

@@ -11,6 +11,12 @@ import { WalletProviderError } from "./wallet-provider";
 const paymentPayload = z.object({ intentId: z.uuid() }).strict();
 const webhookPayload = z.object({ seller: z.enum(["venue", "brightline"]), eventId: z.string().min(3).max(128), rootIntentId: z.uuid() }).strict();
 export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResult> {
+  if (job.kind === "rental_closeout_dispatch" || job.kind === "rental_closeout_readback" || job.kind === "rental_closeout_retry") {
+    const schema = job.kind === "rental_closeout_retry" ? z.object({ intentId: z.uuid(), grantId: z.uuid() }).strict() : z.object({ intentId: z.uuid() }).strict();
+    const parsed = schema.safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./rental-closeout/worker")).runRentalCloseoutWork(job.tenantId, parsed.data.intentId, signal, job.kind === "rental_closeout_dispatch" ? "dispatch" : job.kind === "rental_closeout_retry" ? "retry" : "readback", "grantId" in parsed.data && typeof parsed.data.grantId === "string" ? parsed.data.grantId : undefined);
+  }
   if (job.kind === "event_remedy") {
     const parsed = z.object({ decisionId: z.uuid(), itemId: z.uuid() }).strict().safeParse(job.payload);
     if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };

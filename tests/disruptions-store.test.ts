@@ -273,9 +273,15 @@ test("an accepted captured rental survives show cancellation and can close its o
   const desk = await service.readDisruptionWorkspace(value.authority); assert.equal(desk.rentalCommitments[0]!.canCancel, false); assert.equal(desk.rentalCommitments[0]!.capturedMinor, 48000);
   await assert.rejects(() => act(value.authority, { type: "cancel_rental", executionId: value.executionId, detail: "Attempting to void a captured rental is not an uncaptured cancellation.", confirmed: true }), /unfulfilled or supplier-returned rejected rental/);
   await decision(value); show = await store.getShow(value.actor.tenantId);
-  await value.protocol.callSupplierService("brightline", { version: 1, requestId: randomUUID(), tenantId: value.actor.tenantId, actorId: value.supplierAuthority.actor.id, action: { type: "return", executionId: value.executionId, expectedRevision: show.revision, detail: "Controlled supplier return inspection after cancellation: original unit returned without damage." } }, signal(), value.transport);
+  await assert.rejects(() => value.protocol.callSupplierService("brightline", { version: 1, requestId: randomUUID(), tenantId: value.actor.tenantId, actorId: value.supplierAuthority.actor.id, action: { type: "return", executionId: value.executionId, expectedRevision: show.revision, detail: "The superseded return RPC cannot bypass an exact original-unit inspection." } }, signal(), value.transport), /original rental closeout desk/);
+  const closeout = await import("../src/server/rental-closeout/service"), closeoutWorker = await import("../src/server/rental-closeout/worker");
+  const rental = (await closeout.readCloseoutWorkspace(value.supplierAuthority)).rentals[0]!;
+  await closeout.executeCloseoutCommand(value.supplierAuthority, { commandId: randomUUID(), expectedRevision: show.revision, command: { type: "record_return", executionId: value.executionId, executionDigest: rental.executionDigest, previousInspectionId: null, observedAt: new Date().toISOString(), condition: "undamaged", detail: "Controlled supplier return after cancellation; no actual physical handoff is claimed.", confirmed: true } });
   show = await store.getShow(value.actor.tenantId);
-  const released = await paymentService.handlePayment(value.actor, { type: "release_rental_hold", intentId: value.root.id, expectedRevision: show.revision }, "http://localhost:4105"); assert.equal(released.status, "succeeded");
+  const preview = await closeout.previewRentalCloseout(value.authority, value.executionId, show.revision); assert.equal(preview.ready, true);
+  const approved = await closeout.executeCloseoutCommand(value.authority, { commandId: randomUUID(), expectedRevision: show.revision, command: { type: "approve_closeout", executionId: value.executionId, previewDigest: preview.digest, detail: "Producer reviewed original return and captured fee separately from cancellation.", confirmed: true } });
+  const originalIntent = approved.workspace.rentals[0]!.closeout!.intentId!;
+  assert.equal((await closeoutWorker.runRentalCloseoutWork(value.actor.tenantId, originalIntent, signal(), "dispatch")).status, "complete");
   const final = await store.getShow(value.actor.tenantId), finance = financialSummary(final);
   assert.equal(finance.rentalCapturedMinor, 48000); assert.equal(finance.releasedMinor, 30000); assert.equal(finance.cancelledAuthorizationMinor, 0); assert.equal(finance.remainingRentalAuthorizationMinor, 0);
   assert.equal(final.financialEvidence.filter(entry => entry.kind === "refund" && entry.purpose === "rental").length, 0);

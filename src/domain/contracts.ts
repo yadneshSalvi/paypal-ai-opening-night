@@ -2,6 +2,7 @@
 import type { RentalExecution, SupplierId, SupplierQuoteRef } from "./supplier-contracts";
 import type { CrewAdoption, CrewAttestation, CrewCueExecution, CrewNextCall, CrewProductionOverview } from "./crew/contracts";
 import type { CancellationDecision, DisruptionAssessment, SupplierDisruption } from "./disruptions";
+import type { RentalCloseoutCheck } from "./rental-closeout";
 export type Provenance = "sample" | "modelled" | "live_sandbox" | "replay";
 export type Role = "producer" | "stage_manager" | "department_lead" | "foh" | "crew" | "supplier" | "driver";
 export type Lane = "lighting" | "audio" | "stage" | "people" | "commercial" | "house";
@@ -73,6 +74,7 @@ export interface FinancialEvidence {
   amountMinor: number; currency: "USD"; source: Provenance; verified: boolean; planVersion: number;
   providerResourceId: string; parentId: string | null; ticketId: string | null; recordedAt: string;
   allocation?: { decisionId: string; admissionMinor: number; perkMinor: number };
+  rentalCloseoutId?: string;
 }
 export interface FinancialObservation {
   id: string; seller: "venue" | "brightline"; kind: "order" | "authorization" | "capture" | "refund" | "payout";
@@ -108,6 +110,7 @@ export interface ShowSnapshot {
   financialChecks?: FinancialCheck[];
   commercialProtocol?: 2;
   rentalExecutions?: RentalExecution[];
+  rentalCloseoutChecks?: RentalCloseoutCheck[];
   crewProtocol?: 1;
   crewAdoption?: CrewAdoption;
   crewAttestations?: CrewAttestation[];

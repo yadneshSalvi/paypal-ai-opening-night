@@ -79,6 +79,8 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
       const captures = current.filter(resource => resource.kind === "capture" && !["FAILED", "CANCELLED", "DECLINED", "DENIED"].includes(resource.status));
       const fee = await pool.query("SELECT 1 FROM on_payment_intents WHERE tenant_id=$1 AND document->>'parentId'=$2 AND document->>'purpose'='rental_fee' LIMIT 1", [intent.tenantId, intent.parentId]);
       if (fee.rowCount || captures.length || !auth?.money || !direct?.money || auth.status !== "CREATED" || direct.status !== "CREATED" || auth.money.currency !== "USD" || direct.money.currency !== "USD" || auth.money.minor !== action.money.minor || direct.money.minor !== action.money.minor) throw new DomainError("UNCAPTURED_CANCELLATION_UNPROVEN", "The exact original authorization is not proved fully uncaptured. Cancellation remains pending for review.");
+    } else if (intent.rentalCloseoutId) {
+      await verifyOriginalCloseout(intent, signal, "before", current);
     } else {
       const captures = current.filter(resource => resource.kind === "capture" && ["COMPLETED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(resource.status));
       if (!auth?.money || auth.status !== "PARTIALLY_CAPTURED" || captures.length !== 1 || captures[0]?.money?.minor !== intent.feeMinor || auth.money.minor - intent.feeMinor !== intent.depositMinor) throw new DomainError("HOLD_CLOSURE_PENDING", "The remaining damage hold could not be verified. Closure stays pending.");
@@ -86,7 +88,8 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
   }
   const action = command.action;
   const commerce = await authorizeCommerceIntent(intent, show, signal);
-  if (intent.purpose === "event_refund") await (await import("./disruptions/payment-policy")).authorizeEventRemedy(intent);
+  if (intent.rentalCloseoutId) await (await import("./rental-closeout/payment-policy")).authorizeRentalCloseout(intent);
+  else if (intent.purpose === "event_refund") await (await import("./disruptions/payment-policy")).authorizeEventRemedy(intent);
   else if (intent.approvedSessionHash) {
     // Exact-session approvals must still hold after asynchronous provider readback.
     // This also covers the reviewed cancellation of an original uncaptured rental.
@@ -102,7 +105,22 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
   } catch (error) { if (error instanceof DomainError) throw new PaymentError(error.code, error.message, error.status); throw error; }
 }
 async function coreFor(intent: PaymentIntent, signal: AbortSignal) { return new PaymentCore({ store: await paymentStore(), provider: providers[intent.seller], policy: { authorize: command => authorizePayment(command, signal) } }); }
+async function verifyOriginalCloseout(intent: PaymentIntent, signal: AbortSignal, phase: "before" | "after", originalOrder?: ProviderResource[]) {
+  const { grant } = await (await import("./rental-closeout/store")).readCloseoutGrant(intent.tenantId, intent.rentalCloseoutId!);
+  const provider = providers[intent.seller], observations = await import("./rental-closeout/observations");
+  const started = phase === "after" ? await observations.beginCloseoutRead() : null;
+  let order: ProviderResource[] | null = null, authorization: ProviderResource[] | null = null, capture: ProviderResource[] | null = null;
+  try {
+    [order, authorization, capture] = await Promise.all([originalOrder ? Promise.resolve(originalOrder) : provider.read("order", grant.orderId, signal), provider.read("authorization", grant.authorizationId, signal), provider.read("capture", grant.captureId, signal)]);
+    await (await import("./rental-closeout/payment-policy")).assertCloseoutProviderState(intent, order, authorization, capture, phase);
+  } catch (error) {
+    if (started) await observations.recordCloseoutRead(intent, started, { verified: false, code: error instanceof DomainError ? error.code : "RENTAL_HOLD_READ_UNAVAILABLE", order, authorization, capture });
+    throw error;
+  }
+  if (started) await observations.recordCloseoutRead(intent, started, { verified: true, code: null, order, authorization, capture });
+}
 async function importConfirmedOperation(intent: PaymentIntent, operation: PaymentOperation, signal: AbortSignal) {
+  if (intent.rentalCloseoutId && operation.status === "succeeded") await verifyOriginalCloseout(intent, signal, "after");
   if (!needsParentReadback(operation)) return importPaymentOperation(intent, operation);
   const action = operation.command.action; const orderId = "orderId" in action ? action.orderId : undefined;
   if (!orderId || !intent.resourceIds.includes(orderId)) throw new PaymentError("PARENT_READBACK_REQUIRED", "The exact owned order is required before importing this reconciled receipt.", 503);
@@ -110,7 +128,7 @@ async function importConfirmedOperation(intent: PaymentIntent, operation: Paymen
   return importPaymentOperation(intent, operation, { orderId, observedAt: new Date().toISOString(), resources });
 }
 async function withIntentDispatch<T>(intent: PaymentIntent, work: () => Promise<T>): Promise<T> {
-  const scope = intent.cohortId ? "cohort:" + intent.tenantId + ":" + intent.cohortId : intent.remedyBatchId ? "remedy:" + intent.tenantId + ":" + intent.remedyBatchId : intent.eventDecisionId ? "event-remedy:" + intent.tenantId + ":" + intent.eventDecisionId : null;
+  const scope = intent.cohortId ? "cohort:" + intent.tenantId + ":" + intent.cohortId : intent.remedyBatchId ? "remedy:" + intent.tenantId + ":" + intent.remedyBatchId : intent.eventDecisionId ? "event-remedy:" + intent.tenantId + ":" + intent.eventDecisionId : intent.rentalCloseoutId ? "rental-closeout:" + intent.tenantId + ":" + intent.executionId : null;
   if (!scope) return work();
   return withCommerceLock(scope, async () => {
     try { const result = await work(); await recordCommerceOutcome(intent, await (await paymentStore()).get(intent.command.scope, intent.id)); return result; }
@@ -141,7 +159,15 @@ async function prepare(actor: Actor, spec: IntentSpec): Promise<PaymentIntent> {
 /** A durable intent is the authority. An event is only a read-only wakeup. */
 export async function reconcilePaymentIntent(tenantId: string, intentId: string, signal: AbortSignal, allowUndispatched = false): Promise<JobResult> {
   const intent = await readIntent(tenantId, intentId);
+  if (intent.rentalCloseoutId && env.controlledQa) return { status: "needs_attention", code: "PROVIDER_QA_DISABLED" };
   return withIntentDispatch(intent, () => reconcileIntentUnlocked(tenantId, intentId, signal, allowUndispatched));
+}
+/** Only the exact-session closeout command can enqueue this explicit original retry. */
+export async function retryOriginalRentalCloseout(tenantId: string, intentId: string) {
+  const intent = await readIntent(tenantId, intentId);
+  if (!intent.rentalCloseoutId) throw new DomainError("RENTAL_CLOSEOUT_REQUIRED", "This retry needs its original retained-rental review.", 403);
+  if (env.controlledQa) throw new DomainError("PROVIDER_QA_DISABLED", "Actual provider work is disabled in this review runtime.", 503);
+  return executeIntent(intent, true);
 }
 async function reconcileIntentUnlocked(tenantId: string, intentId: string, signal: AbortSignal, allowUndispatched: boolean): Promise<JobResult> {
   const intent = await readIntent(tenantId, intentId); const store = await paymentStore();
@@ -211,6 +237,7 @@ export async function handlePayment(actor: Actor, request: PaymentRequest, rawOr
     intent = await prepare(actor, { purpose: "vip_refund", semanticKey: "ticket:" + request.ticketId + ":vip-remedy", seller: "venue", parentId: root.id, ticketId: request.ticketId, tier: "vip", resourceIds: [capture.id, order.id], expectedRevision: request.expectedRevision, build: () => ({ kind: "refund_capture", money: { currency: "USD", minor: 1500 }, captureId: capture.id, orderId: order.id }) });
   } else {
     intent = await readIntent(actor.tenantId, request.intentId); currentRole(actor, intent.purpose);
+    if (intent.rentalCloseoutId && request.type === "retry_refused") throw new DomainError("EXACT_RENTAL_RETRY_REQUIRED", "Review an explicit retry through this original hold-closure approval and its exact session.", 403);
     if (request.type === "reconcile") { const signal = AbortSignal.timeout(55000); const core = await coreFor(intent, signal); const operation = await core.reconcile(intent.command.scope, intent.command.operationId, signal); await importConfirmedOperation(intent, operation, signal); return operation; }
     return executeIntent(intent, true);
   }

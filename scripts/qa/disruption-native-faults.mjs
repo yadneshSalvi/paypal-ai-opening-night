@@ -2,11 +2,11 @@
 import { createHash } from 'node:crypto';
 import { gunzipSync, inflateSync, brotliDecompressSync } from 'node:zlib';
 export const disruptionFaultModes = ['drop-before-dispatch', 'drop-committed-response', 'hold-receipt-lookup'];
-export function createDisruptionNativeFaults({ producerToken, actorId, tenantId, cookieName, record }) {
+export function createDisruptionNativeFaults({ producerToken, actorId, tenantId, cookieName, record, commandPath = '/api/disruptions/commands', commandIdKey = 'idempotencyKey', modes = disruptionFaultModes }) {
   let armed = null, held = null;
   const state = () => ({ armed: armed?.mode ?? null, held: held?.mode ?? null });
   async function arm(mode) {
-    if (!disruptionFaultModes.includes(mode)) throw new Error('Choose a named bounded transport fault');
+    if (!modes.includes(mode)) throw new Error('Choose a named bounded transport fault');
     if (armed || held) throw new Error('Finish or cancel the current fault first');
     await record({ event: 'armed', mode }); armed = { mode };
   }
@@ -27,19 +27,20 @@ export function createDisruptionNativeFaults({ producerToken, actorId, tenantId,
     const cookie = String(req.headers.cookie ?? '').split(';').map(value => value.trim()).find(value => value.startsWith(cookieName + '='));
     if (cookie !== `${cookieName}=${producerToken}`) return false;
     const path = String(req.url ?? ''), mode = armed.mode;
-    const command = req.method === 'POST' && path === '/api/disruptions/commands';
-    const lookup = req.method === 'GET' && /^\/api\/disruptions\/commands\/[a-f0-9-]{36}$/.test(path);
-    if (!(command && mode.startsWith('drop-') || lookup && mode === 'hold-receipt-lookup')) return false;
+    const command = req.method === 'POST' && path === commandPath;
+    const lookup = req.method === 'GET' && path.startsWith(commandPath + '/') && /^[a-f0-9-]{36}$/.test(path.slice(commandPath.length + 1));
+    if (!(command && (mode.startsWith('drop-') || mode === 'respond-503-before-dispatch') || lookup && mode === 'hold-receipt-lookup')) return false;
     armed = null;
     if (mode === 'hold-receipt-lookup') {
       held = { req, res, next, mode, path };
       await record({ event: 'held-before-dispatch', mode, path }); return true;
     }
-    if (mode === 'drop-before-dispatch') {
+    if (mode === 'drop-before-dispatch' || mode === 'respond-503-before-dispatch') {
       const chunks = []; let bytes = 0;
       for await (const chunk of req) { bytes += chunk.length; if (bytes > 30000) throw new Error('Bounded command body required'); chunks.push(chunk); }
       const body = Buffer.concat(chunks), value = JSON.parse(body.toString('utf8'));
-      await record({ event: 'dropped-before-dispatch', mode, commandId: value.idempotencyKey, bodySha256: createHash('sha256').update(body).digest('hex'), dispatched: false });
+      await record({ event: mode === 'drop-before-dispatch' ? 'dropped-before-dispatch' : 'responded-503-before-dispatch', mode, commandId: value[commandIdKey], bodySha256: createHash('sha256').update(body).digest('hex'), dispatched: false });
+      if (mode === 'respond-503-before-dispatch') { res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store' }); res.end(JSON.stringify({ code: 'CONTROLLED_RESPONSE_BEFORE_DISPATCH', error: 'This controlled response ended before dispatch. Check the original receipt before explicitly retrying the same retained instruction.' })); return true; }
       res.destroy(); return true;
     }
     // Withhold only a real successful response for this exact fixture actor and production.

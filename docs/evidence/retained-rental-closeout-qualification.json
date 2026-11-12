@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "sourceBase": "9e3ae0898c7f967102240671ede2f6c5b58ed757",
+  "unit": "original accepted rental return and remaining-hold closeout",
+  "controlledQualification": true,
+  "actualProviderQualification": false,
+  "actualProviderRequests": 0,
+  "actualPhysicalHandoffs": 0,
+  "nativeAcceptance": "pending root review",
+  "buildId": "o7Cr323V9UGyFuLifSgZb",
+  "typecheck": "passed",
+  "packageVerification": "passed",
+  "fullRegression": {
+    "passed": 719,
+    "failed": 0,
+    "product": 556,
+    "controlledSdk": 163
+  },
+  "faultHarness": {
+    "passed": 7,
+    "failed": 0,
+    "overlapWithFullRegression": 3,
+    "additionalDistinctCases": 4
+  },
+  "http": {
+    "intendedContractsCovered": 12,
+    "initialPassedChecks": 9,
+    "continuationPassedChecks": 5,
+    "originalCommandsRepeated": 0,
+    "workerDispatchRepeated": 0,
+    "nativeBaselinePreserved": true,
+    "originalFailureRetained": "Test expected diagnostic in worker summary; corrected assertion reads closeout record",
+    "auditOnlyFailedContinuations": 2,
+    "auditOnlyFailedContinuationCommands": 0
+  },
+  "nativeFixture": {
+    "fixedExpiry": "2026-11-19T06:15:07.102Z",
+    "personas": 5,
+    "seededReturnObservations": 0,
+    "seededCloseoutApprovals": 0,
+    "originalPlanVersion": 3,
+    "currentPlanPosition": 4,
+    "authorizationMinor": 78000,
+    "acceptedFeeMinor": 48000,
+    "remainingHoldMinor": 30000,
+    "releasedMinor": 0,
+    "initialPlan": "real RFQ and Bryntum services with explicit producer approval",
+    "laterPlan": "supplied historical snapshot; fresh late-day replacement acceptance remains pending"
+  },
+  "preservation": {
+    "priorControlledTenantsUnchanged": 24,
+    "nativeActorAndExpiryRowsUnchanged": 5,
+    "originalInvoiceAndOtherProjectDatabasesTouched": false
+  },
+  "migrations": [
+    14,
+    15
+  ],
+  "coreVersion": "0.2.4",
+  "nextGate": "N1b: authenticated fresh late-day supplier terms, real RFQ/engine review and separate producer approval; no supplied-snapshot substitution."
+}

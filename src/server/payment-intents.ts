@@ -24,6 +24,7 @@ export interface IntentSpec {
   eventDecisionId?: string; eventRemedyItemId?: string; approvedSessionHash?: string;
   refundAllocation?: { admissionMinor: number; perkMinor: number }; approvalExpiresAt?: string;
   eventApprovedPlan?: { version: number; digest: string | null };
+  rentalCloseoutId?: string; rentalReturnId?: string; rentalExecutionDigest?: string;
   approvedExecution?: RentalExecution; runAfter?: Date; build: (id: string, show: ShowSnapshot) => PaymentAction;
 }
 /** The caller owns the show lock and saves any execution snapshot before committing. No provider call occurs here. */
@@ -36,11 +37,12 @@ export async function preparePaymentIntent(client: PoolClient, actor: Actor, spe
     if (intent.purpose !== spec.purpose || intent.seller !== spec.seller || intent.ticketId !== (spec.ticketId ?? null) || intent.tier !== (spec.tier ?? null) || (intent.executionId ?? null) !== (execution?.id ?? null)) throw new DomainError("PAYMENT_IDENTITY_CONFLICT", "This payment identity already has different approved terms.");
     if (spec.cohortId && intent.cohortId !== spec.cohortId || spec.remedyBatchId && intent.remedyBatchId && intent.remedyBatchId !== spec.remedyBatchId) throw new DomainError("PAYMENT_IDENTITY_CONFLICT", "This ticket instruction belongs to a different recorded approval.");
     if (intent.eventDecisionId !== spec.eventDecisionId || intent.eventRemedyItemId !== spec.eventRemedyItemId || intent.approvedSessionHash !== spec.approvedSessionHash || digest(intent.refundAllocation ?? null) !== digest(spec.refundAllocation ?? null)) throw new DomainError("PAYMENT_IDENTITY_CONFLICT", "This payment identity belongs to a different exact session or cancellation allocation.");
+    if (intent.rentalCloseoutId !== spec.rentalCloseoutId || intent.rentalReturnId !== spec.rentalReturnId || intent.rentalExecutionDigest !== spec.rentalExecutionDigest) throw new DomainError("PAYMENT_IDENTITY_CONFLICT", "The original hold closure already has a different retained approval.");
     return { intent, created: false };
   }
   if (spec.expectedRevision !== undefined && show.revision !== spec.expectedRevision) throw new DomainError("STALE_REVISION", "The production changed. Refresh before reviewing this commitment.");
   const id = randomUUID(); const now = new Date().toISOString(); const action = spec.build(id, show);
-  const rental = spec.purpose.startsWith("rental_") && spec.purpose !== "rental_cancel" ? approvedRental(show) : null;
+  const rental = spec.purpose.startsWith("rental_") && spec.purpose !== "rental_cancel" && !spec.rentalCloseoutId ? approvedRental(show) : null;
   const cohort = spec.cohortId ? await readCohort(actor.tenantId, spec.cohortId, client, true) : null;
   const remedyBatch = spec.remedyBatchId ? await readRemedyBatch(actor.tenantId, spec.remedyBatchId, client, true) : null;
   const planVersion = spec.purpose === "event_refund" && spec.eventApprovedPlan ? spec.eventApprovedPlan.version : execution?.planVersion ?? show.planVersion; const planDigest = spec.purpose === "event_refund" && spec.eventApprovedPlan ? spec.eventApprovedPlan.digest : execution?.planDigest ?? show.approvedPlan?.digest ?? null;
@@ -55,8 +57,9 @@ export async function preparePaymentIntent(client: PoolClient, actor: Actor, spe
     ...(cohort ? { cohortId: cohort.id } : {}), ...(remedyBatch && spec.remedyItemId ? { remedyBatchId: remedyBatch.id, remedyItemId: spec.remedyItemId } : {}),
     ...(spec.approvedSessionHash ? { approvedSessionHash: spec.approvedSessionHash, approvedActor: actor } : {}),
     ...(spec.eventDecisionId && spec.eventRemedyItemId && spec.refundAllocation ? { eventDecisionId: spec.eventDecisionId, eventRemedyItemId: spec.eventRemedyItemId, refundAllocation: spec.refundAllocation } : {}),
+    ...(spec.rentalCloseoutId ? { rentalCloseoutId: spec.rentalCloseoutId, rentalReturnId: spec.rentalReturnId, rentalExecutionDigest: spec.rentalExecutionDigest } : {}),
     command: { scope: { tenantId: actor.tenantId, projectId: "opening-night:" + spec.seller }, operationId: id, businessKey: spec.semanticKey, intentId: id, providerRequestId: randomUUID(), payloadHash: payloadHash(action), action,
-      approval: { id: "approval:" + id, version: planVersion, digest: digest({ actorId: actor.id, action, planDigest, ...(execution ? { executionId: execution.id, captureConsentAt: execution.captureConsentAt } : {}), ...(cohort ? { cohortId: cohort.id, cohortDigest: cohort.digest } : {}), ...(remedyBatch ? { remedyBatchId: remedyBatch.id, remedyDigest: remedyBatch.digest } : {}), ...(spec.eventDecisionId ? { decisionId: spec.eventDecisionId, itemId: spec.eventRemedyItemId, allocation: spec.refundAllocation, sessionHash: spec.approvedSessionHash } : {}) }), expiresAt: new Date(expiry).toISOString() } },
+      approval: { id: "approval:" + id, version: planVersion, digest: digest({ actorId: actor.id, action, planDigest, ...(execution ? { executionId: execution.id, captureConsentAt: execution.captureConsentAt } : {}), ...(cohort ? { cohortId: cohort.id, cohortDigest: cohort.digest } : {}), ...(remedyBatch ? { remedyBatchId: remedyBatch.id, remedyDigest: remedyBatch.digest } : {}), ...(spec.eventDecisionId ? { decisionId: spec.eventDecisionId, itemId: spec.eventRemedyItemId, allocation: spec.refundAllocation, sessionHash: spec.approvedSessionHash } : {}), ...(spec.rentalCloseoutId ? { closeoutId: spec.rentalCloseoutId, returnId: spec.rentalReturnId, executionDigest: spec.rentalExecutionDigest, sessionHash: spec.approvedSessionHash } : {}) }), expiresAt: new Date(expiry).toISOString() } },
   };
   assertPaymentAuthority(show, intent);
   if (spec.parentId && spec.purpose.startsWith("rental_")) {
@@ -70,7 +73,8 @@ export async function preparePaymentIntent(client: PoolClient, actor: Actor, spe
   await client.query("INSERT INTO on_payment_intents(id,tenant_id,seller,semantic_key,document) VALUES($1,$2,$3,$4,$5)", [id, actor.tenantId, spec.seller, spec.semanticKey, intent]);
   await linkCommerceIntent(client, intent);
   if (intent.purpose === "event_refund") await (await import("./disruptions/payment-policy")).linkEventRemedyIntent(client, show, intent);
-  await enqueueJob(client, { tenantId: actor.tenantId, kind: "payment_reconcile", semanticKey: id, payload: { intentId: id }, runAfter: spec.runAfter ?? new Date(Date.now() + 65000) });
+  if (intent.rentalCloseoutId) await (await import("./rental-closeout/payment-policy")).linkRentalCloseoutIntent(client, show, intent);
+  await enqueueJob(client, { tenantId: actor.tenantId, kind: intent.rentalCloseoutId ? "rental_closeout_dispatch" : "payment_reconcile", semanticKey: id, payload: { intentId: id }, runAfter: spec.runAfter ?? new Date(Date.now() + 65000) });
   if (execution) {
     if (spec.purpose === "rental_order") { execution.paymentRootId = intent.id; execution.state = "awaiting_payment"; }
     if (spec.purpose === "rental_fee") execution.captureIntentId = intent.id;
