@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "qualifiedAt": "2026-11-12T17:37:43.969Z",
+  "kind": "hosted-final-planning-release",
+  "sourceCommit": "c7dc3a0f9adb951a87e6ee75e1dd716c4a3f7983",
+  "deploymentId": "dpl_GG1Zz1cevtZAbMZLyieA3FvNjmnG",
+  "canonicalUrl": "https://paypal-ai-opening-night.vercel.app",
+  "scope": "Reviewed production inputs, linked native presentation and illustrative stage layout, enrolled supplier administration, six bounded typed recovery families, exact tour assignment admission, source-bound learning and current-assignee delivery authority.",
+  "sourceArchiveSha256": "c3bf37d8fa52ecc4ac91d5f35cbc2118d062654eae767b45b4ae69ee248419f7",
+  "releaseInputs": {
+    "immutableGitArchive": true,
+    "sourceFiles": 1211,
+    "regularUploadFiles": 1169,
+    "rootPrivateValuesCompared": 14,
+    "rootPrivateValueMatches": 0,
+    "expandedArchiveMembers": 160,
+    "privateBuildTracePaths": 0,
+    "localQualifiedBuildId": "WJqEJgIFYTtUN5VQNOkiK",
+    "localBuildInputSha256": "9e5cec57e028dce23370cdea396fb5bd1306ae8f137d0d2ae00dc992820d1e22",
+    "exactColdInstalledDependencies": true
+  },
+  "migration": {
+    "versions": [
+      20,
+      21,
+      22
+    ],
+    "verifiedReadableBackupBeforeMigration": true,
+    "originalTables": 93,
+    "originalRows": 2778,
+    "originalFullRowsAndColumnsUnchanged": true,
+    "newEmptyTables": 15,
+    "addedMigrationMarkers": 3,
+    "businessRowsAdded": 0,
+    "finalTables": 108,
+    "finalRows": 2781,
+    "finalComparison": "committed_exactly",
+    "allOriginalColumnsAndFullRowValuesPreserved": true
+  },
+  "hostedContinuity": {
+    "stagedGetChecks": 21,
+    "canonicalGetChecks": 21,
+    "originalSessionOnly": true,
+    "originalSessionExpiry": "2026-11-19T04:16:24.816Z",
+    "newSessions": 0,
+    "businessMutationRequests": 0,
+    "audienceWorkspacesInitialized": 0,
+    "providerOrModelEndpointsRequested": 0,
+    "finalFullTableComparisonPassed": true
+  },
+  "acceptedLocalEvidence": {
+    "operationalSourceCommit": "47cf2d70450a1559b52d51daf262fb66932ce02c",
+    "record": "planning-workbench-qualification.json",
+    "controlledFullJourneys": 3,
+    "journeyKinds": [
+      "doors",
+      "tour",
+      "amplified stage soundcheck"
+    ],
+    "nativeParent": {
+      "commands": 6,
+      "sourceAndFinancialHistoryPreserved": true,
+      "networkLedgerComplete": false
+    },
+    "readOnlyNamesSuccessor": {
+      "sourceCommit": "c7dc3a0f9adb951a87e6ee75e1dd716c4a3f7983",
+      "tables": 108,
+      "originalRows": 133,
+      "allRowsAndExpiriesExact": true,
+      "applicationDomainMutations": 0,
+      "viewportWidths": [
+        320
+      ],
+      "consoleErrors": 0,
+      "networkLedgerComplete": true
+    },
+    "priorAcceptedNativeJourneysRepeated": false
+  },
+  "receiptBindings": {
+    "releaseClosureSha256": "cc2d216c048eaf88ec0d42738cb0e3f47678cb4e20af731e59cd1c7851d8254b",
+    "finalComparisonSha256": "b7fa917486f58bf027e7a95514fe359f0db0cb8fc729831491512dab8223568b",
+    "stagedContinuitySha256": "a45290c562bfbe549fd3d2e55102e86bb9d56dc1bc5dbeb38088f95b5078213b",
+    "canonicalContinuitySha256": "042dee4f29f6912bf72f8b156337f4a308a9470b4fa044819eec10d93d733dd7",
+    "namesNativeClosureSha256": "bd780dd8b37a35ee0c4967d1df7745b132f3ae641502e524dec6cd4a0647223f"
+  },
+  "limits": [
+    "No new provider, model, financial operation, human participation or physical event was performed by release qualification.",
+    "Three complete service journeys use declared controlled people, installed-SDK wire fixtures and isolated namespaces; they do not add actual sandbox purchases or real work.",
+    "The frozen66-case evaluator and500-task/100-resource stress measurements retain their96ff4cd source binding; no broad current-source AI quality claim is made.",
+    "The original supplier4619 lost-response qualification limit and N4 hidden-visibility/partial browser-ledger limitations are retained.",
+    "Learning derives conservative requirements from planned editions, not measured actual-work outcomes; other tour legs retain separate authority.",
+    "Independent practitioner/manual-baseline research, physical device/venue/work proof and broader model/account qualification remain unclaimed."
+  ]
+}
