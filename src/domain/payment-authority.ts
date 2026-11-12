@@ -5,6 +5,7 @@ import { atVenue, compareInstants } from "./time";
 import { currentRentalExecution, deliveryIsAccepted, supplierIsConfirmed } from "./supplier-contracts";
 import { hasCurrentSupportOnlyPlan, selectedInterruption } from "./disruptions";
 import { rentalExecutionDigest } from "./rental-closeout";
+import { inputPlanCurrent } from "./production-inputs/constraints";
 
 export type PaymentSeller = "venue" | "brightline";
 export type PaymentPurpose = "rental_order" | "rental_authorize" | "rental_fee" | "rental_release" | "rental_cancel" | "ticket_order" | "ticket_capture" | "vip_refund" | "event_refund";
@@ -36,6 +37,7 @@ export interface PublicPayment {
 export function approvedRental(show: ShowSnapshot) {
   const plan = show.approvedPlan;
   if (!plan) throw new DomainError("PLAN_APPROVAL_REQUIRED", "Review and approve a recovery plan before committing money.");
+  if (!inputPlanCurrent(show)) throw new DomainError("INPUT_PLAN_REVIEW_REQUIRED", "The admitted roster or venue inputs changed. Review a fresh engine-validated plan before a new current-plan commitment.");
   const candidate = show.runs.flatMap(r => r.candidates).find(c => c.id === plan.candidateId && c.digest === plan.digest);
   const offer = show.offers.find(o => o.id === candidate?.patch.offerId);
   if (!candidate || !offer || candidate.patch.offerRevision !== offer.revision) throw new DomainError("OFFER_CHANGED", "The approved offer changed. Review the recovery plan again.");

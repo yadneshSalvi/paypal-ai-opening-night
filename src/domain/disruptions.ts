@@ -44,8 +44,8 @@ export interface CancellationDecision {
 export function disruptionDigest(show: Pick<ShowSnapshot, "supplierDisruptions">) {
   return digest(show.supplierDisruptions ?? []);
 }
-export function operatingDigest(show: Pick<ShowSnapshot, "supplierDisruptions" | "cancellationDecision">) {
-  return digest({ disruptions: disruptionDigest(show), decision: show.cancellationDecision?.id ?? null });
+export function operatingDigest(show: Pick<ShowSnapshot, "supplierDisruptions" | "cancellationDecision" | "productionInputs">) {
+  return digest({ disruptions: disruptionDigest(show), decision: show.cancellationDecision?.id ?? null, ...(show.productionInputs ? { productionInputs: show.productionInputs.digest } : {}) });
 }
 export function latestSupplierDisruption(show: Pick<ShowSnapshot, "supplierDisruptions">, offer: Pick<SupplierOffer, "supplierId" | "unitId">) {
   return (show.supplierDisruptions ?? []).filter(report => report.supplierId === offer.supplierId && report.unitId === offer.unitId).at(-1) ?? null;

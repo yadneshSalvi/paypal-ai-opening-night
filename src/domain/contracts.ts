@@ -4,6 +4,7 @@ import type { CrewAdoption, CrewAttestation, CrewCueExecution, CrewNextCall, Cre
 import type { CancellationDecision, DisruptionAssessment, SupplierDisruption } from "./disruptions";
 import type { RentalCloseoutCheck } from "./rental-closeout";
 import type { SupplierTermRef } from "./supplier-recovery";
+import type { ProductionInputState } from "./production-inputs/contracts";
 export type Provenance = "sample" | "modelled" | "live_sandbox" | "replay";
 export type Role = "producer" | "stage_manager" | "department_lead" | "foh" | "crew" | "supplier" | "driver";
 export type Lane = "lighting" | "audio" | "stage" | "people" | "commercial" | "house";
@@ -67,6 +68,7 @@ export interface PublishedRunSheet {
   id: string; version: number; planRevision: number; candidateId: string | null; digest: string;
   publishedAt: string; tasks: Task[]; changes: { taskId: string; name: string; before: string; after: string; reason: string; resourceIds: string[] }[];
   operatingDigest?: string;
+  productionInputDigest?: string;
 }
 export interface Acknowledgment { id: string; personId: string; sheetVersion: number; sheetDigest: string; receivedAt: string; source: "controlled_client"; offline: boolean; actorId?: string; commandId?: string; seenTaskIds?: string[] }
 export interface FinancialEvidence {
@@ -110,7 +112,7 @@ export interface ShowSnapshot {
   schemaVersion: 1; id: string; tenantId: string; revision: number; planVersion: number; title: string; support: string; venue: string;
   zone: "America/Chicago"; showDate: string; clock: string; createdAt: string; updatedAt: string;
   doorsAt: string; curfewAt: string; accessUntil: string; nextCallAt: string;
-  state: "standby" | "go" | "house_open"; policy: { version: number; minimumRestMinutes: number; maxShiftMinutes: number; refundCount: 38; criticalCrewCount: 11 };
+  state: "standby" | "go" | "house_open"; policy: { version: number; minimumRestMinutes: number; maxShiftMinutes: number; refundCount: 38; criticalCrewCount: number };
   tasks: Task[]; dependencies: Dependency[]; resources: Resource[]; offers: SupplierOffer[]; incidents: Incident[];
   runs: RescueRun[]; approvedPlan: ApprovedPlan | null; sheets: PublishedRunSheet[]; acknowledgments: Acknowledgment[];
   financialEvidence: FinancialEvidence[]; tickets: Ticket[]; facts: OperationalFact[]; sources: EvidenceRef[]; events: DomainEvent[];
@@ -134,6 +136,7 @@ export interface ShowSnapshot {
   supplierTermRevisions?: SupplierTermRef[];
   disruptionAssessments?: DisruptionAssessment[];
   cancellationDecision?: CancellationDecision;
+  productionInputs?: ProductionInputState;
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }

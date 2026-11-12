@@ -3,6 +3,7 @@ import { currentActual } from "../finance";
 import { deliveryIsAccepted } from "../supplier-contracts";
 import { atVenue, compareInstants, minutesBetween, plusMinutes } from "../time";
 import { operatingDigest, selectedInterruption } from "../disruptions";
+import { inputPlanCurrent, inputPublicationCurrent } from "../production-inputs/constraints";
 import { cueScope, type CrewAttestation, type CrewCall, type CrewCueExecution, type CrewCueKind, type CrewDutyKind, type CrewNextCall, type CrewRecord, type CrewReview, type CrewVerifier } from "./contracts";
 
 export const dutyDefinitions: Record<CrewDutyKind, { title: string; instructions: string; taskIds: string[] }> = {
@@ -53,6 +54,7 @@ export function canCue(show: ShowSnapshot, person: Resource, kind: CrewCueKind):
 export function currentCrewReview(show: ShowSnapshot): CrewReview | null {
   const sheet = show.sheets.at(-1);
   if (show.crewProtocol !== 1 || !show.approvedPlan || !sheet || sheet.planRevision !== show.planVersion || sheet.candidateId !== show.approvedPlan.candidateId) return null;
+  if (!inputPlanCurrent(show) || !inputPublicationCurrent(show)) return null;
   if ((show.supplierDisruptions?.length || show.cancellationDecision) && sheet.operatingDigest !== operatingDigest(show)) return null;
   return { planVersion: show.planVersion, planDigest: show.approvedPlan.digest, sheetVersion: sheet.version, sheetDigest: sheet.digest, policyVersion: show.policy.version };
 }

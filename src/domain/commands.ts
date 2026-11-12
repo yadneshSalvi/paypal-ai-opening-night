@@ -11,6 +11,7 @@ import { supplierIsConfirmed } from "./supplier-contracts";
 import { crewDutyKinds, type CrewVerifier } from "./crew/contracts";
 import { fixtureNextCalls, requireCrewPerson } from "./crew/policy";
 import { hasCurrentSupportOnlyPlan, operatingDigest, selectedInterruption } from "./disruptions";
+import { inputPlanCurrent } from "./production-inputs/constraints";
 
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("load_incidents") }).strict(),
@@ -87,18 +88,20 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
     case "publish": {
       requireRole(actor, "producer", "stage_manager");
       if (!show.approvedPlan) throw new DomainError("PLAN_APPROVAL_REQUIRED", "Approve a current recovery plan before publishing.");
+      if (!inputPlanCurrent(show)) throw new DomainError("INPUT_PLAN_REVIEW_REQUIRED", "The admitted roster or venue inputs changed. Approve a fresh engine-validated plan before publication.");
       if (selectedInterruption(show) || show.cancellationDecision && !hasCurrentSupportOnlyPlan(show)) throw new DomainError("DISRUPTION_REVIEW_REQUIRED", "Review the supplier change or publish the producer's cancellation notice from the disruption desk.");
       const secured = currentActual(show).some(e => e.planVersion === show.planVersion && e.kind === "authorization" && e.purpose === "rental" && e.amountMinor === show.approvedPlan!.commercialCapMinor);
       const confirmed = supplierIsConfirmed(show);
       if (!secured || !confirmed) throw new DomainError("COMMERCIAL_PENDING", "Publication waits for verified rental authorization and supplier confirmation.");
-      if (show.sheets.at(-1)?.candidateId === show.approvedPlan.candidateId && (!show.supplierDisruptions?.length || show.sheets.at(-1)?.operatingDigest === operatingDigest(show))) throw new DomainError("ALREADY_PUBLISHED", "This approved plan is already published.");
+      if (show.sheets.at(-1)?.candidateId === show.approvedPlan.candidateId && (!(show.supplierDisruptions?.length || show.productionInputs) || show.sheets.at(-1)?.operatingDigest === operatingDigest(show))) throw new DomainError("ALREADY_PUBLISHED", "This approved plan is already published.");
       const previous = show.sheets.at(-1)!;
       const changes = show.tasks.flatMap(t => { const old = previous.tasks.find(v => v.id === t.id); return !old || old.start !== t.start || old.end !== t.end ? [{ taskId: t.id, name: t.name, before: old ? `${localTime(old.start)}–${localTime(old.end)}` : "New call", after: `${localTime(t.start)}–${localTime(t.end)}`, reason: "Approved recovery plan", resourceIds: t.resources }] : []; });
       for (const old of previous.tasks.filter(t => !show.tasks.some(current => current.id === t.id))) changes.push({ taskId: old.id, name: old.name, before: `${localTime(old.start)}–${localTime(old.end)}`, after: "Canceled", reason: "Approved recovery plan", resourceIds: old.resources });
       const version = previous.version + 1;
-      const operating = show.supplierDisruptions?.length ? operatingDigest(show) : undefined;
-      if (operating) changes.push({ taskId: "supplier-review", name: "Supplier recovery reviewed", before: "Previous supplier facts", after: "Current recovery plan", reason: "Review the new supplier evidence before signing any current duty.", resourceIds: show.resources.filter(person => person.kind === "person" && person.critical && !person.reserve).map(person => person.id) });
-      show.sheets.push({ id: randomUUID(), version, planRevision: show.planVersion, candidateId: show.approvedPlan.candidateId, digest: digest({ tasks: show.tasks, version, candidate: show.approvedPlan.digest, ...(operating ? { operating } : {}) }), publishedAt: now, tasks: structuredClone(show.tasks), changes, ...(operating ? { operatingDigest: operating } : {}) });
+      const operating = show.supplierDisruptions?.length || show.productionInputs ? operatingDigest(show) : undefined;
+      if (show.supplierDisruptions?.length) changes.push({ taskId: "supplier-review", name: "Supplier recovery reviewed", before: "Previous supplier facts", after: "Current recovery plan", reason: "Review the new supplier evidence before signing any current duty.", resourceIds: show.resources.filter(person => person.kind === "person" && person.critical && !person.reserve).map(person => person.id) });
+      if (show.productionInputs) changes.push({ taskId: "production-input-review", name: "Roster & venue inputs reviewed", before: "Previous planning inputs", after: `Input edition ${show.productionInputs.revision}`, reason: "Review the current sourced assignments, availability and venue policy before acting or signing current work.", resourceIds: show.resources.filter(person => person.kind === "person" && person.critical && !person.reserve).map(person => person.id) });
+      show.sheets.push({ id: randomUUID(), version, planRevision: show.planVersion, candidateId: show.approvedPlan.candidateId, digest: digest({ tasks: show.tasks, version, candidate: show.approvedPlan.digest, ...(operating ? { operating } : {}) }), publishedAt: now, tasks: structuredClone(show.tasks), changes, ...(operating ? { operatingDigest: operating } : {}), ...(show.productionInputs ? { productionInputDigest: show.productionInputs.digest } : {}) });
       appendEvent(show, actor, "run_sheet.published", `Published run sheet v${version}; ${changes.length} changes require current acknowledgments.`, now); break;
     }
     case "acknowledge": {

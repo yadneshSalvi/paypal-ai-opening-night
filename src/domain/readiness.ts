@@ -6,8 +6,10 @@ import { deliveryIsAccepted, supplierIsConfirmed } from "./supplier-contracts";
 import { currentAttestation, currentCrewReview, currentCue, currentRentalClearance, dutyEarliest } from "./crew/policy";
 import { crewDutyKinds, type CrewVerifier } from "./crew/contracts";
 import { cancellationBlocksCue, cancellationRemedies, operatingDigest, selectedInterruption } from "./disruptions";
+import { inputPublicationCurrent, inputReadiness } from "./production-inputs/constraints";
 
 export function currentAcknowledgments(show: ShowSnapshot) {
+  if (!inputPublicationCurrent(show)) return [];
   const sheet = show.sheets.at(-1)!;
   const people = show.resources.filter(r => r.kind === "person" && r.critical && !r.reserve);
   return people.filter(p => show.acknowledgments.some(a => a.personId === p.id && a.sheetVersion === sheet.version && a.sheetDigest === sheet.digest && (show.crewProtocol !== 1 || Boolean(a.commandId && a.actorId?.startsWith(`crew:${p.id}:`)))));
@@ -26,6 +28,8 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
   };
   const gates: ReadinessGate[] = [];
   const gate = (id: string, label: string, complete: boolean, value: string, reason: string, evidenceIds: string[], href = "/execution") => gates.push({ id, label, complete, value, reason, evidenceIds, href });
+  const inputs = inputReadiness(show);
+  if (inputs) gate("production-inputs", "Current roster & venue inputs", inputs.complete, inputs.value, inputs.reason, inputs.evidenceIds, "/inputs");
   if (show.supplierDisruptions?.length || show.cancellationDecision) {
     const interruption = selectedInterruption(show);
     const cancelled = cancellationBlocksCue(show, scope);

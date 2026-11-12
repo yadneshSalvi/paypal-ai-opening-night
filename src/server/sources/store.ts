@@ -118,6 +118,7 @@ export async function deleteSource(authority: IntelligenceAuthority, id: string,
     const row = await sourceRow(db, authority.actor.tenantId, id);
     if (row.content_hash !== expectedHash) planningFail("SOURCE_CHANGED", "This deletion review belongs to different source bytes.");
     if (row.state === "deleted") return sourceView(row);
+    if ((await db.query("SELECT id FROM on_production_input_sources WHERE tenant_id=$1 AND document_id=$2 LIMIT 1", [row.tenant_id, row.id])).rowCount) planningFail("SOURCE_IN_PRODUCTION_INPUT", "This exact document supports retained production input evidence. Upload a replacement; its original source version remains available.");
     const retained = await db.query("SELECT record_id FROM on_tour_source_bindings WHERE tenant_id=$1 AND source_id=$2 LIMIT 1", [row.tenant_id, row.id]);
     if (retained.rowCount) planningFail("SOURCE_IN_LIBRARY", "This immutable source supports a retained production or template edition. Upload a replacement; its original evidence remains available.");
     const related = (await db.query<{ id: string; state: string; applied_at: Date | null }>("SELECT id,state,applied_at FROM on_source_compilations WHERE tenant_id=$1 AND source_bindings @> $2::jsonb FOR UPDATE", [row.tenant_id, JSON.stringify([{ id }])])).rows;

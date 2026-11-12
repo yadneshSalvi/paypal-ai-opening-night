@@ -2,9 +2,10 @@ import type { Candidate, ConstraintIssue, ConstraintReport, Dependency, PlanPatc
 import { atVenue, compareInstants, localTime, minutesBetween, plusMinutes, restLabel } from "./time";
 import { digest } from "./hash";
 import { effectiveDelivery, latestSupplierDisruption, supplierInterruption } from "./disruptions";
+import { productionInputIssues } from "./production-inputs/constraints";
 
 export function planningDigest(show: ShowSnapshot): string {
-  return digest({ tasks: show.tasks, dependencies: show.dependencies, resources: show.resources, offers: show.offers, policy: show.policy, incidents: show.incidents, doorsAt: show.doorsAt, ...(show.supplierDisruptions?.length ? { supplierDisruptions: show.supplierDisruptions } : {}), ...(show.supplierTermRevisions?.length ? { supplierTermRevisions: show.supplierTermRevisions } : {}) });
+  return digest({ tasks: show.tasks, dependencies: show.dependencies, resources: show.resources, offers: show.offers, policy: show.policy, incidents: show.incidents, doorsAt: show.doorsAt, ...(show.supplierDisruptions?.length ? { supplierDisruptions: show.supplierDisruptions } : {}), ...(show.supplierTermRevisions?.length ? { supplierTermRevisions: show.supplierTermRevisions } : {}), ...(show.productionInputs ? { productionInputs: show.productionInputs.digest, curfewAt: show.curfewAt, accessUntil: show.accessUntil } : {}) });
 }
 export function topologicalOrder(tasks: Task[], dependencies: Dependency[]): { order: string[]; invalid: string[] } {
   const ids = new Set(tasks.map(t => t.id)); const degree = new Map(tasks.map(t => [t.id, 0]));
@@ -26,17 +27,18 @@ export function affectedSubgraph(dependencies: Dependency[], starting: string[])
   return [...affected];
 }
 /** Shared by whole-plan validation and the AI assignment tool; one policy source. */
-export function qualificationIssues(show: Pick<ShowSnapshot, "resources">, task: Task): ConstraintIssue[] {
+export function qualificationIssues(show: Pick<ShowSnapshot, "resources" | "productionInputs">, task: Task): ConstraintIssue[] {
   if (!task.requiredSkill) return [];
   return task.resources.flatMap(id => {
     const resource = show.resources.find(item => item.id === id);
-    return resource?.skills.includes(task.requiredSkill!) ? [] : [{ code: "QUALIFICATION", stage: "semantic" as const, severity: "hard" as const, message: `${resource?.name ?? id} lacks ${task.requiredSkill!.replaceAll("_", " ")}.`, resourceId: id, taskId: task.id, sourceId: "crew-policy-v1" }];
+    return resource?.skills.includes(task.requiredSkill!) ? [] : [{ code: "QUALIFICATION", stage: "semantic" as const, severity: "hard" as const, message: `${resource?.name ?? id} lacks ${task.requiredSkill!.replaceAll("_", " ")}.`, resourceId: id, taskId: task.id, sourceId: show.productionInputs?.roster.find(item => item.personId === id)?.sourceIds[0] ?? "crew-policy-v1" }];
   });
 }
 export function validatePatch(show: ShowSnapshot, patch: PlanPatch, offer: SupplierOffer): ConstraintReport {
   const issues: ConstraintIssue[] = [];
   const add = (code: string, stage: ConstraintIssue["stage"], severity: ConstraintIssue["severity"], message: string, resourceId: string | null = null, taskId: string | null = null, sourceId = "venue-policy-v1") => issues.push({ code, stage, severity, message, resourceId, taskId, sourceId });
   const rulesChecked = ["SCHEMA", "ACYCLIC_GRAPH", "DEPENDENCIES", "QUALIFICATION", "RESOURCE_EXCLUSIVITY", "CURFEW", "VENUE_ACCESS", "CREW_REST", "OFFER_FRESHNESS", "SUPPLIER_EVIDENCE", "ARTIST_ARRIVAL", "DOORS_SEQUENCE"];
+  if (show.productionInputs) { issues.push(...productionInputIssues(show, patch.tasks)); rulesChecked.push("ADMITTED_ROSTER_AVAILABILITY", "ADMITTED_QUALIFICATION_EXPIRY", "ADMITTED_VENUE_POLICY"); }
   const interruption = supplierInterruption(show, offer);
   if (interruption) {
     rulesChecked.push("SUPPLIER_DISRUPTION");
@@ -104,7 +106,7 @@ export function buildCandidate(show: ShowSnapshot, offer: SupplierOffer, family:
   const overtimeMinor = family === "artist" ? 36000 : late ? 24000 : 18000;
   const tasks = structuredClone(show.tasks).filter(t => !["headliner-check", "vip", "rental-authorized", "rental-delivery", "rental-captured", "quiet-prep"].includes(t.id) && !(supportOnly && show.cancellationDecision!.cancelledTaskIds.includes(t.id)));
   const update = (id: string, start: string, duration: number, resources?: string[]) => { const t = tasks.find(t => t.id === id); if (t) Object.assign(t, { start, end: plusMinutes(start, duration), durationMinutes: duration, state: "planned", affected: start !== t.baselineStart, ...(resources ? { resources } : {}) }); };
-  update("headliner-arrival", atVenue("19:35"), 0); update("lx-focus", focusStart, 45); update("lx-program", cueStart, 20, family === "direct" ? ["tom"] : ["priya"]);
+  update("headliner-arrival", atVenue("19:35"), 0); update("lx-focus", focusStart, 45); update("lx-program", cueStart, 20, family === "direct" ? ["tom"] : show.productionInputs ? show.tasks.find(task => task.id === "lx-program")?.resources ?? [] : ["priya"]);
   const readinessAt = compareInstants(plusMinutes(doorsAt, -15), cueEnd) >= 0 ? plusMinutes(doorsAt, -15) : cueEnd;
   update("readiness", readinessAt, 0); update("doors", doorsAt, 0); update("support", supportAt, 25); update("changeover", plusMinutes(supportAt, 25), late && family !== "artist" ? 20 : 15); update("headliner", headlinerAt, headlinerDuration);
   const supportEnd = plusMinutes(supportAt, 25), retainedStrikeStart = show.tasks.find(task => task.id === "strike")?.start ?? supportEnd;
