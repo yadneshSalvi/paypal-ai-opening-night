@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "qualifiedAt": "2026-11-12T11:43:27.370Z",
+  "sourceCommit": "b97e47eb41521800ec85656a70001a4bb7b80817",
+  "deploymentId": "dpl_AaMDdwAycoNXcnwovB7jDeRgEYn1",
+  "canonicalUrl": "https://paypal-ai-opening-night.vercel.app",
+  "scope": "Supplier recovery, rental closeout and the immutable evaluation reader; later audience and actual-model successors are separate.",
+  "releaseInputs": {
+    "immutableGitArchive": true,
+    "privateValueMatches": 0,
+    "pinnedInvoiceAdapterIncluded": true,
+    "privateBuildTracePaths": 0
+  },
+  "migration": {
+    "verifiedBackupBeforeMigration": true,
+    "appliedVersions": [
+      14,
+      15,
+      16
+    ],
+    "existingTables": 64,
+    "existingRows": 2772,
+    "existingFieldValuesPreserved": true,
+    "newEmptyTables": 10,
+    "newMigrationLedgerRows": 3,
+    "newRfqOutcomesDefault": []
+  },
+  "canonicalQualification": {
+    "passed": true,
+    "originalSessionGetChecks": 10,
+    "originalSessionUnchanged": true,
+    "newSessions": 0,
+    "anonymousRentalCloseoutStatus": 401,
+    "anonymousSupplierRecoveryStatus": 401,
+    "healthStatus": 200,
+    "providerCalls": 0,
+    "modelCalls": 0
+  },
+  "retainedFailure": {
+    "kind": "staged qualification comparison precision",
+    "detail": "The first staged expiry assertion compared millisecond and microsecond ISO text. The original session row was unchanged. A separate corrected assertion compared the represented instant, and the original failed receipt was retained."
+  },
+  "nativeEvaluation": {
+    "case": "S05",
+    "outcome": "unknown pending evidence",
+    "unknowns": [
+      "DRIVER_UNKNOWN",
+      "CONDITION_UNKNOWN"
+    ],
+    "reportHash": "4920dc9eef5448a892b8fd1093527cac247f8589f10a033ea907b22c833df934",
+    "corpusHash": "a03dbd55d02c08bd448d0e1285fffff8b885ca68ee81e87b8813d1d29a97eb3b",
+    "controlledCaseExpectations": 66,
+    "matchedExpectations": 66,
+    "actualModelAccuracyClaim": false,
+    "consoleIssues": 0
+  },
+  "limits": [
+    "The evaluation measures matching controlled case expectations, including refusals and retained unknowns.",
+    "A supplier hold is not payment, physical delivery or inspection.",
+    "No new provider transaction, external message or model request was made in this release qualification.",
+    "Full product scope and final film remain under implementation."
+  ]
+}
