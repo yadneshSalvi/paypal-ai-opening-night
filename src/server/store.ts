@@ -16,6 +16,7 @@ import { settlementMigration } from "./migrations/settlement-v9";
 import { payoutsMigration } from "./migrations/payouts-v10";
 import { wrapMigration } from "./migrations/wrap-v11";
 import { tourMigration } from "./migrations/tour-v12";
+import { disruptionsMigration } from "./migrations/disruptions-v13";
 import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -99,6 +100,8 @@ export async function migrate() {
       if (!wrap.rowCount) { await client.query(wrapMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(11)"); }
       const tour = await client.query("SELECT version FROM on_schema_migrations WHERE version=12");
       if (!tour.rowCount) { await client.query(tourMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(12)"); }
+      const disruptions = await client.query("SELECT version FROM on_schema_migrations WHERE version=13");
+      if (!disruptions.rowCount) { await client.query(disruptionsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(13)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }

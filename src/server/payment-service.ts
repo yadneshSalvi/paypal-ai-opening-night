@@ -52,7 +52,8 @@ async function resourceBudget(intent: PaymentIntent, signal: AbortSignal): Promi
   if (action.kind === "refund_capture") {
     if (!["COMPLETED", "PARTIALLY_REFUNDED", "REFUNDED"].includes(resource.status) || resource.status === "PARTIALLY_REFUNDED" && consumed === 0 || resource.status === "REFUNDED" && consumed !== resource.money.minor) throw new DomainError("PROVIDER_BUDGET_AMBIGUOUS", "The capture refund state requires reconciliation before another remedy.");
     const show = await getShow(intent.tenantId); const ticket = show.tickets.find(t => t.id === intent.ticketId);
-    if (!ticket || consumed > 0 || ticket.refundedMinor > 0) throw new DomainError("PERK_ALREADY_CONSUMED", "This capture already has a refund. Reconcile its allocation before another remedy.");
+    if (intent.purpose === "event_refund") await (await import("./disruptions/payment-policy")).assertEventProviderBudget(intent, resource, children);
+    else if (!ticket || consumed > 0 || ticket.refundedMinor > 0) throw new DomainError("PERK_ALREADY_CONSUMED", "This capture already has a refund. Reconcile its allocation before another remedy.");
   } else if (!["CREATED", "PARTIALLY_CAPTURED"].includes(resource.status) || resource.status === "PARTIALLY_CAPTURED" && consumed === 0) throw new DomainError("PROVIDER_BUDGET_AMBIGUOUS", "The authorization is not available for this fee capture.");
   return { resourceKey: wantedKind + ":" + resource.id, currency: "USD", totalMinor: resource.money.minor, externallyConsumedMinor: consumed, observedProviderIds: children.map(r => r.id), observedAt: new Date().toISOString() };
 }
@@ -61,7 +62,7 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
   const intent = await readIntent(command.scope.tenantId, command.intentId);
   const show = await getShow(intent.tenantId);
   assertPaymentAuthority(show, intent, command);
-  const active = await pool.query("SELECT 1 FROM on_sessions WHERE tenant_id=$1 AND actor->>'id'=$2 AND expires_at>now() LIMIT 1", [intent.tenantId, intent.approvedBy]);
+  const active = await pool.query("SELECT 1 FROM on_sessions WHERE tenant_id=$1 AND actor->>'id'=$2 AND expires_at>clock_timestamp() AND ($3::text IS NULL OR token_hash=$3) AND ($4::jsonb IS NULL OR actor=$4::jsonb) LIMIT 1", [intent.tenantId, intent.approvedBy, intent.approvedSessionHash ?? null, intent.approvedActor ? JSON.stringify(intent.approvedActor) : null]);
   if (!active.rowCount) throw new PaymentError("AUTHORITY_REVOKED", "The approving session is no longer active.", 403);
   if (intent.parentId && intent.purpose.startsWith("rental_")) { const parent = await readIntent(intent.tenantId, intent.parentId); if (parent.planVersion !== intent.planVersion || parent.planDigest !== intent.planDigest) throw new DomainError("STALE_RENTAL", "The rental checkout belongs to an earlier recovery approval.", 403); }
   const owned = await ownedResources(intent.tenantId, intent.seller, intent.parentId ?? intent.id);
@@ -85,6 +86,18 @@ async function authorizePayment(command: PaymentCommand, signal: AbortSignal): P
   }
   const action = command.action;
   const commerce = await authorizeCommerceIntent(intent, show, signal);
+  if (intent.purpose === "event_refund") await (await import("./disruptions/payment-policy")).authorizeEventRemedy(intent);
+  else if (intent.approvedSessionHash) {
+    // Exact-session approvals must still hold after asynchronous provider readback.
+    // This also covers the reviewed cancellation of an original uncaptured rental.
+    await paymentTransaction(async client => {
+      const currentSession = await client.query("SELECT 1 FROM on_sessions WHERE token_hash=$1 AND tenant_id=$2 AND actor=$3::jsonb AND expires_at>clock_timestamp() FOR SHARE", [intent.approvedSessionHash, intent.tenantId, JSON.stringify(intent.approvedActor)]);
+      if (!currentSession.rowCount) throw new PaymentError("AUTHORITY_REVOKED", "The exact approving session ended during provider readback. No new payment was sent.", 403);
+      const current = (await client.query<{ snapshot: ShowSnapshot }>("SELECT snapshot FROM on_shows WHERE tenant_id=$1 FOR SHARE", [intent.tenantId])).rows[0]?.snapshot;
+      if (!current) throw new DomainError("SHOW_NOT_FOUND", "This production is unavailable.", 404);
+      assertPaymentAuthority(current, intent, command);
+    });
+  }
   return { allowed: true, reason: "Current production approval and owned resource verified.", resourceIds: intent.resourceIds, currency: "USD", maximumMinor: action.money.minor, approvalId: command.approval.id, approvalVersion: command.approval.version, approvalDigest: command.approval.digest, ...commerce, ...(reservation ? { reservation } : {}), ...(action.kind === "create_order" && action.experience ? { checkoutOrigins: [checkoutOrigin(action.experience.returnUrl)] } : {}) };
   } catch (error) { if (error instanceof DomainError) throw new PaymentError(error.code, error.message, error.status); throw error; }
 }
@@ -97,7 +110,7 @@ async function importConfirmedOperation(intent: PaymentIntent, operation: Paymen
   return importPaymentOperation(intent, operation, { orderId, observedAt: new Date().toISOString(), resources });
 }
 async function withIntentDispatch<T>(intent: PaymentIntent, work: () => Promise<T>): Promise<T> {
-  const scope = intent.cohortId ? "cohort:" + intent.tenantId + ":" + intent.cohortId : intent.remedyBatchId ? "remedy:" + intent.tenantId + ":" + intent.remedyBatchId : null;
+  const scope = intent.cohortId ? "cohort:" + intent.tenantId + ":" + intent.cohortId : intent.remedyBatchId ? "remedy:" + intent.tenantId + ":" + intent.remedyBatchId : intent.eventDecisionId ? "event-remedy:" + intent.tenantId + ":" + intent.eventDecisionId : null;
   if (!scope) return work();
   return withCommerceLock(scope, async () => {
     try { const result = await work(); await recordCommerceOutcome(intent, await (await paymentStore()).get(intent.command.scope, intent.id)); return result; }

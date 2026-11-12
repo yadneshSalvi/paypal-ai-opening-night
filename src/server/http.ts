@@ -7,7 +7,7 @@ import { PaymentError, ProviderError } from "@fracture/paypal-core";
 import { SessionCreationLimitError } from "./session-admission";
 import { PRODUCTION_SCOPE_HEADER } from "@/domain/rehearsal-contracts";
 import { env } from "./env";
-export const SESSION_COOKIE = !process.env.VERCEL && process.env.OPENING_NIGHT_TOUR_QA === "1" ? "opening-night-tour-4561-session" : !process.env.VERCEL && process.env.OPENING_NIGHT_AI_QA === "1" ? "opening-night-ai-qa-session" : "opening-night-session";
+export const SESSION_COOKIE = !process.env.VERCEL && process.env.OPENING_NIGHT_DISRUPTION_QA === "1" ? "opening-night-disruption-4564-session" : !process.env.VERCEL && process.env.OPENING_NIGHT_TOUR_QA === "1" ? "opening-night-tour-4561-session" : !process.env.VERCEL && process.env.OPENING_NIGHT_AI_QA === "1" ? "opening-night-ai-qa-session" : "opening-night-session";
 export async function currentActor(request?: Request): Promise<Actor | null> {
   const authorization = request?.headers.get("authorization");
   if (authorization != null) return authorization.startsWith("Bearer ") ? getActor(authorization.slice(7)) : null;

@@ -2,6 +2,7 @@ import { DomainError, type Actor, type Resource, type ShowSnapshot } from "../co
 import { currentActual } from "../finance";
 import { deliveryIsAccepted } from "../supplier-contracts";
 import { atVenue, compareInstants, minutesBetween, plusMinutes } from "../time";
+import { operatingDigest, selectedInterruption } from "../disruptions";
 import { cueScope, type CrewAttestation, type CrewCall, type CrewCueExecution, type CrewCueKind, type CrewDutyKind, type CrewNextCall, type CrewRecord, type CrewReview, type CrewVerifier } from "./contracts";
 
 export const dutyDefinitions: Record<CrewDutyKind, { title: string; instructions: string; taskIds: string[] }> = {
@@ -52,6 +53,7 @@ export function canCue(show: ShowSnapshot, person: Resource, kind: CrewCueKind):
 export function currentCrewReview(show: ShowSnapshot): CrewReview | null {
   const sheet = show.sheets.at(-1);
   if (show.crewProtocol !== 1 || !show.approvedPlan || !sheet || sheet.planRevision !== show.planVersion || sheet.candidateId !== show.approvedPlan.candidateId) return null;
+  if ((show.supplierDisruptions?.length || show.cancellationDecision) && sheet.operatingDigest !== operatingDigest(show)) return null;
   return { planVersion: show.planVersion, planDigest: show.approvedPlan.digest, sheetVersion: sheet.version, sheetDigest: sheet.digest, policyVersion: show.policy.version };
 }
 export function matchesCrewReview(show: ShowSnapshot, review: CrewReview) {
@@ -112,6 +114,8 @@ export function dutyEarliest(show: ShowSnapshot, kind: CrewDutyKind): string | n
 }
 export function dutyBlockers(show: ShowSnapshot, person: Resource, kind: CrewDutyKind, verify?: CrewVerifier): string[] {
   const blockers: string[] = [];
+  if (selectedInterruption(show)) blockers.push("The current supplier disruption needs a reviewed recovery and new delivery evidence.");
+  if (show.cancellationDecision?.mode === "cancel_show" || show.cancellationDecision?.mode === "support_only" && ["headliner_checkin", "quiet_prep", "changeover"].includes(kind)) blockers.push("This performance duty belongs to the cancelled program. Existing records remain historical.");
   if (!canAttest(show, person, kind)) blockers.push("This duty needs its assigned qualified crew member.");
   if (!currentCrewReview(show)) blockers.push("The current approved plan must be published with person-scoped crew controls.");
   if (!ownCurrentReadback(show, person.id)) blockers.push("Acknowledge your current run sheet first.");
@@ -158,7 +162,7 @@ export function fixtureNextCalls(show: ShowSnapshot): CrewNextCall[] {
 }
 export function personalCalls(show: ShowSnapshot, personId: string): CrewCall[] {
   const sheet = show.sheets.at(-1)!;
-  const calls: CrewCall[] = sheet.tasks.filter(task => task.critical && task.resources.includes(personId)).map(task => ({ id: task.id, name: task.name, lane: task.lane, start: task.start, end: task.end, durationMinutes: task.durationMinutes, resources: [personId], critical: task.critical, affected: task.affected, nextDay: false }));
+  const calls: CrewCall[] = sheet.tasks.filter(task => task.critical && task.resources.includes(personId)).map(task => ({ id: task.id, name: task.cancellation ? `Cancelled · ${task.name}` : task.name, lane: task.lane, start: task.start, end: task.end, durationMinutes: task.durationMinutes, resources: [personId], critical: task.critical, affected: task.affected, nextDay: false }));
   for (const task of fixtureNextCalls(show).filter(call => call.resources.includes(personId))) calls.push({ id: task.id, name: task.name, lane: task.lane, start: task.start, end: task.end, durationMinutes: minutesBetween(task.start, task.end), resources: [personId], critical: true, affected: false, nextDay: true });
   return calls.sort((a, b) => compareInstants(a.start, b.start) || a.id.localeCompare(b.id));
 }

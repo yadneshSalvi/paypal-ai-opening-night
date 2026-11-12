@@ -55,7 +55,7 @@ export async function linkCommerceIntent(client: PoolClient, intent: PaymentInte
     if (intent.purpose === "ticket_order") { line.rootIntentId = intent.id; line.reservedAt ??= new Date().toISOString(); }
     else line.captureIntentId = intent.id;
     await saveCohortTicket(client, line);
-  } else if (intent.ticketId && intent.purpose !== "vip_refund") {
+  } else if (intent.ticketId && !["vip_refund", "event_refund"].includes(intent.purpose)) {
     const reserved = await client.query("SELECT 1 FROM on_cohort_tickets WHERE tenant_id=$1 AND id=$2", [intent.tenantId, intent.ticketId]);
     if (reserved.rowCount) throw new DomainError("COHORT_TICKET_REQUIRES_APPROVAL", "This reserved ticket must use its recorded cohort approval.", 403);
   }

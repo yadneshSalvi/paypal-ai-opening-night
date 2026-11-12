@@ -3,8 +3,8 @@ import { Temporal } from "@js-temporal/polyfill";
 export function venueSpokenDate(value: string | Date): string {
   return new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZoneName: "short" }).format(new Date(value));
 }
-export function taskAriaLabel(task: Pick<Task, "name" | "start" | "end" | "durationMinutes">): string {
-  return `${task.name}. ${venueSpokenDate(task.start)}${task.durationMinutes ? ` until ${venueSpokenDate(task.end)}` : ". Milestone"}. Venue time, America Chicago.`;
+export function taskAriaLabel(task: Pick<Task, "name" | "start" | "end" | "durationMinutes" | "cancellation">): string {
+  return `${task.cancellation ? "Cancelled. Original call retained. " : ""}${task.name}. ${venueSpokenDate(task.start)}${task.durationMinutes ? ` until ${venueSpokenDate(task.end)}` : ". Milestone"}. Venue time, America Chicago.`;
 }
 /** Header boundaries must use venue midnights as well as venue-formatted text. */
 export function venueDayCells(viewStart: Date, viewEnd: Date) {

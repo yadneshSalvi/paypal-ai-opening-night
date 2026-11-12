@@ -1,6 +1,7 @@
 /** Canonical Opening Night contract v1. Browser views are projections, never authority. */
 import type { RentalExecution, SupplierId, SupplierQuoteRef } from "./supplier-contracts";
 import type { CrewAdoption, CrewAttestation, CrewCueExecution, CrewNextCall, CrewProductionOverview } from "./crew/contracts";
+import type { CancellationDecision, DisruptionAssessment, SupplierDisruption } from "./disruptions";
 export type Provenance = "sample" | "modelled" | "live_sandbox" | "replay";
 export type Role = "producer" | "stage_manager" | "department_lead" | "foh" | "crew" | "supplier" | "driver";
 export type Lane = "lighting" | "audio" | "stage" | "people" | "commercial" | "house";
@@ -13,6 +14,7 @@ export interface Task {
   state: TaskState; critical: boolean; affected: boolean; milestone: string | null; sourceId: string;
   /** Source-reviewed planning constraints survive later recovery proposals. They establish no physical completion. */
   sourceConstraints?: { amplified: boolean; earliestStart: string | null; latestEnd: string | null; compilationId: string };
+  cancellation?: { decisionId: string; reason: string };
 }
 export interface Dependency { id: string; from: string; to: string; lagMinutes: number; financial: boolean }
 export interface Resource {
@@ -49,6 +51,7 @@ export interface ConstraintReport {
 }
 export interface PlanPatch {
   baseRevision: number; offerId: string; offerRevision: number; policyVersion: number;
+  programMode?: "support_only";
   tasks: Task[]; dependencies: Dependency[]; doorsAt: string; supportAt: string; headlinerAt: string;
   crewFinishAt: string; overtimeMinor: number; canceledPerk: boolean; changedPeople: string[];
 }
@@ -61,13 +64,15 @@ export interface RescueRun { id: string; baseRevision: number; createdAt: string
 export interface PublishedRunSheet {
   id: string; version: number; planRevision: number; candidateId: string | null; digest: string;
   publishedAt: string; tasks: Task[]; changes: { taskId: string; name: string; before: string; after: string; reason: string; resourceIds: string[] }[];
+  operatingDigest?: string;
 }
 export interface Acknowledgment { id: string; personId: string; sheetVersion: number; sheetDigest: string; receivedAt: string; source: "controlled_client"; offline: boolean; actorId?: string; commandId?: string; seenTaskIds?: string[] }
 export interface FinancialEvidence {
   id: string; operationId: string; kind: "authorization" | "capture" | "refund" | "void" | "payout";
-  purpose: "rental" | "ticket" | "vip_remedy" | "deposit" | "rental_cancel" | "crew"; status: "pending" | "completed" | "failed";
+  purpose: "rental" | "ticket" | "vip_remedy" | "event_remedy" | "deposit" | "rental_cancel" | "crew"; status: "pending" | "completed" | "failed";
   amountMinor: number; currency: "USD"; source: Provenance; verified: boolean; planVersion: number;
   providerResourceId: string; parentId: string | null; ticketId: string | null; recordedAt: string;
+  allocation?: { decisionId: string; admissionMinor: number; perkMinor: number };
 }
 export interface FinancialObservation {
   id: string; seller: "venue" | "brightline"; kind: "order" | "authorization" | "capture" | "refund" | "payout";
@@ -81,7 +86,7 @@ export interface FinancialCheck {
 }
 export interface Ticket {
   id: string; tier: "standard" | "vip"; admissionMinor: number; perkMinor: number; captureId: string | null;
-  source: Provenance; refundedMinor: number; status: "reserved" | "captured" | "partially_refunded";
+  source: Provenance; refundedMinor: number; status: "reserved" | "captured" | "partially_refunded" | "refunded";
 }
 export interface OperationalFact {
   id: string; kind: "supplier_confirmed" | "delivery_accepted" | "return_accepted" | "focus_signed_off" | "cue_signed_off" | "foh_contingency" | "support_checkin" | "support_ready" | "headliner_checkin" | "quiet_prep" | "changeover";
@@ -114,6 +119,9 @@ export interface ShowSnapshot {
   payoutVersion?: number;
   /** Attributed account entries, invoice instructions and report editions have immutable private history. */
   wrapVersion?: number;
+  supplierDisruptions?: SupplierDisruption[];
+  disruptionAssessments?: DisruptionAssessment[];
+  cancellationDecision?: CancellationDecision;
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }

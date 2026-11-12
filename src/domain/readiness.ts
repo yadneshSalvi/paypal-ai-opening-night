@@ -5,6 +5,7 @@ import { atVenue, compareInstants, formatMoney, localTime } from "./time";
 import { deliveryIsAccepted, supplierIsConfirmed } from "./supplier-contracts";
 import { currentAttestation, currentCrewReview, currentCue, currentRentalClearance, dutyEarliest } from "./crew/policy";
 import { crewDutyKinds, type CrewVerifier } from "./crew/contracts";
+import { cancellationBlocksCue, cancellationRemedies, operatingDigest, selectedInterruption } from "./disruptions";
 
 export function currentAcknowledgments(show: ShowSnapshot) {
   const sheet = show.sheets.at(-1)!;
@@ -25,6 +26,15 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
   };
   const gates: ReadinessGate[] = [];
   const gate = (id: string, label: string, complete: boolean, value: string, reason: string, evidenceIds: string[], href = "/execution") => gates.push({ id, label, complete, value, reason, evidenceIds, href });
+  if (show.supplierDisruptions?.length || show.cancellationDecision) {
+    const interruption = selectedInterruption(show);
+    const cancelled = cancellationBlocksCue(show, scope);
+    const published = sheet.operatingDigest === operatingDigest(show);
+    gate("disruption", "Current disruption decision", !interruption && !cancelled && published,
+      cancelled ? show.cancellationDecision?.mode === "cancel_show" ? "Show cancelled" : "Headliner cancelled" : interruption ? "Supplier change unresolved" : !published ? "Current notice not published" : "Current review published",
+      cancelled ? "The producer's cancellation remains authoritative. Existing receipts, calls and obligations stay in their own ledgers." : "Review the latest supplier facts, publish current calls, and obtain new technical evidence before issuing this cue.",
+      [interruption?.id, show.cancellationDecision?.id].filter((id): id is string => Boolean(id)), "/disruptions");
+  }
   const clearance = currentRentalClearance(show);
   const auth = show.crewProtocol === 1 ? clearance.authorization : actual.find(e => e.kind === "authorization" && e.purpose === "rental" && e.amountMinor === 78000);
   const capture = show.crewProtocol === 1 ? clearance.capture : actual.find(e => e.kind === "capture" && e.purpose === "rental" && e.amountMinor === 48000 && e.parentId === auth?.providerResourceId);
@@ -42,7 +52,9 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
     gate("delivery", "Console accepted", deliveryIsAccepted(show), deliveryIsAccepted(show) ? "Accepted" : "Delivery pending", "An authorized department lead records delivery and condition acceptance.", fact("delivery_accepted") ? [fact("delivery_accepted")!.id] : []);
     gate("capture", "Rental fee captured", Boolean(capture), `${fee !== null ? formatMoney(fee) : "Selected fee"} ${capture ? "captured" : "pending"}`, "Verified partial fee capture follows accepted delivery; the deposit remains separate.", capture ? [capture.id] : []);
     gate("technical", "Focus & cue checks", technical, technical ? "Signed off" : "Not cleared", "Current department sign-offs follow accepted console delivery and fee capture.", [fact("focus_signed_off")?.id, fact("cue_signed_off")?.id].filter((s): s is string => Boolean(s)));
-    gate("refunds", "VIP remedies confirmed", finance.refundedVipCount === show.policy.refundCount, `${finance.refundedVipCount} / ${show.policy.refundCount} refunded`, `All ${show.policy.refundCount} original-capture $15 refunds must be verified; a pending request does not count.`, finance.evidenceIds, "/box-office");
+    const cancelledRemedies = cancellationRemedies(show);
+    if (cancelledRemedies) gate("refunds", "Cancellation remedies confirmed", cancelledRemedies.complete, `${cancelledRemedies.completed} / ${cancelledRemedies.total} allocations confirmed`, "The producer's exact admission and perk allocation must be verified against each original capture. Pending instructions do not count.", show.financialEvidence.filter(item => item.purpose === "event_remedy").map(item => item.id), "/disruptions");
+    else gate("refunds", "VIP remedies confirmed", finance.refundedVipCount === show.policy.refundCount, `${finance.refundedVipCount} / ${show.policy.refundCount} refunded`, `All ${show.policy.refundCount} original-capture $15 refunds must be verified; a pending request does not count.`, finance.evidenceIds, "/box-office");
     const ack = currentAcknowledgments(show); const currentPublished = published;
     gate("crew", "Current crew acknowledgments", currentPublished && ack.length === show.policy.criticalCrewCount, `${currentPublished ? ack.length : 0} / ${show.policy.criticalCrewCount} acknowledged`, "All active critical crew acknowledge this exact published version. The reserve is excluded.", show.acknowledgments.filter(a => ack.some(person => person.id === a.personId) && a.sheetVersion === sheet.version && a.sheetDigest === sheet.digest && (show.crewProtocol !== 1 || Boolean(a.commandId && a.actorId?.startsWith(`crew:${a.personId}:`)))).map(a => a.id), "/crew");
   } else if (scope === "SUPPORT_START") {

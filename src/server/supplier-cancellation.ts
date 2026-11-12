@@ -1,4 +1,5 @@
-import { DomainError, type Actor } from "@/domain/contracts";
+import type { PoolClient } from "pg";
+import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
 import { currentActual } from "@/domain/finance";
 import { ownedResources, paymentStore, readIntent } from "./payment-store";
@@ -16,6 +17,15 @@ export async function approveRentalCancellation(actor: Actor, executionId: strin
       return show;
     }
     assertRevision(show, expectedRevision);
+    await prepareRentalCancellation(client, show, actor, executionId, detail);
+    await client.query("INSERT INTO on_commands(tenant_id,command_id,payload_hash,result_revision) VALUES($1,$2,$3,$4)", [actor.tenantId, commandId, payloadHash, show.revision]);
+    return show;
+  });
+}
+
+/** Caller owns the show lock and current session review. This prepares no new payment resource. */
+export async function prepareRentalCancellation(client: PoolClient, show: ShowSnapshot, actor: Actor, executionId: string, detail: string, exactApproval?: { sessionHash: string; expiresAt: string }) {
+    assertProducer(actor);
     const execution = await readRentalExecution(client, actor.tenantId, executionId);
     if (execution.supplierId !== "brightline" || !execution.paymentRootId || !execution.authorizationId || !["held", "awaiting_payment", "authorized", "confirmed", "expired", "reconfirmation_required", "returned_unaccepted"].includes(execution.state) || execution.acceptedAt || execution.captureIntentId || execution.state === "returned_unaccepted" && !execution.rejectedReturn) throw new DomainError("UNCAPTURED_CANCELLATION_REQUIRED", "This branch cancels only an unfulfilled or supplier-returned rejected rental with a verified original authorization and no fee instruction.");
     const auth = currentActual(show).find(item => item.kind === "authorization" && item.purpose === "rental" && item.providerResourceId === execution.authorizationId && item.planVersion === execution.planVersion && item.amountMinor === execution.feeMinor + execution.depositMinor);
@@ -28,9 +38,7 @@ export async function approveRentalCancellation(actor: Actor, executionId: strin
     if (!order || !authorization || root.executionId !== execution.id) throw new DomainError("ORIGINAL_RESOURCE_REQUIRED", "The original order and authorization must belong to this exact rental execution.");
     execution.state = "compensation_pending"; execution.cancellationApprovedAt = new Date().toISOString(); execution.lastCode = null;
     await saveRentalExecution(client, show, execution);
-    await preparePaymentIntent(client, actor, { purpose: "rental_cancel", semanticKey: root.id + ":cancel-uncaptured", seller: "brightline", parentId: root.id, resourceIds: [authorization.id, order.id], approvedExecution: execution, runAfter: new Date(), build: () => ({ kind: "void_authorization", money: root.command.action.money, authorizationId: authorization.id, orderId: order.id }) }, show);
+    const prepared = await preparePaymentIntent(client, actor, { purpose: "rental_cancel", semanticKey: root.id + ":cancel-uncaptured", seller: "brightline", parentId: root.id, resourceIds: [authorization.id, order.id], approvedExecution: execution, runAfter: new Date(), ...(exactApproval ? { approvedSessionHash: exactApproval.sessionHash, approvalExpiresAt: exactApproval.expiresAt } : {}), build: () => ({ kind: "void_authorization", money: root.command.action.money, authorizationId: authorization.id, orderId: order.id }) }, show);
     await saveSupplierSnapshot(client, show, actor.id, "supplier.compensation_approved", "Producer approved cancellation of the exact uncaptured authorization: " + detail + ". Provider confirmation is pending; no refund or fee reversal is implied.");
-    await client.query("INSERT INTO on_commands(tenant_id,command_id,payload_hash,result_revision) VALUES($1,$2,$3,$4)", [actor.tenantId, commandId, payloadHash, show.revision]);
-    return show;
-  });
+    return prepared.intent;
 }

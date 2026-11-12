@@ -10,6 +10,7 @@ export interface TaskExecutionPresentation {
 
 /** Completion and provenance are independent: a fixture can be accepted and a real receipt can be complete. */
 export function taskExecutionPresentation(show: ShowSnapshot, task: Task, presentation: Pick<ConsoleData, "crew" | "controlledQa"> = {}): TaskExecutionPresentation {
+  if (task.cancellation) return { label: "Cancelled", source: "Producer operating notice; original call and earned-work history retained", tone: "amber" };
   if (task.state !== "complete") return { label: task.state === "blocked" ? "Blocked" : "Planned", source: "Awaiting execution evidence", tone: task.state === "blocked" ? "amber" : "muted" };
 
   const actual = currentActual(show).filter(receipt => receipt.planVersion === show.planVersion);

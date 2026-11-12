@@ -1,0 +1,64 @@
+{
+  "qualification": "supplier disruption and reviewed cancellation",
+  "at": "2026-11-12T04:58:52.825Z",
+  "scope": "isolated source unit, restricted local PostgreSQL, actual production build, controlled SDK responses",
+  "baseSource": "adf2d9a56118ffd96ec683b39d6f6672126b3204",
+  "productionBuildId": "0UnlGj0-AE2FDvaGpyKsg",
+  "migration": 13,
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "tests": {
+    "product": { "passed": 538, "failed": 0, "skipped": 0 },
+    "controlledSdk": { "passed": 143, "failed": 0, "skipped": 0 },
+    "total": { "passed": 681, "failed": 0, "skipped": 0 },
+    "http": { "passed": 15, "failed": 0 }
+  },
+  "httpCoverage": [
+    "private exact-origin native chooser and original fixed capabilities",
+    "fault controls isolated from unrelated tenants",
+    "anonymous, cross-origin and changed-production rejection",
+    "strict bounded request schema",
+    "concurrent exact command and original-session receipt recovery",
+    "supplier own-unit scope and financial denial",
+    "actual local Bryntum engine, twelve retained bounded alternatives",
+    "read-only zero-capture preview without fabricated money",
+    "new source invalidates old assessment and preview",
+    "full cancellation notice retains original crew and records",
+    "terminal decision and original stop/readback identities",
+    "support-only decision retains applicable clearance requirements",
+    "revoked capability and foreign command recovery denial",
+    "actual production disruption shell",
+    "unchanged original native histories and all five fixed expiries"
+  ],
+  "controlledFinancialCoverage": [
+    "80 original captures totaling 337000 minor units",
+    "38 prior perk refunds totaling 57000 plus 280000 new admission remedies, without duplicate allocation",
+    "partial admission and perk remedy followed by remaining full-cancellation allocation",
+    "lost-response and ambiguous original-operation readback",
+    "extra or changed prior refunds block new dispatch",
+    "exact-session revocation before and during provider reads blocks original refund and uncaptured void",
+    "stop prevents unstarted remedies while retaining crew and supplier fees",
+    "supplier failure after authorization uses the original uncaptured 78000 authorization",
+    "supplier failure after accepted 48000 fee retains the fee and requires attributed return before closing the 30000 residual hold",
+    "fresh support-only plan does not replace the original approved refund allocation"
+  ],
+  "nativeFixture": {
+    "stateAtHttpQualification": "ready and unchanged",
+    "personaCount": 5,
+    "fixedExpiry": "2026-11-19T04:47:39.158Z",
+    "paymentReceiptsSeeded": 0,
+    "physicalSignoffsSeeded": 0,
+    "personalReadbacksSeeded": 0,
+    "operatingDecisionsSeeded": 0
+  },
+  "actualProviderCalls": 0,
+  "providerTransports": "disabled",
+  "nativeRootReview": "pending, separate evidence required",
+  "actualProviderQualification": "pending, separate exact-lane coordination required",
+  "deployment": "not performed by this source unit",
+  "remainingBoundaries": [
+    "old accepted-rental return and residual closure after a different operating plan and quote have replaced it",
+    "actual audience communications and physical or personal evidence",
+    "broader full-product evaluation, stress corpus and demo preparation"
+  ]
+}

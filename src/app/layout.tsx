@@ -5,6 +5,7 @@ import "./crew.css";
 import "./sources.css";
 import "./settlement.css";
 import "./tour.css";
+import "./disruptions.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald", display: "swap" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });

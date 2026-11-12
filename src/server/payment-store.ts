@@ -108,9 +108,9 @@ export async function importPaymentOperation(intent: PaymentIntent, operation: P
         if (!existing) show.tickets.push({ id: item.ticketId, tier: intent.tier, admissionMinor: 3500, perkMinor: intent.tier === "vip" ? 1500 : 0, captureId: item.providerResourceId, source: "live_sandbox", refundedMinor: 0, status: "captured" });
         else { existing.captureId = item.providerResourceId; existing.source = "live_sandbox"; existing.status = "captured"; }
       }
-      if (item.purpose === "vip_remedy" && item.ticketId) {
+      if ((item.purpose === "vip_remedy" || item.purpose === "event_remedy") && item.ticketId) {
         const ticket = show.tickets.find(t => t.id === item.ticketId);
-        if (ticket) { ticket.refundedMinor = show.financialEvidence.filter(e => e.ticketId === ticket.id && e.kind === "refund" && e.verified && e.status === "completed").reduce((sum, e) => sum + e.amountMinor, 0); ticket.status = "partially_refunded"; }
+        if (ticket) { ticket.refundedMinor = show.financialEvidence.filter(e => e.ticketId === ticket.id && e.kind === "refund" && e.verified && e.status === "completed").reduce((sum, e) => sum + e.amountMinor, 0); ticket.status = ticket.refundedMinor === ticket.admissionMinor + ticket.perkMinor ? "refunded" : "partially_refunded"; }
       }
     }
     const now = new Date().toISOString();

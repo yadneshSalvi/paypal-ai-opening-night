@@ -1,9 +1,10 @@
 import type { Candidate, ConstraintIssue, ConstraintReport, Dependency, PlanPatch, ShowSnapshot, SupplierOffer, Task } from "./contracts";
 import { atVenue, compareInstants, localTime, minutesBetween, plusMinutes, restLabel } from "./time";
 import { digest } from "./hash";
+import { effectiveDelivery, latestSupplierDisruption, supplierInterruption } from "./disruptions";
 
 export function planningDigest(show: ShowSnapshot): string {
-  return digest({ tasks: show.tasks, dependencies: show.dependencies, resources: show.resources, offers: show.offers, policy: show.policy, incidents: show.incidents, doorsAt: show.doorsAt });
+  return digest({ tasks: show.tasks, dependencies: show.dependencies, resources: show.resources, offers: show.offers, policy: show.policy, incidents: show.incidents, doorsAt: show.doorsAt, ...(show.supplierDisruptions?.length ? { supplierDisruptions: show.supplierDisruptions } : {}) });
 }
 export function topologicalOrder(tasks: Task[], dependencies: Dependency[]): { order: string[]; invalid: string[] } {
   const ids = new Set(tasks.map(t => t.id)); const degree = new Map(tasks.map(t => [t.id, 0]));
@@ -36,6 +37,13 @@ export function validatePatch(show: ShowSnapshot, patch: PlanPatch, offer: Suppl
   const issues: ConstraintIssue[] = [];
   const add = (code: string, stage: ConstraintIssue["stage"], severity: ConstraintIssue["severity"], message: string, resourceId: string | null = null, taskId: string | null = null, sourceId = "venue-policy-v1") => issues.push({ code, stage, severity, message, resourceId, taskId, sourceId });
   const rulesChecked = ["SCHEMA", "ACYCLIC_GRAPH", "DEPENDENCIES", "QUALIFICATION", "RESOURCE_EXCLUSIVITY", "CURFEW", "VENUE_ACCESS", "CREW_REST", "OFFER_FRESHNESS", "SUPPLIER_EVIDENCE", "ARTIST_ARRIVAL", "DOORS_SEQUENCE"];
+  const interruption = supplierInterruption(show, offer);
+  if (interruption) {
+    rulesChecked.push("SUPPLIER_DISRUPTION");
+    if (interruption.availability === "unavailable") add("SUPPLIER_UNAVAILABLE", "evidence", "hard", "The attributed supplier report withdraws this exact unit. A quote cannot prove available capacity.", offer.unitId, "rental-delivery", interruption.id);
+    else add("SUPPLIER_TERMS_RECONFIRMATION", "evidence", "unknown", "Obtain new authenticated terms after this supplier report before approving a replacement commitment.", offer.unitId, "rental-delivery", interruption.id);
+  }
+  if (show.cancellationDecision?.mode === "cancel_show" || show.cancellationDecision?.mode === "support_only" && (patch.programMode !== "support_only" || patch.tasks.some(task => show.cancellationDecision!.cancelledTaskIds.includes(task.id)))) add("PROGRAM_CANCELLED", "authority", "hard", "The producer has cancelled part of this running order. A rescue proposal cannot reinstate it.", null, "headliner", show.cancellationDecision.id);
   if (!Number.isSafeInteger(offer.feeMinor) || offer.feeMinor < 0 || !Number.isSafeInteger(patch.overtimeMinor) || patch.overtimeMinor < 0) add("INVALID_MONEY", "schema", "hard", "All financial amounts must be nonnegative integer cents.");
   for (const message of topologicalOrder(patch.tasks, patch.dependencies).invalid) add("GRAPH_INVALID", "graph", "hard", message);
   const byId = new Map(patch.tasks.map(task => [task.id, task]));
@@ -72,44 +80,49 @@ export function validatePatch(show: ShowSnapshot, patch: PlanPatch, offer: Suppl
   if (patch.offerRevision !== offer.revision) add("QUOTE_CHANGED", "authority", "hard", "The supplier revised this quote; generate a new candidate.", null, null, offer.id);
   if (patch.policyVersion !== show.policy.version) add("POLICY_CHANGED", "authority", "hard", "The operating policy changed after this proposal.");
   const focus = byId.get("lx-focus"); const cues = byId.get("lx-program");
-  if (focus && compareInstants(focus.start, plusMinutes(offer.deliveryAt, 15)) < 0) add("DELIVERY_WINDOW", "temporal", "hard", "Lighting focus begins before delivery, acceptance and handover can clear.", "console", "lx-focus", offer.id);
+  if (focus && compareInstants(focus.start, plusMinutes(effectiveDelivery(show, offer), 15)) < 0) add("DELIVERY_WINDOW", "temporal", "hard", "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.", "console", "lx-focus", latestSupplierDisruption(show, offer)?.id ?? offer.id);
   if (cues && compareInstants(plusMinutes(cues.end, 5), patch.doorsAt) > 0) add("DOORS_SEQUENCE", "temporal", "hard", `Cue validation finishes ${localTime(cues.end)}; doors need a five-minute handover.`, null, "doors");
-  if (compareInstants(patch.headlinerAt, atVenue("19:35")) < 0) add("ARTIST_ARRIVAL", "temporal", "hard", "The headliner cannot perform before the 19:35 on-site arrival.", null, "headliner", "flight-final");
+  if (patch.programMode !== "support_only" && compareInstants(patch.headlinerAt, atVenue("19:35")) < 0) add("ARTIST_ARRIVAL", "temporal", "hard", "The headliner cannot perform before the 19:35 on-site arrival.", null, "headliner", "flight-final");
   const status = issues.some(i => i.severity === "hard") ? "infeasible" : issues.some(i => i.severity === "unknown") ? "unknown_pending_evidence" : "feasible_with_approval";
   return { status, issues, rulesChecked, engine: null };
 }
 
 export function buildCandidate(show: ShowSnapshot, offer: SupplierOffer, family: Candidate["family"], now = new Date().toISOString()): Candidate {
-  let focusStart = plusMinutes(offer.deliveryAt, 15);
+  const supportOnly = show.cancellationDecision?.mode === "support_only";
+  const deliveryAt = effectiveDelivery(show, offer);
+  let focusStart = plusMinutes(deliveryAt, 15);
   if (family === "direct") focusStart = atVenue("15:30");
   const cueStart = plusMinutes(focusStart, 45); const cueEnd = plusMinutes(cueStart, 20); const earliestDoors = plusMinutes(cueEnd, 5);
   const doorsAt = family === "doors" || family === "direct" ? atVenue("19:00") : family === "artist" ? atVenue("20:35") : compareInstants(earliestDoors, atVenue("19:00")) > 0 ? earliestDoors : atVenue("19:00");
   const late = compareInstants(doorsAt, atVenue("19:00")) > 0;
   const supportAt = family === "artist" ? atVenue("20:40") : late ? plusMinutes(doorsAt, 20) : atVenue("20:00");
   const headlinerAt = family === "artist" ? atVenue("21:25") : late ? plusMinutes(supportAt, 45) : atVenue("20:45");
-  const crewFinishAt = family === "artist" ? atVenue("00:30", "2026-11-15") : atVenue("23:30");
+  const crewFinishAt = supportOnly ? show.tasks.find(task => task.id === "strike")?.end ?? atVenue("23:30") : family === "artist" ? atVenue("00:30", "2026-11-15") : atVenue("23:30");
   const headlinerDuration = family === "budget" && late ? 75 : 90;
   const overtimeMinor = family === "artist" ? 36000 : late ? 24000 : 18000;
-  const tasks = structuredClone(show.tasks).filter(t => !["headliner-check", "vip", "rental-authorized", "rental-delivery", "rental-captured", "quiet-prep"].includes(t.id));
+  const tasks = structuredClone(show.tasks).filter(t => !["headliner-check", "vip", "rental-authorized", "rental-delivery", "rental-captured", "quiet-prep"].includes(t.id) && !(supportOnly && show.cancellationDecision!.cancelledTaskIds.includes(t.id)));
   const update = (id: string, start: string, duration: number, resources?: string[]) => { const t = tasks.find(t => t.id === id); if (t) Object.assign(t, { start, end: plusMinutes(start, duration), durationMinutes: duration, state: "planned", affected: start !== t.baselineStart, ...(resources ? { resources } : {}) }); };
   update("headliner-arrival", atVenue("19:35"), 0); update("lx-focus", focusStart, 45); update("lx-program", cueStart, 20, family === "direct" ? ["tom"] : ["priya"]);
   const readinessAt = compareInstants(plusMinutes(doorsAt, -15), cueEnd) >= 0 ? plusMinutes(doorsAt, -15) : cueEnd;
   update("readiness", readinessAt, 0); update("doors", doorsAt, 0); update("support", supportAt, 25); update("changeover", plusMinutes(supportAt, 25), late && family !== "artist" ? 20 : 15); update("headliner", headlinerAt, headlinerDuration);
-  const performanceEnd = plusMinutes(headlinerAt, headlinerDuration); update("strike", performanceEnd, minutesBetween(performanceEnd, crewFinishAt));
+  const supportEnd = plusMinutes(supportAt, 25), retainedStrikeStart = show.tasks.find(task => task.id === "strike")?.start ?? supportEnd;
+  const performanceEnd = supportOnly ? compareInstants(retainedStrikeStart, supportEnd) > 0 ? retainedStrikeStart : supportEnd : plusMinutes(headlinerAt, headlinerDuration); update("strike", performanceEnd, minutesBetween(performanceEnd, crewFinishAt));
   const newTask = (id: string, name: string, lane: Task["lane"], start: string, duration: number, resources: string[] = []): Task => ({ id, name, lane, start, end: plusMinutes(start, duration), durationMinutes: duration, baselineStart: start, baselineEnd: plusMinutes(start, duration), resources, requiredSkill: null, state: "blocked", critical: true, affected: true, milestone: id, sourceId: offer.id });
-  tasks.push(newTask("rental-authorized", "Rental authorized · PayPal", "commercial", atVenue("16:10"), 0), newTask("rental-delivery", "Console delivered & accepted", "commercial", offer.deliveryAt, 0), newTask("rental-captured", "Rental fee captured · PayPal", "commercial", plusMinutes(offer.deliveryAt, 5), 0), newTask("quiet-prep", "Artist quiet preparation · sound lead sign-off required", "audio", atVenue("19:40"), 30, ["backstage"]));
+  tasks.push(newTask("rental-authorized", "Rental authorized · PayPal", "commercial", atVenue("16:10"), 0), newTask("rental-delivery", "Console delivered & accepted", "commercial", deliveryAt, 0), newTask("rental-captured", "Rental fee captured · PayPal", "commercial", plusMinutes(deliveryAt, 5), 0));
+  if (!supportOnly) tasks.push(newTask("quiet-prep", "Artist quiet preparation · sound lead sign-off required", "audio", atVenue("19:40"), 30, ["backstage"]));
   const ids = new Set(tasks.map(t => t.id));
   const dependencies = [...new Map(show.dependencies.filter(d => ids.has(d.from) && ids.has(d.to) && !(d.from === "console-test" && d.to === "lx-focus")).map(d => [d.id, { ...d }])).values()];
   const addEdge = (from: string, to: string, financial = false) => { const edge = { id: `${from}:${to}`, from, to, lagMinutes: 0, financial }; const existing = dependencies.findIndex(d => d.id === edge.id); if (existing < 0) dependencies.push(edge); else dependencies[existing] = edge; };
-  addEdge("rental-authorized", "rental-delivery", true); addEdge("rental-delivery", "rental-captured", true); addEdge("rental-captured", "lx-focus", true); addEdge("headliner-arrival", "quiet-prep");
-  const patch: PlanPatch = { baseRevision: show.revision, offerId: offer.id, offerRevision: offer.revision, policyVersion: show.policy.version, tasks, dependencies, doorsAt, supportAt, headlinerAt, crewFinishAt, overtimeMinor, canceledPerk: true, changedPeople: late ? ["sam", "priya", "tom", "dana", "lee", "avery"] : ["priya", "tom", "dana", "lee"] };
-  const approvals: Candidate["approvals"] = [{ id: "vip-cancellation", label: "VIP soundcheck canceled", role: "producer", grantedBy: null }, { id: "support-first", label: "Support-first running order", role: "producer", grantedBy: null }, { id: "quiet-prep-protocol", label: "Quiet preparation protocol", role: "department_lead", grantedBy: null }];
+  addEdge("rental-authorized", "rental-delivery", true); addEdge("rental-delivery", "rental-captured", true); addEdge("rental-captured", "lx-focus", true); if (!supportOnly) addEdge("headliner-arrival", "quiet-prep");
+  const patch: PlanPatch = { baseRevision: show.revision, offerId: offer.id, offerRevision: offer.revision, policyVersion: show.policy.version, tasks, dependencies, doorsAt, supportAt, headlinerAt, crewFinishAt, overtimeMinor, canceledPerk: true, changedPeople: late ? ["sam", "priya", "tom", "dana", "lee", "avery"] : ["priya", "tom", "dana", "lee"], ...(supportOnly ? { programMode: "support_only" as const } : {}) };
+  const approvals: Candidate["approvals"] = supportOnly ? [{ id: "support-only", label: "Support-only plan; headliner remains cancelled", role: "producer", grantedBy: null }, { id: "retained-crew-calls", label: "Retain existing crew finish and separate compensation", role: "producer", grantedBy: null }] : [{ id: "vip-cancellation", label: "VIP soundcheck canceled", role: "producer", grantedBy: null }, { id: "support-first", label: "Support-first running order", role: "producer", grantedBy: null }, { id: "quiet-prep-protocol", label: "Quiet preparation protocol", role: "department_lead", grantedBy: null }];
   if (late) approvals.push({ id: "doors-delay", label: `Doors ${localTime(doorsAt)}`, role: "producer", grantedBy: null });
-  if (headlinerDuration === 75) approvals.push({ id: "artist-set", label: "Headliner set −15 min", role: "artist_representative", grantedBy: null });
+  if (!supportOnly && headlinerDuration === 75) approvals.push({ id: "artist-set", label: "Headliner set −15 min", role: "artist_representative", grantedBy: null });
   const names = { doors: "Protect doors", budget: "Protect budget", artist: "Protect artist", direct: "Keep original calls" };
   const summaries = { doors: "Keep the house opening at 19:00. A faster console, support first, and a precise VIP remedy.", budget: "Trade a later opening for a lower rental fee. The shorter artist set needs separate approval.", artist: "Preserve a longer artist preparation window. Sunday’s crew rest makes this a diagnostic plan.", direct: "Keep original calls and move programming to Tom. Validation must establish delivery and qualifications." };
-  const cost = { rentalMinor: offer.feeMinor, overtimeMinor, remedyMinor: 57000, totalMinor: offer.feeMinor + overtimeMinor + 57000 };
-  return { id: `${family}-${offer.supplierId}-${show.runs.length + 1}`, family, name: names[family], summary: summaries[family], digest: digest({ patch, approvals, cost }), sourceDigest: planningDigest(show), generatedAt: now, patch, approvals, report: validatePatch(show, patch, offer), cost };
+  const remedyMinor = supportOnly ? show.cancellationDecision!.targets.reduce((sum, target) => sum + target.admissionMinor + target.perkMinor, 0) : 57000;
+  const cost = { rentalMinor: offer.feeMinor, overtimeMinor, remedyMinor, totalMinor: offer.feeMinor + overtimeMinor + remedyMinor };
+  return { id: `${family}-${offer.supplierId}-${show.runs.length + 1}`, family, name: supportOnly ? "Support only · " + names[family] : names[family], summary: supportOnly ? "Keep the headliner cancelled. Revalidate the support program with current supplier terms, retained crew calls and the separately approved ticket remedy." : summaries[family], digest: digest({ patch, approvals, cost }), sourceDigest: planningDigest(show), generatedAt: now, patch, approvals, report: validatePatch(show, patch, offer), cost };
 }
 export function enumerateCandidates(show: ShowSnapshot, now = new Date().toISOString()): Candidate[] { return show.offers.flatMap(offer => (["doors", "budget", "artist", "direct"] as const).map(family => buildCandidate(show, offer, family, now))); }
 export function candidateFunnel(candidates: Candidate[]) {

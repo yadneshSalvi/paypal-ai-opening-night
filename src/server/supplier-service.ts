@@ -7,6 +7,7 @@ import { approvedRental } from "@/domain/payment-authority";
 import { currentActual } from "@/domain/finance";
 import type { DeliveryReceipt, RentalExecution, SupplierId, SupplierQuote } from "@/domain/supplier-contracts";
 import { atVenue, compareInstants } from "@/domain/time";
+import { hasCurrentSupportOnlyPlan, latestSupplierDisruption, supplierInterruption } from "@/domain/disruptions";
 import { enqueueJob, type JobResult } from "./jobs";
 import { signSupplierQuote, signSupplierResponse, verifySupplierQuote, type SupplierRequest, type SupplierResponse, type SupplierResult } from "./supplier-protocol";
 import { appendSupplierFact, assertProducer, assertRevision, assertSupplier, lockSupplierShow, readRentalExecution, saveRentalExecution, saveSupplierSnapshot, supplierActor, supplierTransaction } from "./supplier-storage";
@@ -23,16 +24,19 @@ async function assertInventoryAvailable(client: PoolClient, show: ShowSnapshot, 
     AND (status='confirmed' OR (status='provisional' AND expires_at>clock_timestamp())) LIMIT 1`, [show.tenantId, execution.supplierId, execution.unitId, execution.id, execution.deliveryAt, execution.windowEnd]);
   if (conflict.rowCount) throw new DomainError("UNIT_ALREADY_HELD", "This exact console is already reserved for an overlapping production window.");
 }
-export function currentSupplierPlan(show: ShowSnapshot, execution: RentalExecution) {
+export function currentSupplierPlan(show: ShowSnapshot, execution: RentalExecution, allowReturnAfterDisruption = false) {
   const { plan, offer } = approvedRental(show);
   if (execution.planVersion !== show.planVersion || execution.planDigest !== plan.digest || execution.offerId !== offer.id || execution.offerRevision !== offer.revision || execution.quoteId !== offer.serviceQuote?.id || execution.quoteDigest !== offer.serviceQuote.termsDigest) throw new DomainError("STALE_EXECUTION", "The supplier commitment belongs to an earlier approved plan. Review its retained history before replanning.");
+  if (!allowReturnAfterDisruption && (supplierInterruption(show, offer) || show.cancellationDecision && !hasCurrentSupportOnlyPlan(show))) throw new DomainError("SUPPLIER_DISRUPTION_REVIEW", "The supplier or program changed after these terms. Review the original commitment and obtain fresh terms before another fulfillment step.");
   return offer;
 }
 async function issueQuote(client: PoolClient, show: ShowSnapshot, supplierId: SupplierId): Promise<SupplierQuote> {
   const base = createFixture(show.tenantId).offers.find(offer => offer.supplierId === supplierId)!;
+  const disruption = latestSupplierDisruption(show, base);
+  if (disruption?.availability === "unavailable") throw new DomainError("SUPPLIER_UNAVAILABLE", "The current attributed report withdraws this unit. Its supplier must record new availability before issuing another quote.");
   const previous = await client.query<{ revision: number }>("SELECT coalesce(max(revision),1)+1 AS revision FROM on_supplier_quotes WHERE tenant_id=$1 AND supplier_id=$2", [show.tenantId, supplierId]);
   const revision = previous.rows[0]!.revision; const issuedAt = (await databaseTime(client)).toISOString();
-  const offer: SupplierOffer = { ...base, revision };
+  const offer: SupplierOffer = { ...base, revision, ...(disruption?.earliestAt && compareInstants(disruption.earliestAt, base.deliveryAt) > 0 ? { deliveryAt: disruption.earliestAt } : {}) };
   const equipment = { model: "Touring LX control desk · controlled fixture unit", capabilityEvidence: "Fixture capability sheet: compatible cue-file import, touring data output and safe power configuration. Acceptance still requires the department lead's inspection.", driverEvidence: base.qualifiedDriver ? `${base.supplier} controlled qualified-driver roster` : null, conditionEvidence: base.conditionVerified ? `${base.unitId} controlled pre-dispatch condition checklist` : null };
   const cancellation = "A provisional reservation lasts ten real minutes. Authorization alone does not confirm capacity. An expired hold needs reconfirmation. An uncaptured authorization may be voided only after explicit producer approval; accepted rental fees require separate review.";
   const content = { schemaVersion: 1 as const, id: randomUUID(), tenantId: show.tenantId, supplierId, revision, issuedAt, validUntil: new Date(Date.parse(issuedAt) + QUOTE_MS).toISOString(), offer, equipment, cancellation, source: "controlled_fixture" as const };
@@ -68,7 +72,8 @@ async function changeReservation(client: PoolClient, show: ShowSnapshot, actor: 
   if (execution.supplierId !== supplierId) throw new DomainError("SUPPLIER_SCOPE_REQUIRED", "This rental belongs to another supplier.", 403);
   if (action.type === "return" || action.type === "return_rejected") assertSupplier(actor, supplierId);
   else if (!actor.roles.includes("producer")) assertSupplier(actor, supplierId);
-  if (["cancelled", "compensation_pending", "returned_unaccepted"].includes(execution.state) || execution.state === "needs_attention" && action.type !== "return_rejected") throw new DomainError("EXECUTION_NEEDS_REVIEW", "This rental must be reconciled before another supplier transition.");
+  const disruptedReturn = action.type === "return" && execution.state === "needs_attention" && execution.lastCode === "SUPPLIER_DISRUPTION" && Boolean(execution.acceptedAt);
+  if (["cancelled", "compensation_pending", "returned_unaccepted"].includes(execution.state) || execution.state === "needs_attention" && action.type !== "return_rejected" && !disruptedReturn) throw new DomainError("EXECUTION_NEEDS_REVIEW", "This rental must be reconciled before another supplier transition.");
   if (action.type === "release") {
     assertProducer(actor);
     if (execution.paymentRootId || execution.authorizationId || ["confirmed", "delivered", "accepted", "returned"].includes(execution.state)) throw new DomainError("PAYMENT_RECONCILIATION_REQUIRED", "This rental has a payment or fulfillment history. Review cancellation against its exact original authorization.");
@@ -83,8 +88,8 @@ async function changeReservation(client: PoolClient, show: ShowSnapshot, actor: 
     execution.state = "returned_unaccepted"; execution.lastCode = null;
     await client.query("UPDATE on_resource_holds SET status='returned',updated_at=now() WHERE id=$1", [execution.id]);
   } else if (action.type === "return") {
-    currentSupplierPlan(show, execution);
-    if (execution.state !== "accepted" || !execution.acceptedAt || compareInstants(show.clock, atVenue("23:30")) < 0) throw new DomainError("RETURN_NOT_READY", "An accepted delivery and the 23:30 return step are required for this inspection.");
+    currentSupplierPlan(show, execution, true);
+    if (execution.state !== "accepted" && !disruptedReturn || !execution.acceptedAt || !show.cancellationDecision && compareInstants(show.clock, atVenue("23:30")) < 0) throw new DomainError("RETURN_NOT_READY", "An accepted delivery and the scheduled return step, or an approved program cancellation, are required for this attributed inspection.");
     execution.state = "returned";
     appendSupplierFact(show, actor, "return_accepted", "Authenticated controlled supplier return inspection: " + action.detail);
     await client.query("UPDATE on_resource_holds SET status='returned',updated_at=now() WHERE id=$1", [execution.id]);

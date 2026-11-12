@@ -1,4 +1,5 @@
 import type { ShowSnapshot, SupplierOffer } from "./contracts";
+import { selectedInterruption } from "./disruptions";
 
 export const supplierIds = ["brightline", "northside", "sister"] as const;
 export type SupplierId = typeof supplierIds[number];
@@ -44,12 +45,14 @@ export function currentRentalExecution(show: ShowSnapshot) {
   return show.rentalExecutions?.find(execution => execution.planVersion === show.planVersion && execution.planDigest === show.approvedPlan?.digest) ?? null;
 }
 export function supplierIsConfirmed(show: ShowSnapshot) {
+  if (selectedInterruption(show)) return false;
   const fact = show.facts.some(item => item.kind === "supplier_confirmed" && item.planVersion === show.planVersion);
   if (show.commercialProtocol !== 2) return fact;
   const execution = currentRentalExecution(show);
   return fact && Boolean(execution && ["confirmed", "delivered", "accepted", "returned"].includes(execution.state));
 }
 export function deliveryIsAccepted(show: ShowSnapshot) {
+  if (selectedInterruption(show)) return false;
   const fact = show.facts.some(item => item.kind === "delivery_accepted" && item.planVersion === show.planVersion);
   if (show.commercialProtocol !== 2) return fact;
   const execution = currentRentalExecution(show);

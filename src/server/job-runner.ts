@@ -11,6 +11,16 @@ import { WalletProviderError } from "./wallet-provider";
 const paymentPayload = z.object({ intentId: z.uuid() }).strict();
 const webhookPayload = z.object({ seller: z.enum(["venue", "brightline"]), eventId: z.string().min(3).max(128), rootIntentId: z.uuid() }).strict();
 export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResult> {
+  if (job.kind === "event_remedy") {
+    const parsed = z.object({ decisionId: z.uuid(), itemId: z.uuid() }).strict().safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./disruptions/worker")).runEventRemedy(job.tenantId, parsed.data.decisionId, parsed.data.itemId, signal);
+  }
+  if (job.kind === "event_remedy_retry") {
+    const parsed = z.object({ decisionId: z.uuid(), itemId: z.uuid(), intentId: z.uuid() }).strict().safeParse(job.payload);
+    if (!parsed.success) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };
+    return (await import("./disruptions/worker")).runEventRemedy(job.tenantId, parsed.data.decisionId, parsed.data.itemId, signal, parsed.data.intentId);
+  }
   if (job.kind === "invoice_operation") {
     const parsed = z.object({ invoiceId: z.uuid(), grantId: z.uuid().nullable(), refreshId: z.uuid().nullable() }).strict().safeParse(job.payload);
     if (!parsed.success || Boolean(parsed.data.grantId) === Boolean(parsed.data.refreshId)) return { status: "needs_attention", code: "INVALID_JOB_PAYLOAD" };

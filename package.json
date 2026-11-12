@@ -29,7 +29,13 @@
     "qa:tour:prepare": "node --import ./scripts/qa/tour-disabled-providers.mjs --import tsx scripts/qa/tour-prepare-native.ts",
     "qa:tour:http": "node --import ./scripts/qa/tour-disabled-providers.mjs --import tsx scripts/qa/tour-http-qa.ts",
     "qa:tour:serve": "node scripts/qa/tour-review-server.mjs",
-    "qa:tour:full": "node scripts/qa/tour-regressions.mjs"
+    "qa:tour:full": "node scripts/qa/tour-regressions.mjs",
+    "test:disruptions": "node --import ./scripts/qa/disruption-native-test-runtime.mjs --import tsx --test --test-concurrency=3 tests/disruptions.test.ts tests/disruptions-api.test.ts tests/disruptions-recovery.test.ts tests/disruptions-ui.test.tsx tests/disruptions-native-faults.test.ts",
+    "test:disruptions:payments": "node --import ./scripts/qa/disruption-controlled-wire-runtime.mjs --import tsx --test tests/disruptions-store.test.ts",
+    "qa:disruptions:prepare": "node --import ./scripts/qa/disruption-disabled-providers.mjs --import tsx scripts/qa/disruption-prepare-native.ts",
+    "qa:disruptions:http": "node --import ./scripts/qa/disruption-disabled-providers.mjs --import tsx scripts/qa/disruption-http-qa.ts",
+    "qa:disruptions:serve": "node scripts/qa/disruption-review-server.mjs",
+    "qa:disruptions:full": "node scripts/qa/disruption-regressions.mjs"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",
