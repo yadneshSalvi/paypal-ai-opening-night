@@ -3,8 +3,8 @@ import { financialSummary, currentActual } from "./finance";
 import { digest } from "./hash";
 import { atVenue, compareInstants, formatMoney, localTime } from "./time";
 import { deliveryIsAccepted, supplierIsConfirmed } from "./supplier-contracts";
-import { currentAttestation, currentCrewReview, currentCue, currentRentalClearance, dutyEarliest } from "./crew/policy";
-import { crewDutyKinds, type CrewVerifier } from "./crew/contracts";
+import { currentAttestation, currentCrewReview, currentCue, currentRentalClearance, dutyEarliest, headlinerPreparationKind } from "./crew/policy";
+import { crewDutyKinds, type CrewDutyKind, type CrewVerifier } from "./crew/contracts";
 import { cancellationBlocksCue, cancellationRemedies, operatingDigest, selectedInterruption } from "./disruptions";
 import { inputPlanCurrent, inputPublicationCurrent, inputReadiness } from "./production-inputs/constraints";
 
@@ -19,7 +19,7 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
   const facts = show.facts.filter(f => f.planVersion === show.planVersion);
   const actual = currentActual(show).filter(e => e.planVersion === show.planVersion);
   const finance = financialSummary(show);
-  const fact = (kind: typeof facts[number]["kind"]) => {
+  const fact = (kind: typeof facts[number]["kind"] | CrewDutyKind) => {
     if (show.crewProtocol === 1 && crewDutyKinds.includes(kind as typeof crewDutyKinds[number])) {
       const signed = currentAttestation(show, kind as typeof crewDutyKinds[number], verifyCrew);
       return signed ? { ...signed, role: "department_lead" as const } : undefined;
@@ -57,6 +57,10 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
     gate("delivery", "Console accepted", deliveryIsAccepted(show), deliveryIsAccepted(show) ? "Accepted" : "Delivery pending", "An authorized department lead records delivery and condition acceptance.", fact("delivery_accepted") ? [fact("delivery_accepted")!.id] : []);
     gate("capture", "Rental fee captured", Boolean(capture), `${fee !== null ? formatMoney(fee) : "Selected fee"} ${capture ? "captured" : "pending"}`, "Verified partial fee capture follows accepted delivery; the deposit remains separate.", capture ? [capture.id] : []);
     gate("technical", "Focus & cue checks", technical, technical ? "Signed off" : "Not cleared", "Current department sign-offs follow accepted console delivery and fee capture.", [fact("focus_signed_off")?.id, fact("cue_signed_off")?.id].filter((s): s is string => Boolean(s)));
+    if (headlinerPreparationKind(show) === "headliner_soundcheck") {
+      const check = fact("headliner_soundcheck"), expected = dutyEarliest(show, "headliner_soundcheck"), checked = Boolean(check && expected && compareInstants(check.fixtureAt, expected) >= 0);
+      gate("stage-soundcheck", "Approved stage soundcheck complete", checked, checked ? "Signed by the assigned sound lead" : "Stage soundcheck pending", "This reviewed strategy moves doors after an amplified stage soundcheck. Its own current signed completion is required; the scenario clock and quiet-preparation records cannot clear it.", check ? [check.id] : [], "/crew");
+    }
     const cancelledRemedies = cancellationRemedies(show);
     if (cancelledRemedies) gate("refunds", "Cancellation remedies confirmed", cancelledRemedies.complete, `${cancelledRemedies.completed} / ${cancelledRemedies.total} allocations confirmed`, "The producer's exact admission and perk allocation must be verified against each original capture. Pending instructions do not count.", show.financialEvidence.filter(item => item.purpose === "event_remedy").map(item => item.id), "/disruptions");
     else gate("refunds", "VIP remedies confirmed", finance.refundedVipCount === show.policy.refundCount, `${finance.refundedVipCount} / ${show.policy.refundCount} refunded`, `All ${show.policy.refundCount} original-capture $15 refunds must be verified; a pending request does not count.`, finance.evidenceIds, "/box-office");
@@ -79,14 +83,15 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
       const support = currentCue(show, "SUPPORT_START", verifyCrew);
       gate("headliner-support", "Support cue recorded", Boolean(support), support ? "Support started" : "Support cue pending", "The support-first order requires its separate authorized start cue.", support ? [support.id] : []);
     }
-    const arrived = fact("headliner_checkin"); const quiet = fact("quiet_prep"); const change = fact("changeover");
+    const preparationKind = headlinerPreparationKind(show), onStage = preparationKind === "headliner_soundcheck";
+    const arrived = fact("headliner_checkin"); const quiet = fact(preparationKind); const change = fact("changeover");
     const arrivalAt = dutyEarliest(show, "headliner_checkin") ?? atVenue("19:35", show.showDate);
-    const prepAt = dutyEarliest(show, "quiet_prep") ?? atVenue("20:10", show.showDate);
+    const prepAt = dutyEarliest(show, preparationKind) ?? atVenue("20:10", show.showDate);
     const changeAt = dutyEarliest(show, "changeover") ?? atVenue("20:40", show.showDate);
     const checked = Boolean(arrived && compareInstants(arrived.fixtureAt, arrivalAt) >= 0);
     gate("headliner-checkin", "Headliner on site", checked, `${localTime(arrived?.fixtureAt ?? arrivalAt)} · ${checked ? "checked in" : "expected"}`, "The revised flight and transfer prohibit an earlier arrival.", arrived ? [arrived.id] : []);
     const prep = Boolean(checked && quiet && quiet.role === "department_lead" && compareInstants(quiet.fixtureAt, prepAt) >= 0);
-    gate("headliner-prep", "Quiet preparation signed off", prep, `${localTime(quiet?.fixtureAt ?? prepAt)} · ${prep ? "approved" : "pending"}`, "The sound lead records completion of the approved isolated preparation protocol.", quiet ? [quiet.id] : []);
+    gate("headliner-prep", onStage ? "Stage soundcheck signed off" : "Quiet preparation signed off", prep, `${localTime(quiet?.fixtureAt ?? prepAt)} · ${prep ? "approved" : "pending"}`, onStage ? "The assigned sound lead records completion of the separately approved amplified stage soundcheck; a quiet-preparation record cannot substitute." : "The sound lead records completion of the approved isolated preparation protocol.", quiet ? [quiet.id] : []);
     const changed = Boolean(change && compareInstants(change.fixtureAt, changeAt) >= 0 && technical);
     gate("headliner-changeover", "Changeover & cues clear", changed, `${localTime(change?.fixtureAt ?? changeAt)} · ${changed ? "cleared" : "pending"}`, "Complete changeover and maintain current technical clearance before the scheduled performance.", change ? [change.id] : []);
   }

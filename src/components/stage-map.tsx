@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ArrowUpRight, Radio, X } from "lucide-react";
 import Link from "next/link";
 import type { ConsoleData } from "@/domain/contracts";
@@ -8,10 +8,13 @@ import { stageSelectionNodes } from "./presentation/stage-nodes";
 import { currentReadiness, sameSelection } from "./presentation/model";
 export function StageMap({ disrupted = false, cleared = false, compact = false, data }: { disrupted?: boolean; cleared?: boolean; compact?: boolean; data?: ConsoleData }) {
   const [selected, setSelected] = useState(false);
+  const [spatial, setSpatial] = useState(false);
+  useEffect(() => { setSpatial(false); setSelected(false); }, [data?.show.tenantId, data?.show.id, data?.currentActor?.id]);
   const linked = useLinkedSelection(), nodes = data ? stageSelectionNodes(data) : [], svgId = "stage" + useId().replace(/[^a-z0-9]/gi, "");
   const illuminated = data ? currentReadiness(data)?.gates.find(row => row.id === "technical")?.complete === true : cleared;
-  return <div className={`stage-map ${compact ? "compact" : ""}`}>
-    <div className="stage-map-top"><span><span className="live-square" /> {data?.show.venue.toUpperCase() ?? "ALDER HALL"} <span className="faint">/ STAGE 01</span></span><span className="mono">ILLUSTRATIVE PLAN VIEW</span></div>
+  return <div className={`stage-map ${compact ? "compact" : ""} ${spatial ? "stage-spatial" : ""}`}>
+    <div className="stage-map-top"><span><span className="live-square" /> {data?.show.venue.toUpperCase() ?? "ALDER HALL"} <span className="faint">/ STAGE 01</span></span><span className="mono">{spatial ? "ILLUSTRATIVE SPATIAL VIEW" : "ILLUSTRATIVE PLAN VIEW"}</span></div>
+    {data && !compact && <div className="stage-perspective-controls"><div role="group" aria-label="Stage illustration perspective"><button type="button" aria-pressed={!spatial} onClick={() => setSpatial(false)}>Plan view</button><button type="button" aria-pressed={spatial} onClick={() => setSpatial(true)}>Spatial illustration</button></div><p>{spatial ? "Illustrative depth; geometry and dimensions are unverified." : "Normalized layout; no scale or surveyed dimensions."} Select the same current calls and resources below.</p></div>}
     <svg viewBox="0 0 900 430" role="img" aria-label={`${data?.show.venue ?? "Alder Hall"} illustrative stage schematic. ${disrupted ? "The lighting console is affected by a self-test failure." : "Controlled show baseline."}`}>
       <defs><pattern id={`${svgId}-grid`} width="36" height="36" patternUnits="userSpaceOnUse"><path d="M 36 0 L 0 0 0 36" fill="none" stroke="#aaaaaa" strokeWidth=".4" opacity=".1" /></pattern><linearGradient id={`${svgId}-floor`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#292620" /><stop offset="100%" stopColor="#141516" /></linearGradient><linearGradient id={`${svgId}-beam`}><stop offset="0" stopColor={illuminated ? "#ffb000" : "#c9c0a3"} stopOpacity=".03" /><stop offset=".5" stopColor={illuminated ? "#ffb000" : "#c9c0a3"} stopOpacity={illuminated ? ".17" : ".045"} /><stop offset="1" stopColor="#b5a386" stopOpacity=".01" /></linearGradient><radialGradient id={`${svgId}-glow`}><stop offset="0" stopColor="#ffb000" stopOpacity=".18" /><stop offset="1" stopColor="#ffb000" stopOpacity="0" /></radialGradient></defs>
       <rect width="900" height="430" fill={`url(#${svgId}-grid)`} />
@@ -19,6 +22,7 @@ export function StageMap({ disrupted = false, cleared = false, compact = false, 
       <path d="M168 281H732L764 310H136Z" fill="#1e1f1f" stroke="#4c493f" /><path d="M136 310H764V322H136Z" fill="#101112" stroke="#3c3d3d" />
       <path d="M168 70L245 281H388L206 70Z M420 70L334 281H569L472 70Z M700 70L524 281H666L735 70Z" fill={`url(#${svgId}-beam)`} />
       <g stroke="#65615a" strokeWidth="1" fill="#1c1d1d"><path d="M179 57H721M179 45H721" />{[200,270,340,410,480,550,620,690].map(x => <g key={x}><path d={`M${x-15} 45L${x+15} 57M${x-15} 57L${x+15} 45`} /><rect x={x-7} y="58" width="14" height="11" rx="2" /><path d={`M${x-5} 69L${x-8} 78H${x+8}L${x+5} 69`} /></g>)}</g>
+      {spatial && <g aria-hidden="true" fill="#171c21" stroke="#6f6655" strokeWidth="1.5"><path d="M168 70L144 96V296L168 281ZM732 70L756 96V296L732 281Z" /><path d="M195 202L183 212V276L195 266ZM706 202L718 212V276L706 266Z" /><path d="M101 386L114 399H176L163 386Z" /><path d="M195 202L207 191H246L234 202ZM667 202L679 191H718L706 202Z" fill="#464238" /></g>}
       <text x="450" y="148" textAnchor="middle" className="stage-title">{data ? data.show.title.split(" ").slice(0, 2).join(" ").toUpperCase() : "THE NIGHT"}</text><text x="450" y="202" textAnchor="middle" className="stage-title">{data ? data.show.title.split(" ").slice(2).join(" ").toUpperCase() : "FERRIES"}</text><text x="450" y="226" textAnchor="middle" className="stage-subtitle">{data?.show.showDate ?? "SATURDAY / NOVEMBER 14"}</text>
       <g fill="#292c2d" stroke="#656764" strokeWidth="1"><rect x="195" y="202" width="39" height="64" rx="2" /><rect x="667" y="202" width="39" height="64" rx="2" /><rect x="375" y="250" width="150" height="19" /><circle cx="447" cy="250" r="21" /><circle cx="420" cy="241" r="13" /><circle cx="476" cy="239" r="13" /><path d="M315 226V275M303 275H327M585 226V275M573 275H597" /><circle cx="315" cy="226" r="4" /><circle cx="585" cy="226" r="4" /></g>
       <path d="M244 350Q450 389 656 350M226 368Q450 410 674 368M208 386Q450 430 692 386" fill="none" stroke="#393b3b" strokeWidth="1" strokeDasharray="3 13" />

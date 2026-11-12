@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { DomainError, type Candidate, type ShowSnapshot, type Task } from "../contracts";
 import { buildCandidate, planningDigest, validatePatch } from "../scheduling";
 import { digest } from "../hash";
@@ -33,7 +32,7 @@ export function enumerateStrategies(show: ShowSnapshot, request: StrategyRequest
       const affected = show.resources.filter(person => person.kind === "person" && candidate.patch.tasks.some(task => task.critical && task.resources.includes(person.id)));
       const additionalMinor = Math.ceil(additionalMinutes * affected.reduce((sum, person) => sum + person.rateMinor, 0) / 60);
       candidate.patch.overtimeMinor = original.patch.overtimeMinor + additionalMinor;
-      candidate.patch.changedPeople = show.resources.filter(person => person.kind === "person" && candidate.patch.tasks.some(task => { const old = show.tasks.find(row => row.id === task.id); return task.resources.includes(person.id) && (!old || old.start !== task.start || old.end !== task.end || digest(old.resources) !== digest(task.resources)); })).map(person => person.id);
+      candidate.patch.changedPeople = show.resources.filter(person => person.kind === "person" && candidate.patch.tasks.some(task => { const old = show.tasks.find(row => row.id === task.id); return (task.resources.includes(person.id) || old?.resources.includes(person.id)) && (!old || old.start !== task.start || old.end !== task.end || digest(old.resources) !== digest(task.resources)); })).map(person => person.id);
       candidate.cost.overtimeMinor = candidate.patch.overtimeMinor; candidate.cost.totalMinor = candidate.cost.rentalMinor + candidate.cost.overtimeMinor + candidate.cost.remedyMinor;
       candidate.name = name; candidate.summary = "Typed bounded variation. Original source, technical duties, artist consent, supplier evidence and current publication remain separate requirements.";
       const semanticDigest = digest({ tasks: candidate.patch.tasks, dependencies: candidate.patch.dependencies, doorsAt: candidate.patch.doorsAt, offer: [offer.id, offer.revision] });
@@ -46,6 +45,10 @@ export function enumerateStrategies(show: ShowSnapshot, request: StrategyRequest
         for (const id of task.resources) { const person = show.resources.find(row => row.id === id); if (person?.kind === "person" && (Date.parse(task.start) < Date.parse(person.availableFrom) || Date.parse(task.end) > Date.parse(person.availableUntil) || person.reserve && task.critical)) candidate.report.issues.push({ code: "STRATEGY_CREW_WINDOW", stage: "semantic", severity: "hard", message: `${person.name} is outside their current active availability.`, taskId: task.id, resourceId: id, sourceId: task.sourceId }); }
       }
       if (kind === "running_order") candidate.report.issues.push({ code: "RUNNING_ORDER_CUE_POLICY", stage: "authority", severity: "unknown", message: "Headliner-first requires a separately sourced current cue policy; this diagnostic proposal cannot reuse the support-first cue gates.", taskId: "headliner", resourceId: null, sourceId: "crew-policy-v1" });
+      if (kind === "crew_substitution") {
+        const previous=show.resources.find(row=>row.id===parameters.replacesPersonId), replacement=show.resources.find(row=>row.id===parameters.personId);
+        if(previous && replacement && previous.skills.some(skill=>!replacement.skills.includes(skill))) candidate.report.issues.push({code:"STRATEGY_CREW_COMPLEMENT",stage:"semantic",severity:"hard",message:"The proposed person does not cover the replaced person's current declared qualifications. Admit separately reviewed requirements before changing the crew complement.",taskId:String(parameters.taskId),resourceId:replacement.id,sourceId:"crew-policy-v1"});
+      }
       candidate.report.status = candidate.report.issues.some(issue => issue.severity === "hard") ? "infeasible" : candidate.report.issues.some(issue => issue.severity === "unknown") ? "unknown_pending_evidence" : "feasible_with_approval";
       rows.push(candidate);
     };
@@ -72,9 +75,9 @@ export function enumerateStrategies(show: ShowSnapshot, request: StrategyRequest
         candidate.approvals = candidate.approvals.filter(row => row.id !== "support-first"); approval(candidate, "headliner-first", "Producer review of headliner-first public order", "producer"); approval(candidate, "artist-order", "Artist consent to headliner-first order", "artist_representative");
       });
       if (kind === "crew_substitution") for (const substitution of request.substitutions) add(kind, substitution, `Crew alternative · ${offer.supplier}`, candidate => {
-        const task = candidate.patch.tasks.find(task => task.id === substitution.taskId), person = show.resources.find(row => row.id === substitution.personId && row.kind === "person");
-        if (!task || !person || task.cancellation || task.state === "complete") throw new DomainError("STRATEGY_ASSIGNMENT_MISSING", "Choose a current uncompleted task and a current admitted person.");
-        task.resources = [...task.resources.filter(id => show.resources.find(row => row.id === id)?.kind !== "person"), person.id]; approval(candidate, "crew-substitution", "Review the exact changed person and call", "producer");
+        const task = candidate.patch.tasks.find(task => task.id === substitution.taskId), person = show.resources.find(row => row.id === substitution.personId && row.kind === "person"), previous=show.resources.find(row=>row.id===substitution.replacesPersonId&&row.kind==="person");
+        if (!task || !person || !previous || !task.resources.includes(previous.id) || task.resources.includes(person.id) || task.cancellation || task.state === "complete" || task.milestone || task.lane==="commercial" || Date.parse(task.start)<Date.parse(show.clock)) throw new DomainError("STRATEGY_ASSIGNMENT_MISSING", "Choose one original assigned person on a future uncompleted work task and a distinct current admitted replacement.");
+        task.resources = task.resources.map(id=>id===previous.id?person.id:id); approval(candidate, "crew-substitution", "Review the exact changed person and call", "producer");
       });
     }
   }

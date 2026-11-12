@@ -60,3 +60,5 @@
 
 /* White print stock, independent of the application’s stage-black theme. */
 @media print { html, body { background: #fff !important; color: #111 !important; } }
+
+.recovery-workbench-links{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 18px}.recovery-workbench-links a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 14px;color:var(--amber);border:1px solid var(--border);border-radius:6px}.recovery-workbench-links a:focus-visible{outline:2px solid var(--amber);outline-offset:3px}

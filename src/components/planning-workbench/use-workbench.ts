@@ -3,11 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { InputScope } from "@/domain/production-inputs/contracts";
 import type { WorkbenchResult, WorkbenchEnvelope, WorkbenchWorkspace } from "@/domain/planning-workbench/contracts";
 import { ACTIVE_REHEARSAL_STORAGE, PRODUCTION_CHANGED_EVENT, productionFetch } from "../production-fetch";
-import { clearWorkbench, workbenchRecoveryKey, isWorkbenchWorkspace, matchesWorkbenchReceipt, parsePendingWorkbench, prepareWorkbench, retainWorkbench, sameWorkbenchScope, type PendingWorkbench } from "./recovery";
+import { clearWorkbench, workbenchRecoveryKey, verifiedWorkbenchWorkspace, matchesWorkbenchReceipt, parsePendingWorkbench, prepareWorkbench, retainWorkbench, sameWorkbenchScope, type PendingWorkbench } from "./recovery";
 
 class WorkbenchReadError extends Error { constructor(message: string, readonly status: number, readonly code: string) { super(message); } }
 const message = (error: unknown) => error instanceof Error ? error.message : "The original result is unknown. Keep this instruction and check its original receipt.";
-const definite = (error: WorkbenchReadError) => [400, 403, 409, 413, 422].includes(error.status) && !/IDEMPOTENCY|INTEGRITY|ACCESS_CHANGED/.test(error.code);
+const definite = (error: WorkbenchReadError) => [400, 403, 409, 413, 422].includes(error.status) && !/IDEMPOTENCY|INTEGRITY|ACCESS_CHANGED|COMMAND_CONFLICT/.test(error.code);
 const endpoint = "/api/planning-workbench";
 export function useWorkbench() {
   const [view, setView] = useState<WorkbenchWorkspace | null>(null), [busy, setBusy] = useState(true), [error, setError] = useState<string | null>(null), [ended, setEnded] = useState(false), [pending, setPending] = useState<PendingWorkbench | null>(null), [missing, setMissing] = useState(false), [receipt, setReceipt] = useState<WorkbenchResult | null>(null), [journalBlocked, setJournalBlocked] = useState(false);
@@ -23,8 +23,8 @@ export function useWorkbench() {
     return body;
   }, []);
   const readView = useCallback(async (generation: number) => {
-    const value = await request(endpoint);
-    if (!isWorkbenchWorkspace(value)) throw new Error("The source review response is incomplete. Nothing new was sent.");
+    const value = await verifiedWorkbenchWorkspace(await request(endpoint));
+    if (!value) throw new Error("The source review response or its immutable content cannot be verified. Nothing new was sent.");
     if (!active(generation)) return null;
     if (scope.current && !sameWorkbenchScope(scope.current, value.scope)) { stop("Different producer access or fixed expiry is now selected. The original instruction stays retained with its original access."); return null; }
     scope.current = value.scope; setView(value); return value;
@@ -35,10 +35,10 @@ export function useWorkbench() {
     clearWorkbench(sessionStorage, saved); pendingRef.current = null; setPending(null); setMissing(false); setReceipt(value as WorkbenchResult); setError(null); return true;
   }, [active]);
   const lookup = useCallback(async (saved: PendingWorkbench, generation: number): Promise<"saved" | "missing" | "held"> => {
-    try { return await accept(saved, await request(`${endpoint}?commandId=${encodeURIComponent(saved.envelope.commandId)}`), generation) ? "saved" : "held"; }
+    try { return await accept(saved, await request(`${endpoint}/commands/${encodeURIComponent(saved.envelope.commandId)}`), generation) ? "saved" : "held"; }
     catch (cause) {
       if (!active(generation)) return "held";
-      if (cause instanceof WorkbenchReadError && cause.status === 404 && cause.code === "WORKBENCH_COMMAND_NOT_FOUND") { setMissing(true); setError("No original receipt was found. An explicit retry will use these same instructions and identity."); return "missing"; }
+      if (cause instanceof WorkbenchReadError && cause.status === 404 && cause.code === "WORKBENCH_COMMAND_MISSING") { setMissing(true); setError("No original receipt was found. An explicit retry will use these same instructions and identity."); return "missing"; }
       setMissing(false); if (cause instanceof WorkbenchReadError && [401, 410].includes(cause.status)) stop(message(cause)); else setError(message(cause)); return "held";
     }
   }, [accept, request, active, stop]);

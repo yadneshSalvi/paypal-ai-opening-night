@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import type { Pool } from "pg";
-import type { Actor } from "../src/domain/contracts";
+import type { Actor, ShowSnapshot } from "../src/domain/contracts";
 import { applyCommand, recordRescueRun, type Command } from "../src/domain/commands";
 import { enumerateCandidates } from "../src/domain/scheduling";
 import { digest } from "../src/domain/hash";
@@ -34,7 +34,7 @@ export class RetainedRentalWire extends DisruptionWire {
   }
   voids() { return this.calls.filter(call => call.method === "POST" && call.path.endsWith("/void")); }
 }
-export async function rentalHarness(options: { database?: Awaited<ReturnType<typeof isolatedDatabase>>; realEngine?: boolean; appOrigin?: string; onStep?: (step: string, value: unknown) => Promise<void> } = {}) {
+export async function rentalHarness(options: { database?: Awaited<ReturnType<typeof isolatedDatabase>>; realEngine?: boolean; appOrigin?: string; onStep?: (step: string, value: unknown) => Promise<void>; prepareProduction?: (session: Awaited<ReturnType<typeof import('../src/server/store').createSession>>) => Promise<void>; preparePlan?: (session: Awaited<ReturnType<typeof import('../src/server/store').createSession>>, show: ShowSnapshot) => Promise<ShowSnapshot> } = {}) {
   const database = options.database ?? await isolatedDatabase(), wire = new RetainedRentalWire(database.pool);
   const appOrigin = options.appOrigin ?? process.env.APP_BASE_URL ?? "http://127.0.0.1:4580";
   (globalThis as typeof globalThis & { openingNightPool?: Pool }).openingNightPool = database.pool;
@@ -50,14 +50,19 @@ export async function rentalHarness(options: { database?: Awaited<ReturnType<typ
   async function accepted({ replacePlan = true, captureFee = true } = {}) {
     const session = await store.createSession(undefined, "retained-rental-controlled:" + randomUUID()), actor = session.actor;
     await options.onStep?.("session", session);
+    await options.prepareProduction?.(session);
     let show = await command(actor, { type: "load_incidents" }); const rfqId = randomUUID(); await options.onStep?.("rfq-intent", { rfqId, tenantId: actor.tenantId, revision: show.revision }); await rfq.beginSupplierRfq(actor, rfqId, show.revision);
     assert.equal((await rfq.collectSupplierRfq(actor.tenantId, rfqId, signal(), transport)).status, "complete");
-    show = await store.getShow(actor.tenantId); const candidates = options.realEngine ? await (await import("../src/server/engine")).generateCandidates(show) : enumerateCandidates(show);
+    show = await store.getShow(actor.tenantId);
+    if (options.preparePlan) show = await options.preparePlan(session, show);
+    else {
+    const candidates = options.realEngine ? await (await import("../src/server/engine")).generateCandidates(show) : enumerateCandidates(show);
     if (!options.realEngine) candidates.forEach(candidate => { candidate.report.engine = testEngine(candidate); });
     await options.onStep?.("original-plan-candidates", candidates);
     show = (await store.transactCommand(actor, randomUUID(), show.revision, { type: options.realEngine ? "native-real-engine" : "controlled-engine" }, current => recordRescueRun(current, actor, candidates))).show;
     const candidate = candidates.find(item => item.id.startsWith("doors-brightline"))!;
     show = await command(actor, { type: "approve", candidateId: candidate.id, candidateDigest: candidate.digest, approvals: candidate.approvals.map(item => item.id) });
+    }
     const offer = show.offers.find(item => item.supplierId === "brightline")!;
     const held = await protocol.callSupplierService("brightline", { version: 1, requestId: randomUUID(), tenantId: actor.tenantId, actorId: actor.id, action: { type: "hold", quoteId: offer.serviceQuote!.id, planDigest: show.approvedPlan!.digest, expectedRevision: show.revision, acceptCaptureTerms: true } }, signal(), transport);
     if (held.kind !== "execution") throw new Error("Controlled hold missing"); const executionId = held.execution.id;

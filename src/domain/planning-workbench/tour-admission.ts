@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { DomainError, type ConstraintIssue, type ShowSnapshot, type Task } from "../contracts";
 import type { PlannedProduction, Tour } from "../tour/contracts";
 import { resourcesForCall } from "../tour/templates";
@@ -19,7 +18,7 @@ export function assignmentProjection(show: ShowSnapshot, production: PlannedProd
   const tasks = structuredClone(show.tasks), differences: { callId: string; taskId: string; label: string; before: string[]; after: string[] }[] = [], assignments: TourAssignmentState["assignments"] = [];
   for (const link of mapping) {
     const call = production.calls.find(row => row.id === link.callId), task = tasks.find(row => row.id === link.taskId);
-    if (!call || !task || task.state === "complete" || task.cancellation || task.lane === "commercial" || task.milestone) throw new DomainError("TOUR_ADMISSION_TASK", "Map only current uncompleted production work. Completed work, cancellation and commercial or physical milestones cannot be reassigned through a tour plan.");
+    if (!call || !task || task.state === "complete" || task.cancellation || task.lane === "commercial" || task.milestone || Date.parse(task.start)<Date.parse(show.clock)) throw new DomainError("TOUR_ADMISSION_TASK", "Map only future uncompleted production work. Earlier work, cancellation and commercial or physical milestones cannot be reassigned through a tour plan.");
     if (Date.parse(call.start.instant) !== Date.parse(task.start) || Date.parse(call.end.instant) !== Date.parse(task.end)) throw new DomainError("TOUR_ADMISSION_INTERVAL", "The planning call and target operating call must have the same current interval. Review schedule changes in the production before importing its assignment.");
     const people = resourcesForCall(production, call).map(id => tour.resources.find(row => row.id === id)).filter(resource => resource?.kind === "person");
     if (!people.length || people.some(person => !person?.personId || person.id !== person.personId)) throw new DomainError("TOUR_ADMISSION_PERSON", "Every imported person must have an exact current admitted roster identity.");
@@ -29,6 +28,11 @@ export function assignmentProjection(show: ShowSnapshot, production: PlannedProd
       if (!current || current.name !== person!.label || digest([...current.skills].sort()) !== digest([...person!.skills].sort()) || current.reserve) throw new DomainError("TOUR_ADMISSION_ROSTER", "A tour allocation cannot replace a current person's identity, active status or qualifications. Admit changed roster sources first.");
     }
     const before = task.resources.filter(id => show.resources.find(row => row.id === id)?.kind === "person").sort();
+    if(personIds.length!==before.length) throw new DomainError("TOUR_ADMISSION_COMPLEMENT", "An assignment import cannot silently increase or reduce the current required crew complement. Review changed production requirements first.");
+    const removed=before.filter(id=>!personIds.includes(id)),added=personIds.filter(id=>!before.includes(id));
+    const matches=new Map<string,number>();
+    const cover=(index:number,seen:Set<string>):boolean=>added.some(id=>{if(seen.has(id))return false;const previous=show.resources.find(row=>row.id===removed[index])!,replacement=show.resources.find(row=>row.id===id)!;if(!previous.skills.every(skill=>replacement.skills.includes(skill)))return false;seen.add(id);const occupied=matches.get(id);if(occupied===undefined||cover(occupied,seen)){matches.set(id,index);return true;}return false;});
+    if(!removed.every((_,index)=>cover(index,new Set()))) throw new DomainError("TOUR_ADMISSION_QUALIFICATIONS", "The proposed people must cover every replaced person's current declared qualifications. A tour cannot erase the operating crew requirements.");
     assignments.push({ callId: call.id, taskId: task.id, personIds, originalTaskDigest: digest(task) });
     task.resources = [...task.resources.filter(id => show.resources.find(row => row.id === id)?.kind !== "person"), ...personIds];
     differences.push({ callId: call.id, taskId: task.id, label: task.name, before, after: personIds });

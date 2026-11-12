@@ -33,6 +33,7 @@ const navigation = [
   { id: "resources", label: "Crew & equipment", icon: Users, href: "/resources" },
   { id: "calendar", label: "Calendar", icon: CalendarDays, href: "/calendar" },
   { id: "recovery", label: "Recovery studio", icon: Sparkles, href: "/recovery" },
+  { id: "supplier-admin", label: "Supplier network", icon: PackageCheck, href: "/suppliers/manage" },
   { id: "planning-workbench", label: "Planning workbench", icon: GitBranch, href: "/planning-workbench" },
   { id: "disruptions", label: "Disruption desk", icon: ShieldAlert, href: "/disruptions" },
   { id: "execution", label: "Execution", icon: Clapperboard, href: "/execution" },

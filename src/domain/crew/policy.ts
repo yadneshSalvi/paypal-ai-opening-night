@@ -14,6 +14,7 @@ export const dutyDefinitions: Record<CrewDutyKind, { title: string; instructions
   support_ready: { title: "Support sound ready", instructions: "Confirm support sound readiness after check-in and the current lighting and cue checks.", taskIds: ["support-check", "support"] },
   headliner_checkin: { title: "The Night Ferries checked in", instructions: "Record the delayed act’s controlled arrival. The flight and transfer set the earliest arrival.", taskIds: ["headliner"] },
   quiet_prep: { title: "Quiet preparation complete", instructions: "As the assigned headliner sound lead, review the completed isolated backstage preparation after the artist has checked in.", taskIds: ["quiet-prep", "headliner"] },
+  headliner_soundcheck: { title: "Stage soundcheck complete", instructions: "As the assigned headliner sound lead, review the completed amplified stage soundcheck after the artist has checked in. Its separate artist consent and current technical clearance remain required.", taskIds: ["headliner-check", "headliner"] },
   changeover: { title: "Stage changeover clear", instructions: "Confirm changeover after the support cue and quiet preparation, with current technical clearance.", taskIds: ["readiness", "headliner"] },
 };
 export const cueTitles: Record<CrewCueKind, string> = { DOORS_GO: "Issue DOORS GO", HOUSE_OPEN: "Confirm HOUSE OPEN", SUPPORT_START: "Call SUPPORT START", HEADLINER_START: "Call HEADLINER START" };
@@ -39,7 +40,8 @@ export function canAttest(show: ShowSnapshot, person: Resource, kind: CrewDutyKi
     // The approved patch assigns the isolated preparation to the backstage
     // room. Its sound-lead reviewer is assigned to the headliner, not to an
     // overlapping physical preparation shift during the support performance.
-    case "quiet_prep": return person.skills.includes("audio_foh") && person.skills.includes("quiet_prep") && assigned(show, person.id, "headliner") && Boolean(show.tasks.find(task => task.id === "quiet-prep" && task.resources.includes("backstage")));
+    case "quiet_prep": return headlinerPreparationKind(show) === "quiet_prep" && person.skills.includes("audio_foh") && person.skills.includes("quiet_prep") && assigned(show, person.id, "headliner") && Boolean(show.tasks.find(task => task.id === "quiet-prep" && task.resources.includes("backstage")));
+    case "headliner_soundcheck": return headlinerPreparationKind(show) === "headliner_soundcheck" && person.skills.includes("audio_foh") && assigned(show, person.id, "headliner-check") && assigned(show, person.id, "headliner");
     // The stage manager supervises the assigned stagehands through the show's
     // readiness/headliner duties; this does not invent a programming skill.
     case "changeover": return stageManager(show, person) && assigned(show, person.id, "headliner") && Boolean(show.tasks.find(task => task.id === "changeover"));
@@ -102,6 +104,10 @@ export function technicalClearance(show: ShowSnapshot, verify?: CrewVerifier) {
   const rental = currentRentalClearance(show);
   return Boolean(rental.accepted && rental.capture && currentAttestation(show, "focus_signed_off", verify) && currentAttestation(show, "cue_signed_off", verify));
 }
+export function headlinerPreparationKind(show: ShowSnapshot): "quiet_prep" | "headliner_soundcheck" {
+  const candidate = show.runs.flatMap(run => run.candidates).find(row => row.id === show.approvedPlan?.candidateId);
+  return candidate?.strategy?.kind === "stage_soundcheck" ? "headliner_soundcheck" : "quiet_prep";
+}
 export function dutyEarliest(show: ShowSnapshot, kind: CrewDutyKind): string | null {
   const taskEnd = (id: string) => show.tasks.find(task => task.id === id)?.end ?? null;
   switch (kind) {
@@ -110,6 +116,7 @@ export function dutyEarliest(show: ShowSnapshot, kind: CrewDutyKind): string | n
     case "support_ready": return taskEnd("support-check");
     case "headliner_checkin": return show.tasks.find(task => task.id === "headliner-arrival")?.start ?? atVenue("19:35", show.showDate);
     case "quiet_prep": return taskEnd("quiet-prep");
+    case "headliner_soundcheck": return taskEnd("headliner-check");
     case "changeover": return taskEnd("changeover");
     default: return null;
   }
@@ -117,7 +124,7 @@ export function dutyEarliest(show: ShowSnapshot, kind: CrewDutyKind): string | n
 export function dutyBlockers(show: ShowSnapshot, person: Resource, kind: CrewDutyKind, verify?: CrewVerifier): string[] {
   const blockers: string[] = [];
   if (selectedInterruption(show)) blockers.push("The current supplier disruption needs a reviewed recovery and new delivery evidence.");
-  if (show.cancellationDecision?.mode === "cancel_show" || show.cancellationDecision?.mode === "support_only" && ["headliner_checkin", "quiet_prep", "changeover"].includes(kind)) blockers.push("This performance duty belongs to the cancelled program. Existing records remain historical.");
+  if (show.cancellationDecision?.mode === "cancel_show" || show.cancellationDecision?.mode === "support_only" && ["headliner_checkin", "quiet_prep", "headliner_soundcheck", "changeover"].includes(kind)) blockers.push("This performance duty belongs to the cancelled program. Existing records remain historical.");
   if (!canAttest(show, person, kind)) blockers.push("This duty needs its assigned qualified crew member.");
   if (!currentCrewReview(show)) blockers.push("The current approved plan must be published with person-scoped crew controls.");
   if (!ownCurrentReadback(show, person.id)) blockers.push("Acknowledge your current run sheet first.");
@@ -125,7 +132,7 @@ export function dutyBlockers(show: ShowSnapshot, person: Resource, kind: CrewDut
   if (earliest && compareInstants(show.clock, earliest) < 0) blockers.push("The scheduled work has not reached its completion time on the fixture clock.");
   if (currentAttestation(show, kind, verify)) blockers.push("This duty already has a current signed record.");
   const rental = currentRentalClearance(show);
-  if (["focus_signed_off", "cue_signed_off", "support_ready", "quiet_prep", "changeover"].includes(kind)) {
+  if (["focus_signed_off", "cue_signed_off", "support_ready", "quiet_prep", "headliner_soundcheck", "changeover"].includes(kind)) {
     if (!rental.accepted) blockers.push("Accepted console delivery is required.");
     if (!rental.capture) blockers.push("The original rental fee must be currently verified as captured.");
   }
@@ -134,10 +141,12 @@ export function dutyBlockers(show: ShowSnapshot, person: Resource, kind: CrewDut
     if (!currentAttestation(show, "support_checkin", verify)) blockers.push("Record the support act’s check-in first.");
     if (!technicalClearance(show, verify)) blockers.push("Current focus and programmed cue checks must be clear.");
   }
-  if (kind === "quiet_prep" && !currentAttestation(show, "headliner_checkin", verify)) blockers.push("Record the headliner’s current check-in first.");
+  if (["quiet_prep", "headliner_soundcheck"].includes(kind) && !currentAttestation(show, "headliner_checkin", verify)) blockers.push("Record the headliner’s current check-in first.");
+  if (kind === "headliner_soundcheck" && !technicalClearance(show, verify)) blockers.push("Current technical clearance is required for the amplified stage soundcheck.");
   if (kind === "changeover") {
     if (!currentCue(show, "SUPPORT_START", verify)) blockers.push("The separate support start cue has not been recorded.");
-    if (!currentAttestation(show, "quiet_prep", verify)) blockers.push("The sound lead must sign quiet preparation first.");
+    const preparation = headlinerPreparationKind(show);
+    if (!currentAttestation(show, preparation, verify)) blockers.push(preparation === "headliner_soundcheck" ? "The sound lead must sign the current stage soundcheck first." : "The sound lead must sign quiet preparation first.");
     if (!technicalClearance(show, verify)) blockers.push("Current technical clearance is required.");
   }
   return blockers;
@@ -151,7 +160,7 @@ export function crewScopes(show: ShowSnapshot, person: Resource) {
   if (stageManager(show, person)) { scopes.add("DOORS"); scopes.add("SUPPORT_START"); scopes.add("HEADLINER_START"); }
   if (canAttest(show, person, "foh_contingency") || canAttest(show, person, "focus_signed_off") || canAttest(show, person, "cue_signed_off")) scopes.add("DOORS");
   if (canAttest(show, person, "support_ready")) scopes.add("SUPPORT_START");
-  if (canAttest(show, person, "quiet_prep")) scopes.add("HEADLINER_START");
+  if (canAttest(show, person, "quiet_prep") || canAttest(show, person, "headliner_soundcheck")) scopes.add("HEADLINER_START");
   return [...scopes];
 }
 

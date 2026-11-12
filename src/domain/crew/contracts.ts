@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { CueScope, Lane, ShowSnapshot } from "../contracts";
 
 export const CREW_PROTOCOL = 1 as const;
-export const crewDutyKinds = ["focus_signed_off", "cue_signed_off", "foh_contingency", "support_checkin", "support_ready", "headliner_checkin", "quiet_prep", "changeover"] as const;
+export const crewDutyKinds = ["focus_signed_off", "cue_signed_off", "foh_contingency", "support_checkin", "support_ready", "headliner_checkin", "quiet_prep", "headliner_soundcheck", "changeover"] as const;
 export type CrewDutyKind = typeof crewDutyKinds[number];
 export const crewCueKinds = ["DOORS_GO", "HOUSE_OPEN", "SUPPORT_START", "HEADLINER_START"] as const;
 export type CrewCueKind = typeof crewCueKinds[number];
@@ -62,7 +62,7 @@ export const crewDataSchema = z.object({
   review: crewReviewSchema.nullable(),
   acknowledgments: z.array(crewReadbackSchema).max(1000),
   rest: z.object({ lastCallId: boundedId.nullable(), lastFinishAt: instant.nullable(), nextCall: crewCallSchema.nullable(), minutes: z.number().nullable(), minimumMinutes: z.number().positive(), status: z.enum(["pass", "fail", "unknown", "not_scheduled"]) }).strict(),
-  duties: z.array(crewDutySchema).max(8), cues: z.array(crewCueOptionSchema).max(4), readiness: z.array(crewReadinessSchema).max(3),
+  duties: z.array(crewDutySchema).max(9), cues: z.array(crewCueOptionSchema).max(4), readiness: z.array(crewReadinessSchema).max(3),
   history: z.array(crewRecordSummarySchema).max(1000),
   contact: z.object({ label: z.string().max(100), instruction: z.string().max(300) }).strict(),
 }).strict();

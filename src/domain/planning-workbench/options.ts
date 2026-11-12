@@ -3,7 +3,7 @@ export const strategyKinds = ["doors_window", "set_length", "quiet_preparation",
 export const strategyRequestSchema = z.strictObject({
   kinds: z.array(z.enum(strategyKinds)).min(1).max(6).refine(rows => new Set(rows).size === rows.length),
   offerIds: z.array(z.string().min(1).max(100)).min(1).max(8).refine(rows => new Set(rows).size === rows.length),
-  substitutions: z.array(z.strictObject({ taskId: z.string().min(1).max(100), personId: z.string().min(1).max(100) })).max(4),
+  substitutions: z.array(z.strictObject({ taskId: z.string().min(1).max(100), replacesPersonId: z.string().min(1).max(100), personId: z.string().min(1).max(100) })).max(4),
 });
 export type StrategyRequest = z.infer<typeof strategyRequestSchema>;
 
