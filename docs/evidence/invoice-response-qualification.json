@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "sourceBase": "f9d176efb862290674b0a6965e026fd37e3e9342",
+  "unit": "original invoice response compatibility",
+  "controlledQualification": true,
+  "actualProviderQualification": false,
+  "actualProviderCalls": 0,
+  "originalLaneDatabaseConnections": 0,
+  "databaseScope": "owned PostgreSQL 55573, temporary on_test_* schemas only",
+  "focusedTests": {
+    "passed": 21,
+    "failed": 0
+  },
+  "combinedRegressions": {
+    "passed": 130,
+    "failed": 0,
+    "skipped": 0,
+    "includesFocusedTests": true
+  },
+  "typecheck": "passed",
+  "packageVerification": "passed",
+  "productionBuild": {
+    "status": "passed",
+    "buildId": "AX1UsWlFXg18Mf48wA69S"
+  },
+  "migrationChanges": 0,
+  "core": {
+    "version": "0.2.4-opening-invoice.1",
+    "archiveSha256": "70f2b1ef6aef01bd77ad88e2b1fe3760eea1a4b9399d0a9eaaf94aa6948fc922",
+    "sharedSourceModified": false,
+    "published": false
+  },
+  "responsePolicy": {
+    "hrefIdOnly": true,
+    "canonicalOutboundOrigin": "https://api-m.sandbox.paypal.com",
+    "absentPartialPaymentUsesDocumentedFalseDefault": true,
+    "nullOrUnknownPoliciesRejected": true,
+    "completeZeroDiscountStructureRetained": true,
+    "nonzeroIncompleteOrUnknownAdjustmentsRejected": true
+  },
+  "authority": "Original number/reference, parties, amount, exact review, durable one-time dispatch and current session checks retained; no new root session, admission, grant or invoice created by this unit."
+}

@@ -41,7 +41,8 @@
     "qa:rental-closeout:prepare": "node --import ./scripts/qa/rental-closeout-controlled-wire-runtime.mjs --import tsx scripts/qa/rental-closeout-prepare-native.ts",
     "qa:rental-closeout:http": "node --import ./scripts/qa/rental-closeout-disabled-providers.mjs --import tsx scripts/qa/rental-closeout-http-qa.ts",
     "qa:rental-closeout:serve": "node scripts/qa/rental-closeout-review-server.mjs",
-    "qa:rental-closeout:full": "node scripts/qa/rental-closeout-regressions.mjs"
+    "qa:rental-closeout:full": "node scripts/qa/rental-closeout-regressions.mjs",
+    "test:invoice-response": "node --import ./scripts/qa/invoice-response-runtime.mjs --import tsx --test --test-concurrency=2 tests/invoice-response.test.ts tests/invoice-response-store.test.ts"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",
@@ -53,7 +54,7 @@
     "@bryntum/grid-enterprise": "8.0.0",
     "@bryntum/scheduler-enterprise": "8.0.0",
     "@bryntum/scheduler-react-enterprise": "8.0.0",
-    "@fracture/paypal-core": "file:vendor/fracture-paypal-core-0.2.4.tgz",
+    "@fracture/paypal-core": "file:vendor/fracture-paypal-core-0.2.4-opening-invoice.1.tgz",
     "@js-temporal/polyfill": "0.5.1",
     "@paypal/agent-toolkit": "1.11.0",
     "@pdf-lib/fontkit": "1.1.1",

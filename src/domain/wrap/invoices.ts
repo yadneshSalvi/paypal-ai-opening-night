@@ -13,22 +13,48 @@ export function ownedInvoiceId(state: WrapState, invoiceId: string) { return wra
 const object = (value: unknown): Record<string, unknown> => { if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("INVOICE_ENVELOPE_UNKNOWN"); return value as Record<string, unknown>; };
 const text = (value: unknown, max = 240): string => { if (typeof value !== "string" || !value.trim() || value.length > max || /[\u0000-\u001f\u007f]/.test(value)) throw new Error("INVOICE_ENVELOPE_UNKNOWN"); return value; };
 const optionalText = (value: unknown, max = 2400) => value === undefined || value === null || value === "" ? null : text(value, max);
-const optionalBoolean = (value: unknown) => value === undefined || value === null ? null : typeof value === "boolean" ? value : (() => { throw new Error("INVOICE_ENVELOPE_UNKNOWN"); })();
+const optionalBoolean = (value: unknown) => value === undefined ? null : typeof value === "boolean" ? value : (() => { throw new Error("INVOICE_ENVELOPE_UNKNOWN"); })();
 const date = (value: unknown) => z.iso.date().parse(value);
 export function providerMinor(value: unknown): number { const v = object(value); if (v.currency_code !== "USD" || typeof v.value !== "string" || !/^\d{1,10}(?:\.\d{1,2})?$/.test(v.value)) throw new Error("INVOICE_MONEY_UNKNOWN"); const [whole, fraction = ""] = v.value.split("."); const amount = Number(whole) * 100 + Number(fraction.padEnd(2, "0")); if (!Number.isSafeInteger(amount)) throw new Error("INVOICE_MONEY_UNKNOWN"); return amount; }
 const terms = new Set(["DUE_ON_RECEIPT", "DUE_ON_DATE_SPECIFIED", "NET_10", "NET_15", "NET_30", "NET_45", "NET_60", "NET_90", "NO_DUE_DATE"]);
 const invoiceStatuses = new Set(["DRAFT", "SENT", "SCHEDULED", "PAID", "MARKED_AS_PAID", "CANCELLED", "REFUNDED", "PARTIALLY_PAID", "PARTIALLY_REFUNDED", "MARKED_AS_REFUNDED", "UNPAID", "PAYMENT_PENDING", "AUTO_CANCELLED", "PAID_EXTERNAL", "REFUNDED_EXTERNAL", "SHARED"]);
+function partialPaymentsDisabled(value: unknown): boolean {
+  // Invoicing v2 omits this optional object when the documented false default applies.
+  // A present object must explicitly disable partial payment and contain no minimum or unknown policy.
+  if (value === undefined) return true;
+  const partial = object(value);
+  return partial.allow_partial_payment === false && Object.keys(partial).every(key => key === "allow_partial_payment");
+}
+function exactMoney(value: unknown): number {
+  const money = object(value);
+  if (Object.keys(money).some(key => key !== "currency_code" && key !== "value")) throw new Error("INVOICE_ADJUSTMENTS_CHANGED");
+  return providerMinor(money);
+}
+function zeroDiscount(value: unknown): boolean {
+  const discount = object(value);
+  // Retain compatibility with an explicit flat zero; never reinterpret a mixed or partial structure.
+  if ("currency_code" in discount || "value" in discount) return exactMoney(discount) === 0;
+  if (Object.keys(discount).length !== 2 || !("invoice_discount" in discount) || !("item_discount" in discount)) return false;
+  const invoiceDiscount = object(discount.invoice_discount);
+  return Object.keys(invoiceDiscount).length === 1 && "amount" in invoiceDiscount && exactMoney(invoiceDiscount.amount) === 0 && exactMoney(discount.item_discount) === 0;
+}
+function noAdjustments(breakdown: Record<string, unknown>, itemMinor: number): boolean {
+  const known = new Set(["item_total", "discount", "shipping", "custom", "tax_total", "tip"]);
+  if (Object.keys(breakdown).some(key => !known.has(key)) || breakdown.item_total !== undefined && exactMoney(breakdown.item_total) !== itemMinor) return false;
+  if (breakdown.discount !== undefined && !zeroDiscount(breakdown.discount)) return false;
+  return [breakdown.shipping, breakdown.custom, breakdown.tax_total, breakdown.tip].every(value => value === undefined || exactMoney(value) === 0);
+}
 /** Parse only the one-item, no-tip/no-partial-payment contract this application can authorize. */
 export function invoiceEnvelope(raw: unknown): InvoiceEnvelope {
   const v = object(raw), d = object(v.detail), issuer = object(v.invoicer), recipients = v.primary_recipients, items = v.items;
   if (!Array.isArray(recipients) || recipients.length !== 1 || !Array.isArray(items) || items.length !== 1 || v.additional_recipients !== undefined && (!Array.isArray(v.additional_recipients) || v.additional_recipients.length)) throw new Error("INVOICE_PARTIES_OR_ITEMS_CHANGED");
-  const recipient = object(recipients[0]), billing = object(recipient.billing_info), item = object(items[0]), configuration = object(v.configuration), partial = object(configuration.partial_payment);
+  const recipient = object(recipients[0]), billing = object(recipient.billing_info), item = object(items[0]), configuration = object(v.configuration);
   const issuerEmail = z.email().parse(issuer.email_address).toLowerCase(), recipientEmail = z.email().parse(billing.email_address).toLowerCase();
-  if (configuration.allow_tip !== false || partial.allow_partial_payment !== false || partial.minimum_amount !== undefined || !["1", "1.0", "1.00"].includes(String(item.quantity)) || d.currency_code !== "USD") throw new Error("INVOICE_POLICY_CHANGED");
+  if (configuration.allow_tip !== false || !partialPaymentsDisabled(configuration.partial_payment) || !["1", "1.0", "1.00"].includes(String(item.quantity)) || d.currency_code !== "USD") throw new Error("INVOICE_POLICY_CHANGED");
   const paymentTerm = d.payment_term === undefined ? null : object(d.payment_term), term = paymentTerm ? optionalText(paymentTerm.term_type, 40) : null;
   if (term !== null && !terms.has(term) || paymentTerm?.conditional_rules !== undefined || d.recurring_info !== undefined || d.late_fee !== undefined) throw new Error("INVOICE_TERMS_UNKNOWN");
   const amountMinor = providerMinor(v.amount), unitMinor = providerMinor(item.unit_amount), breakdown = object(v.amount).breakdown === undefined ? {} : object(object(v.amount).breakdown);
-  if (amountMinor !== unitMinor || item.tax !== undefined || item.discount !== undefined || [breakdown.discount, breakdown.shipping, breakdown.custom, breakdown.tax_total, breakdown.tip].some(value => value !== undefined && value !== null && providerMinor(value) !== 0)) throw new Error("INVOICE_ADJUSTMENTS_CHANGED");
+  if (amountMinor !== unitMinor || item.tax !== undefined || item.discount !== undefined || !noAdjustments(breakdown, unitMinor)) throw new Error("INVOICE_ADJUSTMENTS_CHANGED");
   return { id: text(v.id, 128), invoiceNumber: text(d.invoice_number, 25), reference: text(d.reference, 120), issuerEmail, recipientEmail, issuerIdentityDigest: digest(issuer), recipientIdentityDigest: digest(recipient), currency: "USD", amountMinor,
     item: { name: text(item.name, 200), quantity: "1", unitMinor, description: optionalText(item.description), unitOfMeasure: optionalText(item.unit_of_measure, 40), tax: item.tax ?? null, discount: item.discount ?? null },
     invoiceDate: date(d.invoice_date), dueDate: paymentTerm?.due_date === undefined ? null : date(paymentTerm.due_date), paymentTerm: term, terms: optionalText(d.terms_and_conditions, 4000), note: optionalText(d.note, 4000), memo: optionalText(d.memo, 4000),

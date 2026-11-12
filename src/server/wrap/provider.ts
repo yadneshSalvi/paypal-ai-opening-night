@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SandboxCommerceRestGateway, type CommerceRestResult, type InvoiceObservation, type SandboxConfig } from "@fracture/paypal-core";
+import { SandboxCommerceRestGateway, sandboxInvoiceIdFromHref, type CommerceRestResult, type InvoiceObservation, type SandboxConfig } from "@fracture/paypal-core";
 import { DomainError, type ShowSnapshot } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
 import type { InvoiceAdmission, InvoiceDraft, InvoiceEnvelope, InvoiceGrant, InvoiceResult, InvoiceWireProof, WrapData } from "@/domain/wrap/contracts";
@@ -76,7 +76,7 @@ export async function runGuardedInvoice(draft: InvoiceDraft, grant: InvoiceGrant
     }
     if (response.ok && create && value) {
       if (typeof value.id === "string" && /^[A-Za-z0-9._-]{1,128}$/.test(value.id)) allowed.add(value.id);
-      if (typeof value.href === "string") try { const link = new URL(value.href), match = /^\/v2\/invoicing\/invoices\/([A-Za-z0-9._-]+)$/.exec(link.pathname); if (link.origin === "https://api-m.sandbox.paypal.com" && !link.search && !link.hash && !link.username && !link.password && match) allowed.add(match[1]!); } catch { /* Unknown creation remains held. */ }
+      const linkedId = sandboxInvoiceIdFromHref(value.href); if (linkedId) allowed.add(linkedId);
     }
     if (response.ok && search && Array.isArray(value?.items)) for (const item of value.items) { const candidate = object(item), detail = object(candidate?.detail); if (detail?.invoice_number === draft.request.invoiceNumber && detail.reference === draft.request.reference && typeof candidate?.id === "string" && /^[A-Za-z0-9._-]{1,128}$/.test(candidate.id)) allowed.add(candidate.id); }
     return response;
