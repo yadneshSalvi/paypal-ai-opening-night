@@ -22,6 +22,7 @@ import { rentalCloseoutReadsMigration } from "./migrations/rental-closeout-reads
 import { supplierRecoveryMigration } from "./migrations/supplier-recovery-v16";
 import { audienceMigration } from "./migrations/audience-v17";
 import { intelligenceContinuityMigration } from "./migrations/intelligence-continuity-v18";
+import { planConsentsMigration } from "./migrations/plan-consents-v19";
 import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -117,6 +118,8 @@ export async function migrate() {
       if (!audience.rowCount) { await client.query(audienceMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(17)"); }
       const intelligenceContinuity = await client.query("SELECT version FROM on_schema_migrations WHERE version=18");
       if (!intelligenceContinuity.rowCount) { await client.query(intelligenceContinuityMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(18)"); }
+      const planConsents = await client.query("SELECT version FROM on_schema_migrations WHERE version=19");
+      if (!planConsents.rowCount) { await client.query(planConsentsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(19)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }

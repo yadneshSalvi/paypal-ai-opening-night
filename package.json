@@ -56,7 +56,8 @@
     "qa:audience:build": "node scripts/qa/audience-build.mjs",
     "qa:audience:full": "node scripts/qa/audience-regressions.mjs",
     "qa:audience:freeze": "node scripts/qa/audience-freeze.mjs",
-    "qa:audience:stress": "node --import ./scripts/qa/audience-controlled-wire-runtime.mjs --import tsx scripts/qa/audience-stress.ts"
+    "qa:audience:stress": "node --import ./scripts/qa/audience-controlled-wire-runtime.mjs --import tsx scripts/qa/audience-stress.ts",
+    "test:plan-consents": "node --import ./scripts/qa/plan-consents-test-runtime.mjs --import tsx --test --test-concurrency=1 tests/plan-consents-store.test.ts tests/plan-consents-api.test.ts tests/plan-consents-migration.test.ts tests/plan-consents-recovery.test.ts tests/plan-consents-ui.test.tsx"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",

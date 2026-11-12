@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { DomainError, type Actor, type Candidate, type OperationalFact, type ShowSnapshot } from "./contracts";
+import { DomainError, type Actor, type Candidate, type OperationalFact, type ShowSnapshot, type VerifiedPlanConsent } from "./contracts";
 import { consoleIncident, flightIncident } from "./fixture";
 import { digest } from "./hash";
 import { readiness } from "./readiness";
@@ -33,7 +33,7 @@ function requireRole(actor: Actor, ...roles: Actor["roles"]) {
 export function appendEvent(show: ShowSnapshot, actor: Actor, type: string, message: string, now: string) {
   show.events.push({ id: randomUUID(), type, message, at: now, fixtureAt: show.clock, actorId: actor.id, source: "sample", revision: show.revision + 1 });
 }
-export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command, now = new Date().toISOString(), verifyCrew?: CrewVerifier, crewCommandId?: string): ShowSnapshot {
+export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command, now = new Date().toISOString(), verifyCrew?: CrewVerifier, crewCommandId?: string, verifiedConsents: readonly VerifiedPlanConsent[] = []): ShowSnapshot {
   if (input.tenantId !== actor.tenantId) throw new DomainError("TENANT_MISMATCH", "This show belongs to another session.", 403);
   const show = structuredClone(input);
   switch (command.type) {
@@ -66,10 +66,20 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       if (!["feasible", "feasible_with_approval"].includes(checked.status) || candidate.report.engine?.status !== "passed") throw new DomainError("PLAN_NOT_FEASIBLE", "A successful engine run and all deterministic constraints are required.");
       for (const requirement of candidate.approvals) {
         if (!command.approvals.includes(requirement.id)) throw new DomainError("APPROVAL_MISSING", `${requirement.label} needs explicit approval.`);
-        if (!actor.roles.includes(requirement.role as Actor["roles"][number])) throw new DomainError("APPROVAL_ROLE_REQUIRED", `${requirement.label} requires the ${requirement.role.replaceAll("_", " ")}.`, 403);
-        requirement.grantedBy = actor.id;
+        if (requirement.role === "artist_representative") {
+          const matches = verifiedConsents.filter(consent => consent.requirementId === requirement.id);
+          if (matches.length !== 1) throw new DomainError("APPROVAL_ROLE_REQUIRED", `${requirement.label} requires the artist representative.`, 403);
+          const proof = matches[0]!;
+          const expiresAt = Date.parse(proof.expiresAt), approvedAt = Date.parse(proof.approvedAt);
+          if (proof.role !== requirement.role || proof.issuerActorId !== actor.id || proof.reviewerId !== `plan-review:${proof.requestId}` || proof.candidateDigest !== candidate.digest || proof.sourceDigest !== candidate.sourceDigest || proof.baseRevision !== show.revision || !Number.isFinite(expiresAt) || !Number.isFinite(approvedAt) || expiresAt <= Date.parse(now) || approvedAt > Date.parse(now) || !/^[a-f0-9]{64}$/.test(proof.receiptDigest)) throw new DomainError("PLAN_CONSENT_CHANGED", "The separate artist consent no longer binds this exact current proposal.");
+          requirement.grantedBy = proof.reviewerId;
+        } else {
+          if (!actor.roles.includes(requirement.role)) throw new DomainError("APPROVAL_ROLE_REQUIRED", `${requirement.label} requires the ${requirement.role.replaceAll("_", " ")}.`, 403);
+          requirement.grantedBy = actor.id;
+        }
       }
-      show.approvedPlan = { candidateId: candidate.id, digest: candidate.digest, approvedAt: now, actorId: actor.id, commercialCapMinor: offer.feeMinor + offer.depositMinor, roles: [...actor.roles], baseRevision: show.revision };
+      const externalApprovals = verifiedConsents.filter(consent => candidate.approvals.some(item => item.id === consent.requirementId && item.role === consent.role)).map(({ issuerActorId: _issuer, ...consent }) => consent);
+      show.approvedPlan = { candidateId: candidate.id, digest: candidate.digest, approvedAt: now, actorId: actor.id, commercialCapMinor: offer.feeMinor + offer.depositMinor, roles: [...actor.roles], baseRevision: show.revision, ...(externalApprovals.length ? { externalApprovals } : {}) };
       show.tasks = structuredClone(candidate.patch.tasks); show.dependencies = structuredClone(candidate.patch.dependencies); show.doorsAt = candidate.patch.doorsAt; show.planVersion++;
       show.state = "standby"; show.goReportId = null;
       appendEvent(show, actor, "rescue.approved", `${candidate.name} approved. ${localTime(candidate.patch.doorsAt)} doors; commercial execution and publication remain pending.`, now); break;

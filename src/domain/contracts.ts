@@ -98,7 +98,14 @@ export interface OperationalFact {
 export interface ReadinessGate { id: string; label: string; complete: boolean; value: string; reason: string; evidenceIds: string[]; href: string }
 export interface ReadinessReport { id: string; revision: number; sheetVersion: number; scope: CueScope; ready: boolean; gates: ReadinessGate[]; blockers: string[]; computedAt: string }
 export interface DomainEvent { id: string; type: string; message: string; at: string; fixtureAt: string; actorId: string; source: Provenance; revision: number }
-export interface ApprovedPlan { candidateId: string; digest: string; approvedAt: string; actorId: string; commercialCapMinor: number; roles: string[]; baseRevision: number }
+export interface ExternalPlanApproval {
+  requestId: string; receiptId: string; receiptDigest: string; requirementId: string; role: "artist_representative";
+  reviewerId: string; declaredName: string; candidateDigest: string; sourceDigest: string; baseRevision: number;
+  approvedAt: string; expiresAt: string; provenance: "controlled_declaration" | "invited_declaration";
+}
+/** Supplied only after the server verifies the original immutable consent and current issuer. */
+export interface VerifiedPlanConsent extends ExternalPlanApproval { issuerActorId: string }
+export interface ApprovedPlan { candidateId: string; digest: string; approvedAt: string; actorId: string; commercialCapMinor: number; roles: string[]; baseRevision: number; externalApprovals?: ExternalPlanApproval[] }
 export interface ShowSnapshot {
   schemaVersion: 1; id: string; tenantId: string; revision: number; planVersion: number; title: string; support: string; venue: string;
   zone: "America/Chicago"; showDate: string; clock: string; createdAt: string; updatedAt: string;

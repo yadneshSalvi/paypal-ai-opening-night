@@ -21,7 +21,8 @@ test("additive continuity migration preserves original planning bytes and expiry
       for (const name of names) { assert.match(name, /^[a-z_]+$/); const values = (await database.pool.query(`SELECT row_to_json(t)::text AS value FROM "${name}" t ORDER BY row_to_json(t)::text`)).rows.map(row => row.value); rows[name] = { count: values.length, digest: digest(values) }; }
       return rows;
     }
-    const before = await snapshot(); assert.equal((await database.pool.query("SELECT max(version) AS version FROM on_schema_migrations")).rows[0].version, 16);
+    // The independent consent migration can already be present; continuity still adds exactly its four tables.
+    const before = await snapshot(); assert.equal((await database.pool.query("SELECT max(version) AS version FROM on_schema_migrations")).rows[0].version, 19);
     delete (globalThis as typeof globalThis & { openingNightMigration?: Promise<void> }).openingNightMigration;
     await store.migrate(); const after = await snapshot();
     assert.equal(Object.keys(after).length, Object.keys(before).length + 4);
