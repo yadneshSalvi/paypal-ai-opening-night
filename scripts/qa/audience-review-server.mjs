@@ -43,7 +43,7 @@ const server = createServer(async (request, response) => {
     if (request.headers.host !== `${hostname}:${port}` || Object.keys(request.headers).some(name => name.startsWith("x-forwarded-"))) { response.writeHead(403); return response.end("Exact owned loopback origin required"); }
     if (/%2f|%5c|\\/i.test(request.url ?? "")) { response.writeHead(404); return response.end("Encoded path separators are outside this controlled review"); }
     const path = new URL(request.url ?? "/", origin).pathname;
-    response.setHeader("Cache-Control", "private, no-store"); response.setHeader("Referrer-Policy", "no-referrer"); response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("Cache-Control", "private, no-store"); response.setHeader("Referrer-Policy", ["/__audience_fixture", "/__audience_control"].includes(path) ? "same-origin" : "no-referrer"); response.setHeader("X-Content-Type-Options", "nosniff");
     if (path === "/") return redirect(response, "/__audience_fixture");
     if (["/__audience_fixture", "/__audience_control"].includes(path)) {
       response.setHeader("X-Frame-Options", "DENY"); response.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'");
