@@ -5,7 +5,7 @@ import { planningContinuation, planningRequestContract, type PlanningRequest, ty
 import type { IntelligenceToolResult } from "../src/domain/intelligence";
 
 const request = (id: string, input: PlanningRequest["input"]): PlanningRequest => ({
-  model: "gpt-6.1-sol", reasoning: { effort: "max" }, background: true, store: false,
+  model: "gpt-6.1-sol", reasoning: { effort: "max" }, background: false, stream: true, store: false,
   include: ["reasoning.encrypted_content"], truncation: "disabled", instructions: "Original fixed instructions.",
   tools: [], input, metadata: { planning_contract: planningRequestContract, opening_planning_run: id, source_digest: "d".repeat(64) },
 });

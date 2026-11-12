@@ -7,7 +7,7 @@ import { readIntelligenceRun, startIntelligence } from "@/server/intelligence/pr
 import { intelligenceWorkspace } from "@/server/intelligence/tools";
 import { readIntelligenceConversation, requirePlanningAuthority, withPlanningTransaction } from "@/server/intelligence/ledger";
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 export async function POST(request: Request) {
   try { assertSameOrigin(request); const authority = await planningDispatchAuthority(request); return planningJson(await startIntelligence(authority, await planningBody(request, startIntelligenceSchema))); }
   catch (error) { return planningError(error); }

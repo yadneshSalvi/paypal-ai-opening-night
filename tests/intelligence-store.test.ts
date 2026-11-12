@@ -43,6 +43,65 @@ function wire(name?: IntelligenceTool, args: unknown = {}, options: { pending?: 
   return { provider, requests, callId, responseId };
 }
 const command = () => ({ requestId: randomUUID(), conversationId: randomUUID(), afterRunId: null, prompt: "Check Tom's programming qualification using current production evidence." });
+
+function streamingWire() {
+  const responseId = 'resp_' + randomUUID().replaceAll('-', ''), requests: string[] = [];
+  let controller: ReadableStreamDefaultController<Uint8Array> | null = null, request: Record<string, unknown> | null = null;
+  const bytes = new TextEncoder(), data = (type: string, body: unknown, sequence: number) => bytes.encode(`event: ${type}\ndata: ${JSON.stringify({ type, response: body, sequence_number: sequence })}\n\n`);
+  const body = (status: string) => ({ id: responseId, status, store: false, model: request!.model, metadata: request!.metadata, output: status === 'completed' ? [{ type: 'reasoning', id: 'rs_original', summary: [], encrypted_content: 'controlled-original-encrypted-reasoning' }, { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'The original production still requires a separate producer review.' }] }] : [] });
+  const provider: PlanningProvider = { configured: true, mode: 'controlled_fixture', fetch: async (_input, init) => {
+    requests.push(init?.method ?? 'GET');
+    if (init?.method !== 'POST') return Response.json({ error: { code: 'original_unavailable' } }, { status: 404 });
+    request = JSON.parse(String(init.body)); assert.equal(request!.stream, true); assert.equal(request!.background, false); assert.equal(request!.store, false);
+    return new Response(new ReadableStream({ start(current) { controller = current; current.enqueue(data('response.created', body('in_progress'), 0)); } }), { headers: { 'content-type': 'text/event-stream', 'x-request-id': 'req_controlled_stream' } });
+  } };
+  return { provider, responseId, requests, complete() { controller!.enqueue(data('response.completed', body('completed'), 4)); controller!.close(); }, disconnect() { controller!.error(new Error('Controlled original stream disconnect')); } };
+}
+
+test('browser recovery reads preserve the original active stream and never race it with a provider GET', async () => {
+  const { authority } = await workspace(), request = command(), fake = streamingWire();
+  const first = providers.startIntelligence(authority, request, fake.provider);
+  let row: { id: string } | undefined;
+  for (let attempt = 0; attempt < 100; attempt++) {
+    row = (await fixture.pool.query("SELECT r.id FROM on_intelligence_runs r JOIN on_intelligence_observations o ON o.run_id=r.id WHERE r.request_id=$1", [request.requestId])).rows[0];
+    if (row) break; await new Promise(resolve => setTimeout(resolve, 5));
+  }
+  assert.ok(row);
+  const during = await providers.readIntelligenceRun(authority, row.id, fake.provider);
+  assert.equal(during.state, 'running'); assert.deepEqual(fake.requests, ['POST']);
+  fake.complete(); const completed = await first; assert.equal(completed.state, 'completed');
+  assert.equal((await providers.startIntelligence(authority, request, fake.provider)).id, completed.id);
+  assert.deepEqual(fake.requests, ['POST']);
+  const observations = (await fixture.pool.query('SELECT id,payload_cipher FROM on_intelligence_observations WHERE run_id=$1 ORDER BY sequence', [completed.id])).rows;
+  const saved = observations.map(row => privatePayload.openIntelligence<{ method: string; stream: { id: string; phase: string; raw?: string } }>(authority.actor.tenantId, `planning-observation:${row.id}`, row.payload_cipher));
+  assert.equal(saved.length, 2); assert.deepEqual(saved.map(x => x.stream.phase), ['created', 'terminal']); assert.equal(saved[0]!.stream.id, saved[1]!.stream.id); assert.ok(saved[1]!.stream.raw?.includes('controlled-original-encrypted-reasoning'));
+});
+
+test('an interrupted foreground stream keeps its first ID and uses only an explicit original read', async () => {
+  const { authority } = await workspace(), request = command(), fake = streamingWire();
+  const first = providers.startIntelligence(authority, request, fake.provider);
+  for (let attempt = 0; attempt < 100; attempt++) { if ((await fixture.pool.query('SELECT 1 FROM on_intelligence_observations o JOIN on_intelligence_runs r ON r.id=o.run_id WHERE r.request_id=$1', [request.requestId])).rowCount) break; await new Promise(resolve => setTimeout(resolve, 5)); }
+  fake.disconnect(); const held = await first; assert.equal(held.state, 'running');
+  const row = (await fixture.pool.query('SELECT provider_response_id FROM on_intelligence_runs WHERE id=$1', [held.id])).rows[0]; assert.equal(row.provider_response_id, fake.responseId);
+  await fixture.pool.query("UPDATE on_intelligence_runs SET poll_after=now()-interval '1 second' WHERE id=$1", [held.id]);
+  const unavailable = await providers.readIntelligenceRun(authority, held.id, fake.provider); assert.equal(unavailable.state, 'unavailable');
+  assert.deepEqual(fake.requests, ['POST', 'GET']);
+  assert.equal((await providers.startIntelligence(authority, request, fake.provider)).id, held.id); assert.deepEqual(fake.requests, ['POST', 'GET']);
+});
+
+test('a retained terminal stream recovers after a process gap before binding without a new network request', async () => {
+  const { authority } = await workspace(), request = command(), fake = streamingWire();
+  await fixture.pool.query("CREATE FUNCTION controlled_stream_bind_gap() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF OLD.state='dispatching' AND NEW.provider_response_id IS NOT NULL THEN RAISE EXCEPTION 'Controlled stream binding interruption'; END IF; RETURN NEW; END $$");
+  await fixture.pool.query('CREATE TRIGGER controlled_stream_bind_gap BEFORE UPDATE ON on_intelligence_runs FOR EACH ROW EXECUTE FUNCTION controlled_stream_bind_gap()');
+  try {
+    const first = providers.startIntelligence(authority, request, fake.provider), rejected = assert.rejects(first, /Controlled stream binding interruption/);
+    for (let attempt = 0; attempt < 100; attempt++) { if ((await fixture.pool.query('SELECT 1 FROM on_intelligence_observations o JOIN on_intelligence_runs r ON r.id=o.run_id WHERE r.request_id=$1', [request.requestId])).rowCount) break; await new Promise(resolve => setTimeout(resolve, 5)); }
+    fake.complete(); await rejected;
+  } finally { await fixture.pool.query('DROP TRIGGER controlled_stream_bind_gap ON on_intelligence_runs'); await fixture.pool.query('DROP FUNCTION controlled_stream_bind_gap()'); }
+  const row = (await fixture.pool.query('SELECT * FROM on_intelligence_runs WHERE request_id=$1', [request.requestId])).rows[0]; assert.equal(row.state, 'dispatching'); assert.equal(row.provider_response_id, null);
+  const recovered = await providers.readIntelligenceRun(authority, row.id, fake.provider); assert.equal(recovered.state, 'completed'); assert.deepEqual(fake.requests, ['POST']);
+  assert.equal((await fixture.pool.query('SELECT count(*) FROM on_intelligence_observations WHERE run_id=$1', [row.id])).rows[0].count, '2');
+});
 const code = (expected: string) => (error: unknown) => { assert.equal((error as { code?: string }).code, expected); return true; };
 async function next(authority: IntelligenceAuthority, last: Awaited<ReturnType<typeof providers.startIntelligence>>, name: IntelligenceTool, args: unknown) {
   const provider = wire(name, args), run = await providers.startIntelligence(authority, { requestId: randomUUID(), conversationId: last.conversationId, afterRunId: last.id, prompt: null }, provider.provider);

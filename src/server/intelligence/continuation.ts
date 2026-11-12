@@ -32,6 +32,7 @@ export function planningContinuation(steps: RetainedPlanningStep[]): { input: Re
     check(step.sequence === index + 1 && step.state === "completed", "PLANNING_CONTINUATION_INCOMPLETE");
     const request = step.request;
     check(request?.metadata?.planning_contract === planningRequestContract && request.store === false && Array.isArray(request.include) && request.include.includes("reasoning.encrypted_content") && !Object.hasOwn(request, "previous_response_id") && !Object.hasOwn(request, "conversation"), "PLANNING_LEGACY_READ_ONLY");
+    check(request.stream === true && request.background === false, "PLANNING_LEGACY_READ_ONLY");
     check(Array.isArray(request.input) && request.input.length > 0, "PLANNING_CONTINUATION_INPUT_MISSING");
     const currentSettings = configuration(request);
     if (!settings) settings = currentSettings;
