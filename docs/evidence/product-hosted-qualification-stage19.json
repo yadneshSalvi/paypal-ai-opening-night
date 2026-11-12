@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "qualifiedAt": "2026-11-12T14:43:25.581175+00:00",
+  "kind": "hosted-product-release",
+  "sourceCommit": "768bab939ce292bc1011cecb45c83ee80e8e6264",
+  "deploymentId": "dpl_3AqJZ2BGmxoFUqtV7UgTBfFdG18T",
+  "canonicalUrl": "https://paypal-ai-opening-night.vercel.app",
+  "scope": "Attendee receipt and controlled inbox, current AI continuity, separate artist consent, and readable native AI controls, integrated with the previously released supplier and evaluation product.",
+  "sourceArchiveSha256": "6ecc1f77e9721afeb6a24bb60ab9d9033f33a43421ea8e10910ffd93d8609ff8",
+  "releaseInputs": {
+    "immutableGitArchive": true,
+    "sourceFiles": 1081,
+    "regularUploadFiles": 1040,
+    "privateValueMatches": 0,
+    "privateBuildTracePaths": 0,
+    "localQualifiedBuildId": "2G8Lccp3yJwGnAaO_6G0y",
+    "localBuildInputSha256": "48b438afb773510dcf727a928e8b852cf3595d6b897fd1f21c4e17403de422ca"
+  },
+  "migration": {
+    "versions": [
+      17,
+      18,
+      19
+    ],
+    "verifiedReadableBackupBeforeMigration": true,
+    "originalTables": 74,
+    "originalRows": 2775,
+    "originalFullRowsAndColumnsUnchanged": true,
+    "newEmptyTables": 19,
+    "addedMigrationMarkers": 3,
+    "businessRowsAdded": 0,
+    "finalTables": 93,
+    "finalRows": 2778,
+    "finalComparison": "committed_exactly",
+    "allOriginalColumnsAndFullRowValuesPreserved": true
+  },
+  "hostedContinuity": {
+    "stagedGetChecks": 15,
+    "canonicalGetChecks": 15,
+    "originalSessionOnly": true,
+    "originalSessionExpiry": "2026-11-19T04:16:24.816Z",
+    "newSessions": 0,
+    "businessMutationRequests": 0,
+    "audienceWorkspacesInitialized": 0,
+    "providerOrModelEndpointsRequested": 0,
+    "finalFullTableComparisonPassed": true
+  },
+  "acceptedLocalEvidence": {
+    "record": "product-completion-stage18.json",
+    "reusedNativeReviews": [
+      "attendee inbox and independent reader scope",
+      "five original actual-model records",
+      "separate controlled artist consent",
+      "native AI display and 44px controls at desktop, 390px and 320px"
+    ],
+    "nativeRerunsInThisRelease": 0,
+    "combinedFocusedChecks": 12
+  },
+  "receiptBindings": {
+    "rootClosureSha256": "586a9bb4e862a658f615ea8b69dd67a53ad0e99b02e99244c1dc1f6e44cd16ed",
+    "finalComparisonSha256": "a7a6017370cae584eb9f7d0a5eb04326a9d49678402d6593a194e56c20f3b4be",
+    "stagedContinuitySha256": "74856848ab4575b97119384609f1caeb10fe5acba9fa8679d7ade02914db97c0",
+    "canonicalContinuitySha256": "ee8f0525745db909b03c70f5ef1496479074c10591f72f4326be79b5cbaeedbf"
+  },
+  "limits": [
+    "No new provider, model, financial operation, human participation or physical event was performed by this release qualification.",
+    "Attendee delivery is an explicitly controlled private inbox; no external email was sent.",
+    "The original actual-model P02 role refusal and the native artist-consent response-loss limitation remain unchanged in their original records.",
+    "The frozen evaluator retains its original application-source and corpus binding.",
+    "Production input admission, linked presentation, supplier administration and remaining tour/strategy/template work are separate successors."
+  ]
+}
