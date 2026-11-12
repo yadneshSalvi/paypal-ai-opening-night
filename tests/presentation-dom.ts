@@ -1,0 +1,26 @@
+/** Synthetic presentation DOM fixture only. Geometry is a shim, never actual browser acceptance. */
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { JSDOM } from "jsdom";
+export const dom = new JSDOM("<!doctype html><html><head></head><body></body></html>", { url: "http://controlled.invalid/presentation", pretendToBeVisual: true });
+for (const name of ["window", "self", "document", "navigator", "DOMTokenList", "EventTarget", "HTMLDialogElement", "StorageEvent", "HTMLDocument", "Document", "Window", "ShadowRoot", "HTMLStyleElement", "CSSStyleSheet", "CSSStyleDeclaration", "Text", "Comment", "CharacterData", "HTMLImageElement", "screen", "pageXOffset", "pageYOffset", "innerWidth", "innerHeight", "devicePixelRatio", "HTMLElement", "HTMLDivElement", "HTMLInputElement", "HTMLButtonElement", "HTMLTextAreaElement", "HTMLCanvasElement", "SVGElement", "Element", "Node", "NodeFilter", "DocumentFragment", "Event", "CustomEvent", "MouseEvent", "KeyboardEvent", "FocusEvent", "MutationObserver", "DOMParser", "XMLSerializer", "Range", "DOMRect", "location", "history", "sessionStorage", "localStorage"] as const) Object.defineProperty(globalThis, name, { configurable: true, value: dom.window[name] });
+for (const name of ["addEventListener", "removeEventListener", "dispatchEvent", "requestAnimationFrame", "cancelAnimationFrame", "getComputedStyle"] as const) Object.defineProperty(globalThis, name, { configurable: true, value: dom.window[name].bind(dom.window) });
+const media = (query: string) => ({ media: query, matches: query.includes("reduced-motion"), onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => true });
+Object.defineProperty(globalThis, "matchMedia", { configurable: true, value: media }); Object.defineProperty(dom.window, "matchMedia", { configurable: true, value: media });
+class ResizeObserverFixture { observe() {} unobserve() {} disconnect() {} }
+Object.defineProperty(globalThis, "ResizeObserver", { configurable: true, value: ResizeObserverFixture }); Object.defineProperty(dom.window, "ResizeObserver", { configurable: true, value: ResizeObserverFixture });
+Object.defineProperty(globalThis, "CSS", { configurable: true, value: { supports: () => false, escape: (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, char => "\\" + char) } }); Object.defineProperty(dom.window, "CSS", { configurable: true, value: globalThis.CSS });
+dom.window.HTMLElement.prototype.getBoundingClientRect = function () { return new dom.window.DOMRect(Number.parseFloat(this.style.left) || 0, Number.parseFloat(this.style.top) || 0, Number.parseFloat(this.style.width) || window.innerWidth, Number.parseFloat(this.style.height) || 100); };
+dom.window.HTMLElement.prototype.getClientRects = function () { return (this.isConnected && !this.closest("[hidden],.b-hidden") ? [this.getBoundingClientRect()] : []) as unknown as DOMRectList; };
+Object.defineProperty(dom.window.HTMLElement.prototype, "offsetParent", { configurable: true, get() { return this.isConnected && !this.closest("[hidden],.b-hidden") ? this.parentElement ?? document.body : null; } });
+for (const [name, dimension] of [["offsetWidth", "width"], ["clientWidth", "width"], ["offsetHeight", "height"], ["clientHeight", "height"]] as const) Object.defineProperty(dom.window.HTMLElement.prototype, name, { configurable: true, get() { return this.getBoundingClientRect()[dimension]; } });
+dom.window.HTMLElement.prototype.scrollIntoView = function () {};
+dom.window.Range.prototype.getBoundingClientRect = () => new dom.window.DOMRect(0, 0, 80, 20); dom.window.Range.prototype.getClientRects = function () { return [this.getBoundingClientRect()] as unknown as DOMRectList; };
+Object.defineProperty(document, "fonts", { configurable: true, value: { ready: Promise.resolve(), status: "loaded", check: () => true, addEventListener() {}, removeEventListener() {} } });
+assert.ok(process.env.BRYNTUM_LICENSE_KEY, "Caller supplies only the approved project engine license"); Object.assign(globalThis, { bryntum: { licenseKey: process.env.BRYNTUM_LICENSE_KEY } });
+const css = document.createElement("style"); css.textContent = await readFile(new URL("../src/components/presentation/presentation.css", import.meta.url), "utf8"); document.head.append(css);
+Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, value: true });
+dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; };
+export const pause = () => new Promise(resolve => setTimeout(resolve, 30));
+export function viewport(width: number, height: number) { Object.defineProperty(dom.window, "innerWidth", { configurable: true, value: width }); Object.defineProperty(dom.window, "innerHeight", { configurable: true, value: height }); Object.defineProperty(globalThis, "innerWidth", { configurable: true, value: width }); Object.defineProperty(globalThis, "innerHeight", { configurable: true, value: height }); }

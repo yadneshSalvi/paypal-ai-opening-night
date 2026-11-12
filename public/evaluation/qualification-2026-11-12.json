@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "opening-evaluation-viewer-qualification-2026-11-12",
+  "date": "2026-11-12",
+  "purpose": "Dated later viewer observations, separate from the immutable original computation report.",
+  "binding": {
+    "runId": "run-20261112T074915063Z-ba7f8ef4",
+    "reportSha256": "4920dc9eef5448a892b8fd1093527cac247f8589f10a033ea907b22c833df934",
+    "corpusSha256": "a03dbd55d02c08bd448d0e1285fffff8b885ca68ee81e87b8813d1d29a97eb3b",
+    "reportSource": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+    "reportPath": "/evaluation/run-20261112T074915063Z-ba7f8ef4/report.json",
+    "corpusPath": "/evaluation/run-20261112T074915063Z-ba7f8ef4/corpus.json"
+  },
+  "localViewer": {
+    "observedAt": "2026-11-12T08:48:56.008Z",
+    "viewerSource": "2b80219a17bce80a6705dde4e82e60160f0316e4",
+    "buildId": "aVRSdepS9J7-63MHvziAi",
+    "receiptSha256": "4a310200b05c89a02742e48a8a30dcbbda44752fbe0f680dcb6114f57d467cb3",
+    "currentExpectationsShown": true,
+    "reloadHashVerificationPassed": true,
+    "applicationCommands": 0,
+    "providerModelDatabaseCalls": 0,
+    "result": "The native reviewer observed the saved viewer, current case expectations and exact hash recovery on the local candidate."
+  },
+  "hostedViewer": {
+    "observedAt": "2026-11-12T11:46:44.838Z",
+    "deployedSource": "b97e47eb41521800ec85656a70001a4bb7b80817",
+    "deploymentId": "dpl_AaMDdwAycoNXcnwovB7jDeRgEYn1",
+    "canonicalUrl": "https://paypal-ai-opening-night.vercel.app",
+    "caseId": "S05",
+    "observedOutcome": "unknown pending evidence",
+    "unresolvedCodes": [
+      "DRIVER_UNKNOWN",
+      "CONDITION_UNKNOWN"
+    ],
+    "consoleErrors": 0,
+    "receiptSha256": "8fb7f2d4e81233d34a1f8cf1d4390f2150314fa79092965a1245b6970d1a076f",
+    "result": "The native reviewer observed the same immutable S05 report on the promoted canonical deployment. Its qualified driver and condition remain unknown."
+  },
+  "controlledRecording": {
+    "startedAt": "2026-11-12T11:46:22.484Z",
+    "endedAt": "2026-11-12T11:46:34.984Z",
+    "durationMs": 12500,
+    "accepted": true,
+    "audio": false,
+    "receiptSha256": "98e765e7d9a9fe05557b8f9bc942df90b2ce8574af256519a7ec849f055edb0f",
+    "description": "Actual native source-view capture. This records the viewer, not physical operations or provider outcomes.",
+    "earlierFailedTakeRetained": true
+  },
+  "unchangedQualifications": [
+    "Original report and corpus bytes and expectations remain unchanged.",
+    "The original pending local viewer gate describes its original report time; these later observations are additive.",
+    "Actual model-quality, human planning, financial provider and physical-execution evaluation require their own evidence.",
+    "S05 remains unknown pending evidence; an expected unknown can match its expectation without becoming ready."
+  ]
+}
