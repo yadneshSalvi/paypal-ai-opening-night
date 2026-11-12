@@ -1,6 +1,6 @@
 # Opening Night
 
-[Hosted integration checkpoint](https://paypal-ai-opening-night.vercel.app) — verified on Vercel with isolated durable sessions, native scheduling and reviewed decision persistence. Full product scope remains under implementation. Hosted checks: `docs/evidence/hosted-http-qualification.json` and `docs/evidence/hosted-browser-qualification.json`.
+[Hosted integration checkpoint](https://paypal-ai-opening-night.vercel.app) — verified on Vercel with isolated durable sessions, native scheduling and reviewed decision persistence. Full product scope remains under implementation. Latest touring release: [hosted and native qualification](docs/evidence/tour-hosted-qualification.json). Earlier hosted checks remain in `docs/evidence/hosted-http-qualification.json` and `docs/evidence/hosted-browser-qualification.json`.
 
 A production console for the moments before a live show. Recover a disrupted schedule, secure replacement equipment, keep ticket promises, publish the right calls, and issue GO only when the current evidence supports it.
 

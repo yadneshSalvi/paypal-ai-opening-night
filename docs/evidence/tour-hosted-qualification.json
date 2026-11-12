@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "opening-night.tour-hosted-qualification.v1",
+  "checkedAt": "2026-11-12T04:23:12.374Z",
+  "sourceCommit": "adf2d9a56118ffd96ec683b39d6f6672126b3204",
+  "deploymentId": "dpl_2RNCxm1LYFaG5Qo9ww5RzYoYsqK3",
+  "url": "https://paypal-ai-opening-night.vercel.app",
+  "status": "promoted-integration-milestone",
+  "database": {
+    "backupVerifiedReadable": true,
+    "oldTables": 33,
+    "oldRows": 2712,
+    "migrationVersionsAdded": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "newTables": 26,
+    "allOldRowsPreservedByMigration": true,
+    "postQualification": {
+      "originalBusinessSessionAndPaymentRowsUnchanged": true,
+      "expiredRateWindowRowsPruned": 8,
+      "newRateWindowRows": 3,
+      "cleanupVerifiedAgainstOriginalBackup": true,
+      "newSyntheticRehearsals": 3,
+      "newSyntheticTourProductions": 2
+    }
+  },
+  "hostedHttp": {
+    "checks": 10,
+    "requests": 23,
+    "passed": true,
+    "privateResponseValueMatches": 0
+  },
+  "native": {
+    "desktop": true,
+    "mobileWidth": 390,
+    "horizontalPageOverflow": false,
+    "syntheticProductionCreated": true,
+    "stageAndCanonicalSelection": true,
+    "denverToUtcClockConversion": true,
+    "nextDayCalendarProjection": true,
+    "timelineRemount": true,
+    "sameEditionAfterReload": true,
+    "viewportRestored": true
+  },
+  "stableRoutes": {
+    "served": [
+      "/",
+      "/tour",
+      "/tour/crew",
+      "/api/health"
+    ],
+    "anonymousTourStatus": 401
+  },
+  "deploymentInputs": {
+    "sourceManifestFiles": 471,
+    "deployedRegularFiles": 430,
+    "privateInputFiles": 0,
+    "secretMatches": 0
+  },
+  "providerCalls": 0,
+  "claims": {
+    "independentHumanReview": false,
+    "physicalExecution": false,
+    "newPayPalTransactions": false,
+    "fullProductComplete": false
+  },
+  "limitations": [
+    "This release qualifies the accepted touring UI and additive hosted infrastructure. Actual-provider voice, source compilation, invoice/Toolkit and wider product gates remain separately tracked.",
+    "A first-time unauthenticated visitor currently sees expired-session wording before using the working session-entry link; a source correction is assigned.",
+    "Native test automation date fill did not update controlled form state. Real keyboard date entry succeeded; no hidden application state was injected.",
+    "The initial post-test preservation assertion caught eight expected expired rate-limit rows. Exact backup hashes and the original one-day cleanup rule verified those removals; every other original row is retained.",
+    "The first cleanup investigation incorrectly assumed all original rate rows were expired. Its retained second investigation scoped the exact eight removed entries."
+  ]
+}
