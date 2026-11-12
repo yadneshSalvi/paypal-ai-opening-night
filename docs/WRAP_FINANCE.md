@@ -42,6 +42,8 @@ The initial Toolkit qualification attempt used the wrong axios instance and may 
 
 The Toolkit dependency tree still has transitive npm advisories; see [dependency review](architecture/wrap-dependency-review.md). A passing scoped test is not a claim that the whole dependency tree is vulnerability-free.
 
-## Work still required for the complete product
+## Work outside this unit
 
-This unit does not complete Opening Night or all six projects. Preserve full crew completion and shift swaps; second incident, no-feasible recovery and partial cancellation; production admission, templates, tours, travel/network/stage depth; incident corpus and 500-task/100-resource/400-synthetic evaluations; real-phone/practitioner evidence or an explicit honest fallback; complete cold-install, security and performance qualification; and the 170-second film and full release. Native wrap review and actual provider qualification remain separate root gates.
+When this unit was written it listed the following as still required: full crew completion and shift swaps; second incident, no-feasible recovery and partial cancellation; production admission, templates, tours, travel/network/stage depth; incident corpus and 500-task/100-resource/400-synthetic evaluations; real-phone/practitioner evidence or an explicit honest fallback; complete cold-install, security and performance qualification; the 170-second film and full release; native wrap review and actual provider qualification.
+
+Most of that has since been built and is recorded in its own documents: [disruption and cancellation](SUPPLIER_DISRUPTIONS.md), [production inputs](PRODUCTION_INPUTS.md), [tours](../TOURING_PRODUCTION.md), [planning workbench and learning templates](PLANNING_WORKBENCH.md), [the 66-case and scale evaluation](evaluation/README.md), [native wrap review](WRAP_FOCUS.md) and the [actual invoice, Toolkit and assistant receipt](evidence/invoice-toolkit-assistant-stage16.json). Real-phone and practitioner evidence was not obtained; the [capability register](CAPABILITIES.md) states that explicitly and lists what remains unqualified.

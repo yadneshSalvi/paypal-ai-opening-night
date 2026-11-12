@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { controlledPresentation } from "../judge/presentation";
 import type { PoolClient } from "pg";
 import { DomainError, type ShowSnapshot, type EngineReport } from "@/domain/contracts";
 import { appendEvent, recordRescueRun } from "@/domain/commands";
@@ -18,6 +19,8 @@ import { inputAuthority, inputNow, inputShow, inputTransaction, inputUnexpired }
 import { records, sourceState, saveRecord } from "../tour/store";
 import { evaluateWithEngine } from "../tour/comparisons";
 import { openReview, readReceipt, reviewById, saveReceipt, saveReview, workbenchDigest } from "./store";
+import { proposeWithModel, strategyAgentStatus } from "./model-strategies";
+import { planningProvider, type PlanningProvider } from "../intelligence/provider";
 
 const binding = (record: TourRecord) => ({ id: record.id, revision: record.revision, digest: record.digest });
 async function portfolioLock(db: PoolClient, tenant: string) { await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,4548))", [tenant]); return records(db, tenant); }
@@ -63,15 +66,18 @@ export async function planningWorkbench(authority: InputAuthority): Promise<Work
    reviews.push({ review, state: admitted ? "admitted" : expired ? "expired" : current ? "current" : "stale", reason: admitted ? "Separate admission saved. Its downstream approvals and execution stay in their own histories." : expired ? "Original fixed access ended." : current ? null : "The original access, production or source edition changed; this retained review cannot be admitted.", receipt });
   }
   await inputAuthority(db, authority, scope);
-  return { version: 1, scope, revision: show.revision, serverAt: now, sourceDigest: workbenchDigest(show), production: { id: show.id, title: show.title, venue: show.venue, showDate: show.showDate, zone: show.zone }, offers: show.offers.map(({ id, supplier, revision, source }) => ({ id, supplier, revision, source })), tasks: show.tasks.map(({ id, name, start, end, resources, requiredSkill, state, cancellation, lane, milestone }) => ({ id, name, start, end, resources, requiredSkill, mutable: state !== "complete" && !cancellation && lane !== "commercial" && !milestone && Date.parse(start) >= Date.parse(show.clock) })), people: show.resources.filter(row => row.kind === "person").map(({ id, name, skills }) => ({ id, name, skills })), productions: all.filter((row): row is PlannedProduction => row.kind === "production"), tours: all.filter((row): row is Tour => row.kind === "tour"), templates: all.filter((row): row is ProductionTemplate => row.kind === "template"), reviews, currentTourAdmission: show.tourAssignments ?? null, controlled: env.controlledQa };
+  const modelAgent = await strategyAgentStatus(db, show.tenantId, Boolean(show.demonstration));
+  return { version: 1, scope, revision: show.revision, serverAt: now, sourceDigest: workbenchDigest(show), production: { id: show.id, title: show.title, venue: show.venue, showDate: show.showDate, zone: show.zone }, offers: show.offers.map(({ id, supplier, revision, source }) => ({ id, supplier, revision, source })), tasks: show.tasks.map(({ id, name, start, end, resources, requiredSkill, state, cancellation, lane, milestone }) => ({ id, name, start, end, resources, requiredSkill, mutable: state !== "complete" && !cancellation && lane !== "commercial" && !milestone && Date.parse(start) >= Date.parse(show.clock) })), people: show.resources.filter(row => row.kind === "person").map(({ id, name, skills }) => ({ id, name, skills })), productions: all.filter((row): row is PlannedProduction => row.kind === "production"), tours: all.filter((row): row is Tour => row.kind === "tour"), templates: all.filter((row): row is ProductionTemplate => row.kind === "template"), reviews, currentTourAdmission: show.tourAssignments ?? null, modelAgent, controlled: controlledPresentation(show) };
  });
 }
 export async function recoverWorkbench(authority: InputAuthority, id: string) {
  return inputTransaction(async db => { await inputShow(db, authority.actor.tenantId, true); const scope = await inputAuthority(db, authority), result = await readReceipt(db, authority, scope, id); if (!result) throw new DomainError("WORKBENCH_COMMAND_MISSING", "No receipt exists for this exact original command and access.", 404); return result; });
 }
-export async function executeWorkbench(authority: InputAuthority, raw: unknown) {
+export async function executeWorkbench(authority: InputAuthority, raw: unknown, provider: PlanningProvider = planningProvider()) {
  const parsed = workbenchEnvelopeSchema.safeParse(raw); if (!parsed.success) throw new DomainError("WORKBENCH_COMMAND_INVALID", "Review the supported typed instruction and its exact access before sending.", 400);
  const envelope: WorkbenchEnvelope = parsed.data;
+ // The model request runs outside any database transaction; its proposals are validated and retained by the same rules.
+ if (envelope.command.type === "strategies.propose") return proposeWithModel(authority, { ...envelope, command: envelope.command }, provider);
  return inputTransaction(async db => {
   const show = await inputShow(db, authority.actor.tenantId, true); await inputAuthority(db, authority, envelope.scope);
   const replay = await readReceipt(db, authority, envelope.scope, envelope.commandId, digest(envelope)); if (replay) return replay;
@@ -101,11 +107,12 @@ export async function executeWorkbench(authority: InputAuthority, raw: unknown) 
    if ((await db.query("SELECT 1 FROM on_planning_workbench_admissions WHERE tenant_id=$1 AND review_id=$2", [show.tenantId, review.id])).rowCount) throw new DomainError("WORKBENCH_ALREADY_ADMITTED", "That exact review already has an admission. Read its retained original receipt.");
    result = { reviewId: review.id, digest: review.digest, revision: show.revision, admitted: true, message: "" };
    if (command.type === "strategies.admit" && review.content.kind === "strategies") {
-    const candidates = review.content.candidates;
+    const candidates = review.content.candidates, generation = review.content.generation;
+    if (!candidates.length) throw new DomainError("STRATEGY_NOTHING_TO_ADMIT", "This retained attempt produced no validated alternative. It stays in the history; there is nothing to admit to Recovery.");
     if (candidates.some(candidate => candidate.strategy?.sourceDigest !== strategyScopeDigest(show))) throw new DomainError("WORKBENCH_SOURCE_CHANGED", "The strategy's exact source constraints changed.");
     // Revalidate real-time quote expiry without repeating unchanged native engine work.
     const current = candidates.map(candidate => { const next = structuredClone(candidate), offer = show.offers.find(row => row.id === candidate.patch.offerId)!; const checked = validatePatch(show, candidate.patch, offer); for (const issue of checked.issues) if (!next.report.issues.some(row => row.code === issue.code && row.taskId === issue.taskId && row.resourceId === issue.resourceId)) next.report.issues.push(issue); if (next.report.issues.some(row => row.severity === "hard")) next.report.status = "infeasible"; else if (next.report.issues.some(row => row.severity === "unknown")) next.report.status = "unknown_pending_evidence"; return next; });
-    const next = recordRescueRun(show, authority.actor, current, await inputNow(db)); await writeShow(db, show, next); result.revision = next.revision; result.message = "The reviewed alternatives are in Recovery studio. Every rejection and unknown is retained; plan approval, artist consent and commitments remain separate.";
+    const next = generation ? recordRescueRun(show, authority.actor, current, await inputNow(db), "model_assisted_proposal", generation) : recordRescueRun(show, authority.actor, current, await inputNow(db)); await writeShow(db, show, next); result.revision = next.revision; result.message = "The reviewed alternatives are in Recovery studio. Every rejection and unknown is retained; plan approval, artist consent and commitments remain separate.";
    } else if (command.type === "tour.admit" && review.content.kind === "tour") {
     const content = review.content, projection = assignmentProjection(show, content.production, content.tour, content.mapping), productions = all.filter((row): row is PlannedProduction => row.kind === "production"), report = evaluateTour(content.tour, productions), other = portfolioFindings(content.tour, productions.filter(row => content.tour.productionIds.includes(row.id)), all);
     if (content.report.hard.length || content.report.unknown.length || content.report.engine?.status !== "passed" || report.hard.length || report.unknown.length || other.some(row => row.severity !== "approval") || projection.issues.length || digest(projection.tasks) !== digest(content.tasks) || !validGraphProof(content.engine, content.tasks, show.dependencies)) throw new DomainError("TOUR_ADMISSION_BLOCKED", "Both the complete current tour and this operating assignment must have clear hard constraints, source evidence and matching real engine proofs.");

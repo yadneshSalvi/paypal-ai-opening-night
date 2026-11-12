@@ -64,7 +64,9 @@ export interface Candidate {
   digest: string; sourceDigest: string; generatedAt: string; patch: PlanPatch; approvals: ApprovalRequirement[];
   report: ConstraintReport; cost: { rentalMinor: number; overtimeMinor: number; remedyMinor: number; totalMinor: number };
 }
-export interface RescueRun { id: string; baseRevision: number; createdAt: string; completedAt: string; candidates: Candidate[]; source: "modelled"; strategySource: "deterministic_enumerator" | "model_assisted_proposal" }
+export interface RescueRun { id: string; baseRevision: number; createdAt: string; completedAt: string; candidates: Candidate[]; source: "modelled"; strategySource: "deterministic_enumerator" | "model_assisted_proposal";
+  /** Present only when a strategy agent (live or recorded model output) proposed this run. Every candidate was still validated here. */
+  generation?: import("./planning-workbench/model-strategies").StrategyGeneration }
 export interface PublishedRunSheet {
   id: string; version: number; planRevision: number; candidateId: string | null; digest: string;
   publishedAt: string; tasks: Task[]; changes: { taskId: string; name: string; before: string; after: string; reason: string; resourceIds: string[] }[];
@@ -77,6 +79,8 @@ export interface FinancialEvidence {
   id: string; operationId: string; kind: "authorization" | "capture" | "refund" | "void" | "payout";
   purpose: "rental" | "ticket" | "vip_remedy" | "event_remedy" | "deposit" | "rental_cancel" | "crew"; status: "pending" | "completed" | "failed";
   amountMinor: number; currency: "USD"; source: Provenance; verified: boolean; planVersion: number;
+  /** Present only in a guided demonstration: the outcome was replayed and no PayPal request was made. */
+  provenance?: "replay";
   providerResourceId: string; parentId: string | null; ticketId: string | null; recordedAt: string;
   allocation?: { decisionId: string; admissionMinor: number; perkMinor: number };
   rentalCloseoutId?: string;
@@ -94,6 +98,8 @@ export interface FinancialCheck {
 export interface Ticket {
   id: string; tier: "standard" | "vip"; admissionMinor: number; perkMinor: number; captureId: string | null;
   source: Provenance; refundedMinor: number; status: "reserved" | "captured" | "partially_refunded" | "refunded";
+  /** Present only in a guided demonstration: this ticket's capture is a replayed outcome. */
+  provenance?: "replay";
 }
 export interface OperationalFact {
   id: string; kind: "supplier_confirmed" | "delivery_accepted" | "return_accepted" | "focus_signed_off" | "cue_signed_off" | "foh_contingency" | "support_checkin" | "support_ready" | "headliner_checkin" | "quiet_prep" | "changeover";
@@ -140,10 +146,12 @@ export interface ShowSnapshot {
   cancellationDecision?: CancellationDecision;
   productionInputs?: ProductionInputState;
   tourAssignments?: import("./planning-workbench/tour-admission").TourAssignmentState;
+  /** Set only when the rehearsal is created and immutable afterwards. Payment-provider outcomes are replayed; no PayPal request is made. */
+  demonstration?: import("./judge/contracts").DemonstrationMarker;
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }
-export interface ConsoleData { show: ShowSnapshot; readiness: ReadinessReport[]; currentActor: Actor; serverAt: string; crew?: CrewProductionOverview; controlledQa?: boolean; controlledPlanningQa?: boolean }
+export interface ConsoleData { show: ShowSnapshot; readiness: ReadinessReport[]; currentActor: Actor; serverAt: string; crew?: CrewProductionOverview; controlledQa?: boolean; controlledPlanningQa?: boolean; /** True only for a guided demonstration rehearsal. */ demonstration?: boolean; /** Fixed sentence shown wherever replayed money appears in a guided demonstration. */ paymentNotice?: string }
 export class DomainError extends Error {
   constructor(public code: string, message: string, public status = 409) { super(message); this.name = "DomainError"; }
 }

@@ -1,0 +1,136 @@
+# Continuous integration: install, typecheck, unit tests and PostgreSQL integration suites.
+# There is deliberately no deploy job. Nothing here calls PayPal, OpenAI or any other provider:
+# no provider credential is configured, and the provider-disabled suites additionally block provider hosts.
+#
+# Optional repository secret (Settings -> Secrets and variables -> Actions):
+#   BRYNTUM_LICENSE_KEY  Bryntum Enterprise license key used by the Node scheduling engine.
+#                        The Bryntum 8.0.0 packages themselves install from the public npm registry,
+#                        so no registry token is needed. When the secret is absent the jobs still run
+#                        and print a warning; engine-backed checks then run without a license key.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  # Test-only values. They authorize nothing outside this workflow run.
+  JUDGE_SESSION_SECRET: ci-only-session-secret-not-used-anywhere-else-0123456789
+  DATABASE_URL: postgresql://opening_night:opening_night@127.0.0.1:5432/opening_night
+
+jobs:
+  typecheck:
+    name: Typecheck and package pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # package-lock.json pins the APIMatic-generated `paypal` SDK as a git+ssh GitHub dependency.
+      # The repository is public, so fetch it over HTTPS instead of requiring an SSH key.
+      - name: Fetch public GitHub dependencies over HTTPS
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://github.com/".insteadOf "git@github.com:"
+      - run: npm ci
+      - name: Verify pinned payment core, SDK and Bryntum versions
+        run: npm run verify:packages
+      - run: npm run typecheck
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BRYNTUM_LICENSE_KEY: ${{ secrets.BRYNTUM_LICENSE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Fetch public GitHub dependencies over HTTPS
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://github.com/".insteadOf "git@github.com:"
+      - run: npm ci
+      - name: Report whether the Bryntum license secret is configured
+        run: |
+          if [ -z "$BRYNTUM_LICENSE_KEY" ]; then
+            echo "::warning title=BRYNTUM_LICENSE_KEY is not configured::Engine-backed tests run without a license key. Add the repository secret BRYNTUM_LICENSE_KEY to run them as licensed."
+          fi
+      - name: Domain, scheduling, payment-policy and crew unit tests
+        run: npm test
+      - name: Security header and Content-Security-Policy tests
+        run: node --import tsx --test tests/security-headers.test.ts
+
+  integration:
+    name: PostgreSQL integration suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BRYNTUM_LICENSE_KEY: ${{ secrets.BRYNTUM_LICENSE_KEY }}
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: opening_night
+          POSTGRES_PASSWORD: opening_night
+          POSTGRES_DB: opening_night
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U opening_night -d opening_night"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Fetch public GitHub dependencies over HTTPS
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://github.com/".insteadOf "git@github.com:"
+      - run: npm ci
+      - name: Report whether the Bryntum license secret is configured
+        id: license
+        run: |
+          if [ -n "$BRYNTUM_LICENSE_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=BRYNTUM_LICENSE_KEY is not configured::The integration suites still run. A failure in an engine-backed suite is reported as a warning instead of failing the job until the repository secret BRYNTUM_LICENSE_KEY is added."
+          fi
+      - name: Apply migrations to the empty service database
+        run: npm run db:migrate
+      # Every suite creates and drops its own disposable schema. SDK and webhook-signature cases use
+      # controlled wire fixtures; no sandbox credential exists in this environment.
+      - name: Store, engine, payment-wire, durable-work and commerce integration suites
+        continue-on-error: ${{ steps.license.outputs.present != 'true' }}
+        run: npm run test:integration
+      # These scripts preload scripts/qa/disabled-providers.mjs, which blanks provider credentials
+      # and refuses any request to PayPal, OpenAI, Google, Anthropic or Vercel Blob hosts.
+      - name: Provider-disabled voice, source, settlement, payout and wrap suites
+        if: ${{ !cancelled() }}
+        run: |
+          npm run test:voice
+          npm run test:sources
+          npm run test:settlement
+          npm run test:payouts
+          npm run test:wrap

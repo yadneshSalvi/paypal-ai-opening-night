@@ -71,6 +71,18 @@ env -i PATH="$PATH" node --import ./scripts/evaluation/isolate.mjs --import tsx 
 
 The page pins the publication metadata at build time. Report/corpus fetches omit credentials, accept only controlled same-origin paths, enforce byte bounds and verify SHA-256 before display. Delayed responses cannot replace a newer selection. An exact run/case selection survives remount. Failed verification retains only an already verified immutable report and exposes retry. All four match states, empty/loading/error states, keyboard focus and retained history have mounted component regressions. These are not native-browser measurements.
 
+## Re-running for a later release commit
+
+The published result stays bound to `96ff4cd` until these steps are completed for a newer commit. The full runner compares the application paths (`src`, `public`, `package.json`, `package-lock.json`, `next.config.ts`, `tsconfig.json`, `next-env.d.ts`, `vendor`) against the corpus's `sourceCommit` and refuses a full run if anything outside the evaluation-owned paths (`src/domain/evaluation/`, `src/components/evaluation/`, `src/app/evaluation/`, `public/evaluation/`) differs.
+
+1. Use an isolated checkout of the release commit whose root is its own Git top level, with dependencies installed and **no** `.env` file (the isolation preload refuses one). Keep the earlier runs' directories under `.artifacts/evaluation-stage16/runs/` in that checkout; publication needs every previously published run.
+2. Freeze a new corpus binding without changing any case or expectation: copy `src/domain/evaluation/corpus-v3.json` to `corpus-v4.json`, changing only `id`, `frozenAt` and `sourceCommit` (the full 40-character release commit); write `docs/evaluation/corpus-freeze-v4.json` with the new file's SHA-256, byte length, the same `frozenAt` and `sourceCommit`, `predecessorSha256` set to the v3 hash, and the unchanged `expectationBytesSha256`; then point the two paths in `frozenCorpus()` (`scripts/evaluation/io.ts`) and the import in `src/domain/evaluation/cases.ts` at v4. Commit this on top of the release commit. These files are evaluation-owned or outside the compared paths, so the binding still matches.
+3. Run the full contract and publish it with every earlier published run, newest first, using the two commands in the next section.
+4. Run `tests/evaluation-contract.test.ts`, `tests/evaluation-engine.test.ts` and `tests/evaluation-evidence.test.ts` as shown under "Other meaningful checks", and update any assertion that names the corpus version.
+5. Copy the new `public/evaluation/` output into the release, write a new machine-readable summary beside `docs/evidence/evaluation-stage16.json` (do not rewrite that file), and update the single results block in the top-level README (between the `EVALUATION-RESULTS` markers).
+
+A focused `--case` run does not need a new binding but cannot be published as a full result.
+
 ## Local production candidate
 
 The offline font helper accepts an explicitly approved read-only accepted cache ending in `/.next/static`. It reads only compiled CSS and the three exact Latin Inter/Oswald/JetBrains Mono font faces, copies those bytes using APFS COW into the private cache and immutable public/evaluation/fonts assets, and records their hashes. It does not fetch external fonts or read configuration from the source checkout.

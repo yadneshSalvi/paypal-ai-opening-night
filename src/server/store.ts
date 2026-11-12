@@ -26,6 +26,8 @@ import { planConsentsMigration } from "./migrations/plan-consents-v19";
 import { productionInputsMigration } from "./migrations/production-inputs-v20";
 import { supplierAdminMigration } from "./migrations/supplier-admin-v21";
 import { planningWorkbenchMigration } from "./migrations/planning-workbench-v22";
+import { modelAgentsMigration } from "./migrations/model-agents-v24";
+import { judgeMigration } from "./migrations/judge-v23";
 import { currentRentalExecution, supplierIds, type SupplierId, type OriginalSupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -129,6 +131,10 @@ export async function migrate() {
       if (!supplierAdmin.rowCount) { await client.query(supplierAdminMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(21)"); }
       const planningWorkbench = await client.query("SELECT version FROM on_schema_migrations WHERE version=22");
       if (!planningWorkbench.rowCount) { await client.query(planningWorkbenchMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(22)"); }
+      const judge = await client.query("SELECT version FROM on_schema_migrations WHERE version=23");
+      if (!judge.rowCount) { await client.query(judgeMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(23)"); }
+      const modelAgents = await client.query("SELECT version FROM on_schema_migrations WHERE version=24");
+      if (!modelAgents.rowCount) { await client.query(modelAgentsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(24)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }
@@ -158,11 +164,13 @@ export async function getShow(tenantId: string): Promise<ShowSnapshot> {
   if (!result.rows[0]) throw new DomainError("SHOW_NOT_FOUND", "This rehearsal has expired. Start a new session.", 404);
   return projectExecutionMilestones(result.rows[0].snapshot);
 }
-export async function createCrewCapability(actor: Actor, personId: string) {
+export async function createCrewCapability(actor: Actor, personId: string, presetToken?: string) {
   if (!actor.roles.includes("producer") || actor.personId || actor.executionId || actor.supplierId) throw new DomainError("ROLE_REQUIRED", "Only the producer can invite a controlled crew client.", 403);
   const show = await getShow(actor.tenantId);
   if (!show.resources.some(r => r.id === personId && r.kind === "person")) throw new DomainError("PERSON_NOT_FOUND", "This person is not on the roster.", 404);
-  const token = randomBytes(32).toString("base64url");
+  // A caller-supplied token must have the same 256-bit shape; it is still stored only as its keyed hash.
+  if (presetToken !== undefined && !/^[A-Za-z0-9_-]{43}$/.test(presetToken)) throw new DomainError("CREW_CAPABILITY_REQUIRED", "A crew capability needs a full-length token.", 400);
+  const token = presetToken ?? randomBytes(32).toString("base64url");
   const crewActor: Actor = { id: `crew:${personId}:${randomUUID()}`, tenantId: actor.tenantId, roles: ["crew"], personId };
   await pool.query("INSERT INTO on_sessions(token_hash, tenant_id, actor, expires_at) VALUES($1,$2,$3,now()+interval '1 day')", [tokenHash(token), actor.tenantId, crewActor]);
   return token;

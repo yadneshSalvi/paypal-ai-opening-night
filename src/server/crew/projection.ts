@@ -1,4 +1,5 @@
 import type { Actor, ShowSnapshot } from "@/domain/contracts";
+import { controlledPresentation } from "../judge/presentation";
 import { digest } from "@/domain/hash";
 import { readiness } from "@/domain/readiness";
 import { cueBlockers } from "@/domain/crew/commands";
@@ -28,7 +29,7 @@ export function crewData(show: ShowSnapshot, actor: Actor, expiresAt: string, se
   const sheet = show.sheets.at(-1)!;
   const ownedSummary = (record: CrewRecord | null) => record?.personId === person.id ? crewRecordSummary(show, record) : null;
   const data: CrewData = {
-    schemaVersion: 1, protocol: show.crewProtocol ?? 0, controlledQa: env.controlledQa, serverAt, access: { actorId: actor.id, expiresAt },
+    schemaVersion: 1, protocol: show.crewProtocol ?? 0, controlledQa: controlledPresentation(show), serverAt, access: { actorId: actor.id, expiresAt },
     person: { id: person.id, name: person.name, role: person.role, color: person.color, critical: person.critical, reserve: person.reserve },
     show: { title: show.title, support: show.support, venue: show.venue, zone: show.zone, showDate: show.showDate, clock: show.clock, revision: show.revision, planVersion: show.planVersion, doorsAt: show.doorsAt },
     sheet: { version: sheet.version, digest: sheet.digest, planVersion: sheet.planRevision, publishedAt: sheet.publishedAt, currentPlan: inputPublicationCurrent(show) && Boolean(show.approvedPlan && sheet.candidateId === show.approvedPlan.candidateId && sheet.planRevision === show.planVersion), recovery: Boolean(sheet.candidateId), calls: personalCalls(show, person.id), changes: sheet.changes.filter(change => change.resourceIds.includes(person.id)).map(({ taskId, name, before, after, reason }) => ({ taskId, name, before, after, reason })) },

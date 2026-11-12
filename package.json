@@ -18,6 +18,7 @@
     "worker:once": "tsx scripts/worker.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "verify:packages": "tsx scripts/verify-packages.ts",
+    "test:judge": "node --import ./scripts/qa/judge-test-runtime.mjs --import tsx --test tests/judge-director.test.ts",
     "test:intelligence": "tsx --test tests/intelligence.test.ts tests/intelligence-store.test.ts",
     "test:voice": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/voice.test.ts tests/voice-store.test.ts",
     "test:sources": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/sources.test.ts tests/sources-store.test.ts",

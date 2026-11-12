@@ -12,6 +12,34 @@ The [Zod advisory](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) affects ve
 
 Build qualification uses Node 22.22.3, npm 10.9.8 and Next 16.4.6 webpack. Google Fonts CSS and real font files were cached from their official endpoints for the provider-disabled build; no placeholder font bytes were substituted. The initial Turbopack build could not consume that local font mock and failed; two subsequent webpack attempts exposed native-require rewriting before the corrected adapter passed. The original build failures are retained. The final frozen build manifest records exact source, lockfile, public fonts, installed dependency tree, build files and private-value scan. Both report route file traces include the Noto files.
 
+## Advisory review, 13 November 2026
+
+`npm audit --json` was run again without changing any package, lockfile or override. The result is unchanged: **11 flagged packages, 10 high and 1 moderate, 0 critical**, every one inside the `@paypal/agent-toolkit` 1.11.0 dependency tree. `npm view` reports 1.11.0 as the latest published Toolkit version, with the same dependency declarations, so no Toolkit upgrade exists that resolves them. npm's own suggested fix is a downgrade to Toolkit 1.3.5, a breaking change away from the qualified read catalog.
+
+| Flagged package (installed) | Advisory behind the flag | Loaded by the app? |
+|---|---|---|
+| `zod` 3.25.76, the Toolkit's own nested copy | [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5), high: memory exhaustion validating oversized constrained collections; fixed only in 4.6.6 | **Yes**, by the Toolkit's tool schemas |
+| `@paypal/agent-toolkit` 1.11.0 | Flagged only because it depends on the packages in this table | **Yes** (`/openai` entry only) |
+| `@langchain/core` 0.3.6 | [GHSA-r399-636x-v7f6](https://github.com/advisories/GHSA-r399-636x-v7f6), high: serialization injection; plus its `zod`, `uuid`, `langsmith` | No |
+| `langsmith` 0.1.68 | Three advisories (prototype pollution, redaction bypass, untrusted manifest deserialization), up to high | No |
+| `uuid` 10.0.0 (two nested copies) | [GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8pq), moderate: missing bounds check when a buffer is supplied | No |
+| `ai` 4.3.19 | [GHSA-rwvc-j5jr-mgvh](https://github.com/advisories/GHSA-rwvc-j5jr-mgvh), low: upload file-type bypass; plus its dependencies | No |
+| `@ai-sdk/provider-utils` 2.2.8, `@ai-sdk/react` 1.2.12, `@ai-sdk/ui-utils` 1.2.11 | [GHSA-866g-f22w-33x8](https://github.com/advisories/GHSA-866g-f22w-33x8), low, and `zod` | No |
+| `jsondiffpatch` 0.6.0 | HTML formatter XSS (moderate) and patch-API prototype pollution (high) | No |
+| `openai` 4.86.1, the Toolkit's nested client | Flagged only through its `zod` peer | No |
+
+"Loaded" was measured again on the installed tree: after `require("@paypal/agent-toolkit/openai")`, `require.cache` contains the Toolkit, its nested Zod 3, mathjs, axios, lodash and its PayPal SDK, and zero modules from `@langchain/core`, `langsmith`, `ai`, `@ai-sdk/*`, `jsondiffpatch`, `openai` or `uuid`. `src/server/wrap/toolkit.ts` is the only application import of the Toolkit and uses only that entry.
+
+**Reachability of the one loaded advisory.** The Zod issue needs an attacker-sized collection to reach a constrained Zod 3 schema. The only values passed to Toolkit schemas are server-created objects holding one bounded identifier of a resource the application already owns (`get_invoice`, `get_order`, `get_refund`), after the application's own Zod 4.6.7 validation and byte limits. No request body, model output or provider response is validated by the Toolkit's Zod. The condition is therefore not reachable through the application's routes; this is an argument from the code path, not a penetration test.
+
+**Options considered.**
+
+- *Force the Toolkit onto Zod 4* with an override. Not recommended: the Toolkit and its `zod-to-json-schema` dependency are written against the Zod 3 API, so this replaces the validator inside a payment-adjacent read path with one it was never built or tested against.
+- *Override only the unloaded packages* (for example `uuid` to 11.1.1 and `jsondiffpatch` to 0.7.6 beneath the Toolkit). This would remove at most those two entries; every other flagged package stays flagged through Zod 3, so the high count remains. It changes no executed code, and it would alter the lockfile that the retained build and provider receipts are bound to. Not recommended on its own.
+- *Leave as is, documented.* **Recommended.** Keep the pins, keep the interceptor that restricts the Toolkit to one owned `GET`, and re-check when a Toolkit release moves to Zod 4 or drops the unused adapters.
+
+This remains a known, reviewed exception, not a zero-advisory release. Enabling any other Toolkit entry point (`/langchain`, `/ai-sdk`, `/mcp`, `/bedrock`) or any Toolkit write action would load the flagged packages and requires a new review first.
+
 ## PDF font provenance
 
 The [official Noto Sans directory](https://github.com/notofonts/noto-fonts/tree/main/hinted/ttf/NotoSans) supplied these original font files. `scripts/verify-packages.ts` checks the exact bytes used in the export qualification.

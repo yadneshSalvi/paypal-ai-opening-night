@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ConsoleData } from "@/domain/contracts";
 import type { Command } from "@/domain/commands";
-import { atVenue, localTime } from "@/domain/time";
+import { atVenue, localTime, restLabel } from "@/domain/time";
 import type { RunCommand } from "../production-console";
 import { Modal } from "../ui";
 import { confirmedClockTransition, pendingObservations, productionIdentity, type ClockTransition } from "./model";
@@ -45,7 +45,7 @@ export function ClockReview({ data, run, busy, fresh, refresh }: { data: Console
     {notice && <p role="status">{notice}</p>}
     {attempt === "unknown" && <button type="button" disabled={busy} onClick={() => void recover()}>Read current clock before another review</button>}
     {pending.length > 0 && <div className="presentation-pending" role="status"><strong>{pending.length} pending financial observations remain visible</strong>{pending.map(row => <span key={row.id}>{row.label}</span>)}</div>}
-    {slate && <div className="presentation-time-slate" role="status"><span>SCENARIO TIME SKIP · CONFIRMED APPLICATION EVENT</span><strong>{localTime(slate.to)} CST</strong><p>+{slate.elapsedMinutes} min from {localTime(slate.from)} CST · accelerated fixture clock</p><small>No physical execution or provider result was created.</small>{pending.length > 0 && <p>{pending.length} financial observations remain pending. See the retained observation list below.</p>}</div>}
+    {slate && <div className="presentation-time-slate" role="status"><span>SCENARIO CLOCK · CONFIRMED APPLICATION EVENT</span><strong>TIME SKIP → {localTime(slate.to)} CST</strong><p>+{restLabel(Math.round(slate.elapsedMinutes))} · fixture clock · from {localTime(slate.from)} CST</p><small>No physical execution or provider result was created.</small>{pending.length > 0 && <p>{pending.length} financial observations remain pending. See the retained observation list below.</p>}</div>}
     {open && <Modal title="Review the exact scenario time skip." dismissible={!submitting.current && !busy} onClose={() => setOpen(false)}><div className="presentation-clock-dialog"><p>This advances the controlled November 14 scenario. It preserves source evidence and does not complete the work between these times.</p><dl><div><dt>Current confirmed time</dt><dd>{localTime(data.show.clock)} CST</dd></div><div><dt>Source</dt><dd>Existing authorized scenario-clock command · revision {data.show.revision}</dd></div></dl><label>New scenario time<select autoFocus value={target} onChange={event => setTarget(event.target.value as typeof target)}>{targets.map(time => <option key={time} value={time}>{time} CST · +{(Date.parse(atVenue(time)) - Date.parse(data.show.clock)) / 60000} minutes</option>)}</select></label>{pending.length > 0 && <p>{pending.length} pending financial observations remain unresolved after a clock skip.</p>}<button type="button" disabled={busy || submitting.current || !fresh} onClick={() => void advance()}>Advance only the scenario clock to {target} CST</button><button type="button" disabled={busy || submitting.current} onClick={() => setOpen(false)}>Keep the current time</button></div></Modal>}
   </section>;
 }

@@ -6,7 +6,8 @@ import { getActor } from "./store";
 import { PaymentError, ProviderError } from "@fracture/paypal-core";
 import { SessionCreationLimitError } from "./session-admission";
 import { PRODUCTION_SCOPE_HEADER } from "@/domain/rehearsal-contracts";
-import { env } from "./env";
+import { controlledPresentation } from "./judge/presentation";
+import { isDemonstration, JUDGE_PAYMENT_NOTICE } from "@/domain/judge/contracts";
 export const SESSION_COOKIE = !process.env.VERCEL && process.env.OPENING_NIGHT_SUPPLIER_RECOVERY_QA === "1" ? "opening-night-supplier-recovery-4586-session" : !process.env.VERCEL && process.env.OPENING_NIGHT_RENTAL_CLOSEOUT_QA === "1" ? "opening-night-rental-closeout-4580-session" : !process.env.VERCEL && process.env.OPENING_NIGHT_DISRUPTION_QA === "1" ? "opening-night-disruption-4564-session" : !process.env.VERCEL && process.env.OPENING_NIGHT_TOUR_QA === "1" ? "opening-night-tour-4561-session" : !process.env.VERCEL && process.env.OPENING_NIGHT_AI_QA === "1" ? "opening-night-ai-qa-session" : "opening-night-session";
 export async function currentActor(request?: Request): Promise<Actor | null> {
   const authorization = request?.headers.get("authorization");
@@ -39,7 +40,7 @@ export function assertSameOrigin(request: Request) {
 export function isProductionActor(actor: Actor) { return !actor.personId && !actor.executionId && !actor.supplierId && !actor.roles.includes("crew") && actor.roles.some(role => ["producer", "stage_manager", "foh"].includes(role)); }
 export function consoleData(show: ShowSnapshot, currentActor: Actor): ConsoleData {
   if (!isProductionActor(currentActor)) throw new DomainError("SCOPED_CLIENT_REQUIRED", "Open this capability’s dedicated client.", 403);
-  return { show, currentActor, readiness: allReadiness(show), serverAt: new Date().toISOString(), crew: crewProductionOverview(show), controlledQa: env.controlledQa, controlledPlanningQa: !process.env.VERCEL && process.env.OPENING_NIGHT_AI_QA === "1" };
+  return { show, currentActor, readiness: allReadiness(show), serverAt: new Date().toISOString(), crew: crewProductionOverview(show), controlledQa: controlledPresentation(show), controlledPlanningQa: !process.env.VERCEL && process.env.OPENING_NIGHT_AI_QA === "1", ...(isDemonstration(show) ? { demonstration: true, paymentNotice: JUDGE_PAYMENT_NOTICE } : {}) };
 }
 export function errorResponse(error: unknown) {
   if (error instanceof SessionCreationLimitError) return Response.json({ error: error.message, code: error.code }, { status: 429, headers: { "Retry-After": String(error.retryAfterSeconds), "Cache-Control": "no-store" } });

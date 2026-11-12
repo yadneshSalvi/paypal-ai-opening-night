@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { DomainError, type Actor, type Candidate, type OperationalFact, type ShowSnapshot, type VerifiedPlanConsent } from "./contracts";
+import { DomainError, type Actor, type Candidate, type OperationalFact, type RescueRun, type ShowSnapshot, type VerifiedPlanConsent } from "./contracts";
 import { consoleIncident, flightIncident } from "./fixture";
 import { digest } from "./hash";
 import { readiness } from "./readiness";
@@ -156,11 +156,11 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
   if (show.state !== "standby" && !readiness(show, "DOORS", now, verifyCrew).ready) { show.state = "standby"; show.goReportId = null; }
   return show;
 }
-export function recordRescueRun(input: ShowSnapshot, actor: Actor, candidates: Candidate[], now = new Date().toISOString(), strategySource: "deterministic_enumerator" | "model_assisted_proposal" = "deterministic_enumerator"): ShowSnapshot {
+export function recordRescueRun(input: ShowSnapshot, actor: Actor, candidates: Candidate[], now = new Date().toISOString(), strategySource: "deterministic_enumerator" | "model_assisted_proposal" = "deterministic_enumerator", generation?: RescueRun["generation"]): ShowSnapshot {
   requireRole(actor, "producer", "stage_manager");
   if (actor.tenantId !== input.tenantId || candidates.some(c => c.sourceDigest !== planningDigest(input))) throw new DomainError("STALE_RUN", "The production graph changed during the engine run.");
   const show = structuredClone(input);
-  show.runs.push({ id: randomUUID(), baseRevision: input.revision, createdAt: candidates[0]?.generatedAt ?? now, completedAt: now, candidates, source: "modelled", strategySource });
-  appendEvent(show, actor, "rescue.candidate_validated", strategySource === "model_assisted_proposal" ? "Producer reviewed an AI-assisted alternative against its saved native engine report. Plan approval and commercial commitments remain separate." : `Computed ${candidates.length} alternatives using the real scheduling engine and deterministic production constraints.`, now);
+  show.runs.push({ id: randomUUID(), baseRevision: input.revision, createdAt: candidates[0]?.generatedAt ?? now, completedAt: now, candidates, source: "modelled", strategySource, ...(generation ? { generation } : {}) });
+  appendEvent(show, actor, "rescue.candidate_validated", generation ? `Producer admitted ${candidates.length} ${generation.provenance === "recorded_model" ? "recorded-model-output" : "model-proposed"} alternatives, each validated here by the real scheduling engine and deterministic production constraints. The model approved nothing.` : strategySource === "model_assisted_proposal" ? "Producer reviewed an AI-assisted alternative against its saved native engine report. Plan approval and commercial commitments remain separate." : `Computed ${candidates.length} alternatives using the real scheduling engine and deterministic production constraints.`, now);
   show.revision++; show.updatedAt = now; return show;
 }

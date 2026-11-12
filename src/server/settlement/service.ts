@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { controlledPresentation } from "../judge/presentation";
 import type { PoolClient } from "pg";
 import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
 import { requireCrewPerson } from "@/domain/crew/policy";
@@ -43,7 +44,7 @@ export async function readState(db: PoolClient, show: ShowSnapshot): Promise<Set
 }
 function view(show: ShowSnapshot, state: SettlementState, authority: SettlementAuthority): SettlementData {
   const sheet = show.sheets.at(-1);
-  const context: SettlementViewContext = { schemaVersion: 1, actorId: authority.actor.id, revision: state.revision, productionRevision: show.revision, serverAt: new Date().toISOString(), production: { title: show.title, showDate: show.showDate, zone: show.zone, clock: show.clock, allowedDays: settlementDays(show), sheet: sheet ? { version: sheet.version, digest: sheet.digest } : null }, controlledQa: env.controlledQa, paymentCapability: "separate_payout_review_required", receipts: [] };
+  const context: SettlementViewContext = { schemaVersion: 1, actorId: authority.actor.id, revision: state.revision, productionRevision: show.revision, serverAt: new Date().toISOString(), production: { title: show.title, showDate: show.showDate, zone: show.zone, clock: show.clock, allowedDays: settlementDays(show), sheet: sheet ? { version: sheet.version, digest: sheet.digest } : null }, controlledQa: controlledPresentation(show), paymentCapability: "separate_payout_review_required", receipts: [] };
   if (authority.scope === "personal") {
     const person = requireCrewPerson(show, authority.actor);
     context.receipts = state.records.filter(record => record.personId === person.id).map(settlementReceipt);

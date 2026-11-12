@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { controlledPresentation } from "../judge/presentation";
 import type { PoolClient } from "pg";
 import { DomainError, type ShowSnapshot } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
@@ -29,7 +30,7 @@ export function toolkitResources(show: ShowSnapshot, state: WrapState): WrapData
 }
 export async function wrapData(db: PoolClient, show: ShowSnapshot, state: WrapState, authority: SettlementAuthority): Promise<WrapData> {
   const settlement = await readState(db, show), payouts = await readPayoutState(db, show), { capability, admissions } = wrapCapability(show);
-  return { schemaVersion: 1, tenantId: show.tenantId, actorId: authority.actor.id, revision: state.revision, productionRevision: show.revision, serverAt: new Date().toISOString(), controlledQa: env.controlledQa, report: buildWrapReport(show, settlement, payouts, state, env.controlledQa), entries: currentEntries(state), adjustments: wrapRecords(state, "entry_adjustment"), cashReports: wrapRecords(state, "cash_report"), invoices: wrapRecords(state, "invoice_draft").map(draft => invoiceView(state, draft)), proposals: wrapRecords(state, "proposal"), editions: await reportEditions(db, show.tenantId), receipts: state.records.filter(record => record.actorId !== null).map(wrapReceipt), capability, admissions, toolkit: toolkitResources(show, state) };
+  return { schemaVersion: 1, tenantId: show.tenantId, actorId: authority.actor.id, revision: state.revision, productionRevision: show.revision, serverAt: new Date().toISOString(), controlledQa: controlledPresentation(show), report: buildWrapReport(show, settlement, payouts, state, controlledPresentation(show)), entries: currentEntries(state), adjustments: wrapRecords(state, "entry_adjustment"), cashReports: wrapRecords(state, "cash_report"), invoices: wrapRecords(state, "invoice_draft").map(draft => invoiceView(state, draft)), proposals: wrapRecords(state, "proposal"), editions: await reportEditions(db, show.tenantId), receipts: state.records.filter(record => record.actorId !== null).map(wrapReceipt), capability, admissions, toolkit: toolkitResources(show, state) };
 }
 export async function readWrap(authority: SettlementAuthority) { return wrapTransaction(async db => { const show = await wrapShow(db, authority.actor.tenantId); await assertWrapAuthority(db, authority, show); return wrapData(db, show, await readWrapState(db, show), authority); }); }
 export async function readInvoiceReview(authority: SettlementAuthority, id: string, operation: "create" | "send" | "cancel") { return wrapTransaction(async db => { const show = await wrapShow(db, authority.actor.tenantId); await assertWrapAuthority(db, authority, show); const state = await readWrapState(db, show), data = await wrapData(db, show, state, authority); return { data, review: invoiceReview(show, state, invoiceDraft(state, id), operation, data.admissions, data.capability.merchantFingerprint) }; }); }

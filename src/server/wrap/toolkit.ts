@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { assertActualProviderTenant } from "../judge/scope";
 import * as nativeModule from "node:module";
 import { AxiosError, AxiosHeaders, type AxiosAdapter } from "axios";
 import { PayPalAgentToolkit } from "@paypal/agent-toolkit/openai";
@@ -53,6 +54,8 @@ function providerId(state: Parameters<typeof ownedInvoiceId>[0], tool: ReadTool,
 const object = (value: unknown): Record<string, unknown> | null => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 type ToolkitClaim = Extract<WrapRecord, { kind: "toolkit_request" }>;
 export async function executeToolkit(authority: SettlementAuthority, raw: unknown, readGuard?: () => Promise<void>) {
+  // A guided demonstration has only replayed resources; the Agent Toolkit is never called for it.
+  await assertActualProviderTenant(authority.actor.tenantId);
   await readGuard?.();
   const request = toolkitRequestSchema.parse(raw), requestBody = { action: "toolkit_read", request }, hash = wrapRequestHash(authority, requestBody);
   const prepared = await wrapTransaction(async db => {

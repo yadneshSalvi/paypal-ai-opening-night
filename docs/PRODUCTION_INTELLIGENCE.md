@@ -40,4 +40,4 @@ Preparation does not call the model. The actual run requires the existing server
 
 Native reviewed voice input/output and the cited text/PDF/spreadsheet source desk now have a separate implementation and local qualification unit. See [voice and production sources](VOICE_AND_SOURCES.md) for its authority, supported formats, current-production application boundary, and remaining native/provider gates. The planning provider protocol above is unchanged.
 
-Broader production admission, incident/tour evaluation, practitioner and real-phone evidence remain unfinished. A local passing result does not establish deployment or provider success; release records identify those independently.
+When this unit was written, broader production admission and the incident/tour evaluation were unfinished; both now exist ([production inputs](PRODUCTION_INPUTS.md), [evaluation](evaluation/README.md)), although that evaluation is deterministic and does not measure model quality. Practitioner and real-phone evidence was never obtained. A local passing result does not establish deployment or provider success; release records identify those independently.

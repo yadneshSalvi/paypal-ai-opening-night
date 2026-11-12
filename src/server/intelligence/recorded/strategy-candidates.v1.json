@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "kind": "strategy",
+  "label": "RECORDED MODEL OUTPUT",
+  "recordedAt": "2026-11-12T19:04:05.507Z",
+  "model": "gpt-6-astra",
+  "responseId": "resp_0dd6ea6d576655eb016af60d9b047c87d2844b938b180b7c23",
+  "promptVersion": "strategy-agent-v1",
+  "inputDigest": "c63607e6e1c90e784ad71529b4533c64ffb415491b5a25a83ef8f53402dc7e26",
+  "outputDigest": "53b115c0b18a3f8eccf10d84f1af79dfce30c382877b86fa97d6253cdac3704c",
+  "fixture": "Alder Hall fixture incident after enrolled supplier quotes, isolated local schema",
+  "references": {
+    "offers": [
+      {
+        "id": "offer-brightline-1",
+        "supplierId": "brightline"
+      },
+      {
+        "id": "offer-northside-1",
+        "supplierId": "northside"
+      },
+      {
+        "id": "offer-sister-1",
+        "supplierId": "sister"
+      }
+    ],
+    "people": [
+      {
+        "alias": "P1",
+        "id": "sam"
+      },
+      {
+        "alias": "P2",
+        "id": "priya"
+      },
+      {
+        "alias": "P3",
+        "id": "tom"
+      },
+      {
+        "alias": "P4",
+        "id": "dana"
+      },
+      {
+        "alias": "P5",
+        "id": "lee"
+      },
+      {
+        "alias": "P6",
+        "id": "alex"
+      },
+      {
+        "alias": "P7",
+        "id": "robin"
+      },
+      {
+        "alias": "P8",
+        "id": "morgan"
+      },
+      {
+        "alias": "P9",
+        "id": "casey"
+      },
+      {
+        "alias": "P10",
+        "id": "jules"
+      },
+      {
+        "alias": "P11",
+        "id": "avery"
+      },
+      {
+        "alias": "P12",
+        "id": "rory"
+      }
+    ]
+  },
+  "output": {
+    "candidates": [
+      {
+        "offerId": "offer-brightline-1",
+        "kind": "doors_window",
+        "minutes": 7,
+        "order": null,
+        "substitution": null,
+        "protects": "doors",
+        "rationale": "A short interval after earliest readiness could limit further delay to public entry.",
+        "assumptions": [
+          "House operations can accommodate a seven-minute interval between readiness and entry."
+        ]
+      },
+      {
+        "offerId": "offer-northside-1",
+        "kind": "set_length",
+        "minutes": 73,
+        "order": null,
+        "substitution": null,
+        "protects": "audience",
+        "rationale": "A shorter headliner set could preserve a substantial performance while creating room before amplified curfew.",
+        "assumptions": [
+          "Separate artist consent can be obtained for a 73-minute set."
+        ]
+      },
+      {
+        "offerId": "offer-sister-1",
+        "kind": "quiet_preparation",
+        "minutes": 23,
+        "order": null,
+        "substitution": null,
+        "protects": "budget",
+        "rationale": "The zero-fee offer paired with isolated quiet preparation could reduce supplier expense without requiring an amplified stage soundcheck.",
+        "assumptions": [
+          "A qualified driver and acceptable equipment condition can be confirmed for this offer.",
+          "An isolated preparation space is available.",
+          "The artist accepts 23 minutes of quiet preparation."
+        ]
+      },
+      {
+        "offerId": "offer-brightline-1",
+        "kind": "stage_soundcheck",
+        "minutes": 19,
+        "order": null,
+        "substitution": null,
+        "protects": "artist",
+        "rationale": "A compact amplified stage soundcheck could provide onstage verification after the delayed arrival.",
+        "assumptions": [
+          "The artist and audio crew consider a 19-minute stage soundcheck sufficient."
+        ]
+      },
+      {
+        "offerId": "offer-northside-1",
+        "kind": "running_order",
+        "minutes": null,
+        "order": "headliner_first",
+        "substitution": null,
+        "protects": "artist",
+        "rationale": "Putting the headliner first could prioritize the headliner performance before amplified curfew.",
+        "assumptions": [
+          "Both acts accept the reversed running order."
+        ]
+      },
+      {
+        "offerId": "offer-sister-1",
+        "kind": "crew_substitution",
+        "minutes": null,
+        "order": null,
+        "substitution": {
+          "taskId": "strike",
+          "replaces": "P8",
+          "person": "P12"
+        },
+        "protects": "crew",
+        "rationale": "Replacing P8 with reserve stagehand P12 on strike could reduce P8's late workload.",
+        "assumptions": [
+          "A qualified driver and acceptable equipment condition can be confirmed for this offer."
+        ]
+      }
+    ]
+  }
+}

@@ -1,4 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
+import { controlledPresentation } from "../judge/presentation";
+import { writerDraftBinding } from "./writer";
 import { DomainError } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
 import { AUDIENCE_MAX_RECIPIENTS, audienceEnvelopeSchema, type AudienceApproval, type AudienceCapabilityCard, type AudienceDelivery, type AudienceDeliveryPass, type AudienceDraft, type AudienceEnvelope, type AudienceMessageSummary, type AudienceMessageView, type AudienceReceipt, type AudienceResult, type AudienceWorkspace } from "@/domain/audience/contracts";
@@ -133,7 +135,7 @@ async function workspace(context: AudienceContext): Promise<AudienceWorkspace> {
   const history: AudienceReceipt[] = [];
   for (const row of (await db.query<{ command_id: string }>("SELECT command_id FROM on_audience_commands WHERE tenant_id=$1 AND actor_id=$2 AND session_hash=$3 AND session_expires_at=$4::timestamptz ORDER BY created_at DESC,command_id LIMIT 20", [show.tenantId, authority.actor.id, authority.sessionHash, context.expiresAt])).rows) { const receipt = await audienceCommandReceipt(context, row.command_id); if (receipt) history.push(receipt); }
   const availability = audienceCanDraft(show);
-  return { tenantId: show.tenantId, actorId: authority.actor.id, sessionFingerprint: audienceFingerprint(authority.sessionHash), revision: context.revision, showRevision: show.revision, expiresAt: context.expiresAt, serverAt: new Date().toISOString(), sourceDigest, event: audienceEvent(show), canDraft: availability.ready, blockers: availability.blockers, tickets: [...receipts.values()], capabilities, messages, history, controlledQa: env.controlledQa || !process.env.VERCEL && process.env.OPENING_NIGHT_AUDIENCE_CONTROLLED_WIRE === "1" };
+  return { tenantId: show.tenantId, actorId: authority.actor.id, sessionFingerprint: audienceFingerprint(authority.sessionHash), revision: context.revision, showRevision: show.revision, expiresAt: context.expiresAt, serverAt: new Date().toISOString(), sourceDigest, event: audienceEvent(show), canDraft: availability.ready, blockers: availability.blockers, tickets: [...receipts.values()], capabilities, messages, history, controlledQa: controlledPresentation(show) || !process.env.VERCEL && process.env.OPENING_NIGHT_AUDIENCE_CONTROLLED_WIRE === "1" };
 }
 export async function readAudienceWorkspace(authority: AudienceAuthority) { return audienceTransaction(authority, false, workspace); }
 
@@ -196,9 +198,10 @@ async function apply(context: AudienceContext, envelope: AudienceEnvelope) {
     const id = randomUUID(), expiresAt = new Date(Math.min(now.getTime() + command.validForMinutes * 60000, Date.parse(context.expiresAt), ...recipients.map(item => Date.parse(item.expiresAt)))).toISOString();
     const body = { id, version: 1 as const, templateVersion: command.templateVersion, kind: command.kind, createdAt: now.toISOString(), expiresAt, sourceDigest, sourceRevision: show.revision, event, note: command.note, recipients,
       recipientDigest: digest(recipients.map(item => ({ capabilityId: item.capabilityId, ticketId: item.ticketId, expiresAt: item.expiresAt, receipt: item.receipt }))), contentDigest: digest(recipients.map(item => ({ capabilityId: item.capabilityId, content: item.content }))) };
-    const record: DraftRecord = { tenantId: show.tenantId, issuer, draft: { ...body, digest: digest(body) } };
+    const writer = await writerDraftBinding(context, command, recipients, event, now.toISOString());
+    const record: DraftRecord = { tenantId: show.tenantId, issuer, draft: { ...body, digest: digest(body) }, ...(writer ? { writer } : {}) };
     await db.query("INSERT INTO on_audience_drafts(tenant_id,id,issuer_actor_id,issuer_session_hash,digest,source_digest,document_cipher,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)", [show.tenantId, id, issuer.actor.id, issuer.sessionHash, digest(record), sourceDigest, audienceSeal(show.tenantId, "draft", id, record), expiresAt]);
-    return { id, message: "Exact event, itemized remedy, recipient and message snapshots saved. This draft is unapproved and nothing was delivered." };
+    return { id, message: writer ? "AI draft saved after its fact check, with exact event, remedy and recipient snapshots. It requires producer approval; nothing was delivered." : "Exact event, itemized remedy, recipient and message snapshots saved. This draft is unapproved and nothing was delivered." };
   }
   if (command.type === "approve_message") {
     const record = await draftFor(context, command.draftId), preview = await messagePreview(context, record);

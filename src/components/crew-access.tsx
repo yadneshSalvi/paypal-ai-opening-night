@@ -10,6 +10,7 @@ import { useCrewClient } from "./crew/use-crew-client";
 import { useOfflineCrewShell } from "./crew/use-offline-shell";
 import { PersonalPayouts } from "./payouts/personal-payouts";
 import { PersonalHours } from "./settlement/personal-hours";
+import { JudgeDeviceBanner, useJudgeDevice } from "./judge/device-flag";
 
 type Tab = "calls" | "calendar" | "duties" | "hours";
 type Review = { item: CrewDuty | CrewCueOption; context: NonNullable<CrewData["review"]>; revision: number; fixtureAt: string };
@@ -25,6 +26,7 @@ function Receipt({ record }: { record: CrewRecordSummary }) {
 export function CrewAccess({ licenseKey }: { licenseKey: string }) {
   const client = useCrewClient();
   const offlineShell = useOfflineCrewShell();
+  const judgeDevice = useJudgeDevice(client.data?.person.id);
   const { data, outbox, connection, clock, busy, error, notice, storageError, cacheWarning } = client;
   const [seen, setSeen] = useState<{ digest: string; ids: string[] }>({ digest: "", ids: [] });
   const [tab, setTab] = useState<Tab>("calls");
@@ -62,7 +64,7 @@ export function CrewAccess({ licenseKey }: { licenseKey: string }) {
     event.preventDefault(); const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + direction + tabs.length) % tabs.length;
     setTab(tabs[next].id); document.getElementById(`crew-tab-${tabs[next].id}`)?.focus();
   };
-  return <div className="crew-mobile crew-workspace"><header><span className="crew-wordmark">OPENING NIGHT<span>.</span></span><Badge tone={fresh ? "green" : connection === "expired" ? "red" : "amber"}>{fresh ? <Wifi size={12} /> : <WifiOff size={12} />}{fresh ? "CONNECTED" : connection === "expired" ? "ACCESS ENDED" : connection === "loading" ? "CHECKING" : connection === "offline" ? "OFFLINE COPY" : "LAST SAVED COPY"}</Badge></header><main id="main">
+  return <div className="crew-mobile crew-workspace"><JudgeDeviceBanner device={judgeDevice} personName={client.data?.person.name} /><header><span className="crew-wordmark">OPENING NIGHT<span>.</span></span><Badge tone={fresh ? "green" : connection === "expired" ? "red" : "amber"}>{fresh ? <Wifi size={12} /> : <WifiOff size={12} />}{fresh ? "CONNECTED" : connection === "expired" ? "ACCESS ENDED" : connection === "loading" ? "CHECKING" : connection === "offline" ? "OFFLINE COPY" : "LAST SAVED COPY"}</Badge></header><main id="main">
     <div className="crew-person-heading"><span className="eyebrow">YOUR PERSONAL RUN SHEET</span><h1>{data ? `${data.person.name.split(" ")[0]}, here is your call.` : "Your calls, in one place."}</h1><p>{data?.person.role ?? (connection === "expired" ? "Open a current personal link from the production desk." : "Opening personal crew access…")}</p></div>
     {data?.controlledQa && <div className="crew-warning qa-fixture-notice"><strong>ISOLATED CREW QA</strong><p>Readiness uses controlled test inputs. Provider actions are disabled. These client actions do not qualify real payments or physical work.</p></div>}
     <p className="crew-offline-status" role="status">{offlineShell.state === "ready" ? "Offline reload ready · this crew shell is saved on this device." : offlineShell.state === "preparing" ? "Preparing this crew page for offline reload…" : "Offline reload is not ready. Keep this page open until the crew shell can be saved."}{offlineShell.state === "unavailable" && <Button onClick={() => void offlineShell.prepare()}>Retry offline setup</Button>}</p>

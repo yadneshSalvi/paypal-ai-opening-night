@@ -1,3 +1,4 @@
+@import "../production-polish.css";
 /* Only presentation and its explicitly linked inspectors. Native records remain read only. */
 .presentation-workspace{--ops-border:#36343a;--ops-muted:#c0bac1;font-size:16px;line-height:1.65;min-width:0;display:grid;gap:28px}
 .presentation-workspace h1{font-family:var(--font-display);font-weight:500;font-size:clamp(36px,4.7vw,66px);letter-spacing:-.8px;line-height:1.05}

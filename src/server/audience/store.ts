@@ -17,7 +17,9 @@ export interface CapabilityRecord {
   id: string; tenantId: string; ticketId: string; captureId: string; receiptDigest: string;
   issuer: AudienceIssuer; createdAt: string; expiresAt: string; invitation: AudienceInvitation;
 }
-export interface DraftRecord { tenantId: string; issuer: AudienceIssuer; draft: AudienceDraft }
+export interface DraftRecord { tenantId: string; issuer: AudienceIssuer; draft: AudienceDraft;
+  /** Present only when the note came from a communications-writer run and passed the deterministic fact check at save time. */
+  writer?: { runId: string; provenance: "model" | "recorded_model"; model: string | null; generatedAt: string | null; recordedAt: string | null; edited: boolean; factsDigest: string; checkedAt: string; checks: import("@/domain/audience/writer").WriterCheck[] } }
 export interface ApprovalRecord { tenantId: string; issuer: AudienceIssuer; approval: AudienceApproval }
 export interface StopRecord { tenantId: string; approvalId: string; issuer: AudienceIssuer; at: string; detail: string }
 export interface PassRecord { tenantId: string; id: string; approvalId: string; issuer: AudienceIssuer; limit: number; createdAt: string }

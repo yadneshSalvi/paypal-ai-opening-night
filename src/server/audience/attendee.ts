@@ -1,4 +1,5 @@
 import { DomainError } from "@/domain/contracts";
+import { controlledPresentation } from "../judge/presentation";
 import { digest } from "@/domain/hash";
 import type { AttendeeView } from "@/domain/audience/contracts";
 import { audienceEvent } from "@/domain/audience/policy";
@@ -46,7 +47,7 @@ export async function readAttendee(reader: AttendeeReader, before: string | null
       }
       // Recheck the fixed reader expiry after all reads and private decoding.
       if (await capabilityState(context, capability) !== "active") throw new DomainError("ATTENDEE_ACCESS_ENDED", "This attendee access ended before the private response could be accepted.", 401);
-      return { capabilityId: capability.id, expiresAt: capability.expiresAt, observedAt: new Date().toISOString(), sourceDigest, event: audienceEvent(context.show), receipt, inbox, inboxPage: { hasMore: rows.length > 20, cursor: rows.length > 20 ? inbox.at(-1)?.id ?? null : null }, transport: "controlled_inbox", controlledQa: env.controlledQa || !process.env.VERCEL && process.env.OPENING_NIGHT_AUDIENCE_CONTROLLED_WIRE === "1" };
+      return { capabilityId: capability.id, expiresAt: capability.expiresAt, observedAt: new Date().toISOString(), sourceDigest, event: audienceEvent(context.show), receipt, originalDoorsAt: [...context.show.sheets].sort((a, b) => a.version - b.version)[0]?.tasks.find(task => task.id === "doors")?.baselineStart ?? null, inbox, inboxPage: { hasMore: rows.length > 20, cursor: rows.length > 20 ? inbox.at(-1)?.id ?? null : null }, transport: "controlled_inbox", controlledQa: controlledPresentation(context.show) || !process.env.VERCEL && process.env.OPENING_NIGHT_AUDIENCE_CONTROLLED_WIRE === "1" };
     });
   } catch (error) {
     if (error instanceof DomainError && ["AUDIENCE_SESSION_ENDED", "AUDIENCE_PRODUCER_REQUIRED", "SHOW_NOT_FOUND"].includes(error.code)) throw new DomainError("ATTENDEE_ACCESS_ENDED", "This attendee access expired or its issuing producer access ended. It was not renewed.", 401);

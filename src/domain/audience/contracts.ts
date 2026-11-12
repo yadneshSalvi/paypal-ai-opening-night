@@ -10,7 +10,9 @@ const recipients = z.array(z.uuid()).min(1).max(AUDIENCE_MAX_RECIPIENTS).refine(
 export const audienceCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("create_invite"), ticketId: identity, receiptDigest: audienceHash, validForMinutes: z.number().int().min(15).max(1440), confirmed: z.literal(true) }).strict(),
   z.object({ type: z.literal("revoke_invite"), capabilityId: z.uuid(), confirmed: z.literal(true) }).strict(),
-  z.object({ type: z.literal("draft_message"), kind: z.enum(["event_update", "vip_remedy"]), recipientIds: recipients, sourceDigest: audienceHash, templateVersion: z.literal(AUDIENCE_TEMPLATE_VERSION), note: z.string().trim().max(1200), validForMinutes: z.number().int().min(5).max(30) }).strict(),
+  z.object({ type: z.literal("draft_message"), kind: z.enum(["event_update", "vip_remedy"]), recipientIds: recipients, sourceDigest: audienceHash, templateVersion: z.literal(AUDIENCE_TEMPLATE_VERSION), note: z.string().trim().max(1200), validForMinutes: z.number().int().min(5).max(30),
+    /** Present only when the note came from a communications-writer run. The server repeats the deterministic fact check on the exact saved words. */
+    writer: z.object({ runId: z.uuid() }).strict().optional() }).strict(),
   z.object({ type: z.literal("approve_message"), draftId: z.uuid(), draftDigest: audienceHash, previewDigest: audienceHash, controlledInboxOnly: z.literal(true), confirmed: z.literal(true) }).strict(),
   z.object({ type: z.literal("deliver_message"), approvalId: z.uuid(), approvalDigest: audienceHash, limit: z.number().int().min(1).max(AUDIENCE_DELIVERY_LIMIT), confirmed: z.literal(true) }).strict(),
   z.object({ type: z.literal("stop_message"), approvalId: z.uuid(), approvalDigest: audienceHash, detail: z.string().trim().min(12).max(500), confirmed: z.literal(true) }).strict(),
@@ -114,6 +116,8 @@ export interface AttendeeView {
   capabilityId: string; expiresAt: string; observedAt: string;
   sourceDigest: string;
   event: AudienceEvent; receipt: AudienceTicketReceipt;
+  /** Doors time on the first published run sheet, for "as scheduled" versus "moved". Null when no sheet carries one. */
+  originalDoorsAt: string | null;
   inbox: (AudienceDelivery & { sourceIsCurrent: boolean })[];
   inboxPage: { hasMore: boolean; cursor: string | null };
   transport: "controlled_inbox"; controlledQa: boolean;

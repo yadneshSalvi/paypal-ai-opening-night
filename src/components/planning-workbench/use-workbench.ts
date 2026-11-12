@@ -7,7 +7,7 @@ import { clearWorkbench, workbenchRecoveryKey, verifiedWorkbenchWorkspace, match
 
 class WorkbenchReadError extends Error { constructor(message: string, readonly status: number, readonly code: string) { super(message); } }
 const message = (error: unknown) => error instanceof Error ? error.message : "The original result is unknown. Keep this instruction and check its original receipt.";
-const definite = (error: WorkbenchReadError) => [400, 403, 409, 413, 422].includes(error.status) && !/IDEMPOTENCY|INTEGRITY|ACCESS_CHANGED|COMMAND_CONFLICT/.test(error.code);
+const definite = (error: WorkbenchReadError) => ([400, 403, 409, 413, 422].includes(error.status) || error.code === "MODEL_AGENT_LIMIT") && !/IDEMPOTENCY|INTEGRITY|ACCESS_CHANGED|COMMAND_CONFLICT/.test(error.code);
 const endpoint = "/api/planning-workbench";
 export function useWorkbench() {
   const [view, setView] = useState<WorkbenchWorkspace | null>(null), [busy, setBusy] = useState(true), [error, setError] = useState<string | null>(null), [ended, setEnded] = useState(false), [pending, setPending] = useState<PendingWorkbench | null>(null), [missing, setMissing] = useState(false), [receipt, setReceipt] = useState<WorkbenchResult | null>(null), [journalBlocked, setJournalBlocked] = useState(false);
@@ -67,7 +67,7 @@ export function useWorkbench() {
   }, [readView, lookup, active, fail]);
   const post = useCallback(async (saved: PendingWorkbench, generation: number) => {
     retainWorkbench(sessionStorage, saved); setMissing(false);
-    try { await accept(saved, await request(endpoint + "/commands", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(saved.envelope) }), generation); }
+    try { await accept(saved, await request(endpoint + "/commands", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(saved.envelope), ...(saved.envelope.command.type === "strategies.propose" ? { signal: AbortSignal.timeout(75000) } : {}) }), generation); }
     catch (cause) {
       if (!active(generation)) return; const outcome = await lookup(saved, generation);
       if (outcome === "missing" && cause instanceof WorkbenchReadError && definite(cause) && active(generation)) { clearWorkbench(sessionStorage, saved); pendingRef.current = null; setPending(null); setMissing(false); setError(`This instruction was refused: ${message(cause)} Read the current source before a new review.`); }

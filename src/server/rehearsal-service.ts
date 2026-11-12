@@ -48,7 +48,7 @@ const summarySelect = `SELECT m.tenant_id,m.label,m.authority_expires_at,m.creat
   s.revision,s.snapshot->>'title' AS title,s.snapshot->>'venue' AS venue,s.snapshot->>'state' AS state,
   (s.snapshot->>'planVersion')::integer AS plan_version,
   EXISTS(SELECT 1 FROM jsonb_array_elements(s.snapshot->'financialEvidence') AS evidence
-    WHERE evidence->>'source'='live_sandbox' AND evidence->>'verified'='true') AS financial_history,
+    WHERE evidence->>'source'='live_sandbox' AND evidence->>'verified'='true' AND evidence->>'provenance' IS DISTINCT FROM 'replay') AS financial_history,
   EXISTS(SELECT 1 FROM on_sessions WHERE tenant_id=m.tenant_id AND actor=m.actor AND expires_at>now()) AS producer_active,
   (SELECT count(*)::integer FROM on_jobs WHERE tenant_id=m.tenant_id AND status IN ('queued','running','waiting')) AS pending_work,
   (SELECT count(*)::integer FROM on_jobs WHERE tenant_id=m.tenant_id AND status='needs_attention') AS review_work
@@ -67,7 +67,7 @@ export async function listRehearsals(actor: Actor, offset = 0): Promise<Rehearsa
     const member = (await client.query<Member>("SELECT * FROM on_rehearsal_members WHERE tenant_id=$1", [actor.tenantId])).rows[0];
     if (!member) {
       const row = (await client.query<Omit<SummaryRow, "label" | "authority_expires_at" | "last_opened_at" | "producer_active">>(`SELECT tenant_id,revision,created_at,snapshot->>'title' AS title,snapshot->>'venue' AS venue,snapshot->>'state' AS state,(snapshot->>'planVersion')::integer AS plan_version,
-        EXISTS(SELECT 1 FROM jsonb_array_elements(snapshot->'financialEvidence') AS evidence WHERE evidence->>'source'='live_sandbox' AND evidence->>'verified'='true') AS financial_history,
+        EXISTS(SELECT 1 FROM jsonb_array_elements(snapshot->'financialEvidence') AS evidence WHERE evidence->>'source'='live_sandbox' AND evidence->>'verified'='true' AND evidence->>'provenance' IS DISTINCT FROM 'replay') AS financial_history,
         (SELECT count(*)::integer FROM on_jobs WHERE tenant_id=s.tenant_id AND status IN ('queued','running','waiting')) AS pending_work,
         (SELECT count(*)::integer FROM on_jobs WHERE tenant_id=s.tenant_id AND status='needs_attention') AS review_work FROM on_shows s WHERE tenant_id=$1`, [actor.tenantId])).rows[0]!;
       return { currentTenantId: actor.tenantId, items: offset ? [] : [summary({ ...row, label: "Alder Hall rehearsal", authority_expires_at: current.expires_at, last_opened_at: row.created_at, producer_active: true }, actor.tenantId)], total: 1, nextOffset: null, serverAt: new Date().toISOString() };

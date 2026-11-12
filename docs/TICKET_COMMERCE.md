@@ -1,6 +1,6 @@
 # The controlled ticket book
 
-The box office implements a save-only wallet request, a separately reviewed eighty-ticket approval, and thirty-eight original-capture remedies. These are implemented workflows with controlled generated-SDK and PostgreSQL tests. Actual venue-wallet capability, eighty live sandbox captures, and thirty-eight live sandbox refunds still require separate browser/provider qualification. Test fixtures do not establish those external results.
+The box office implements a save-only wallet request, a separately reviewed eighty-ticket approval, and thirty-eight original-capture remedies. These are implemented workflows with controlled generated-SDK and PostgreSQL tests. When this unit was written, actual venue-wallet capability, eighty live sandbox captures and thirty-eight live sandbox refunds still required separate browser and provider qualification. That qualification was completed afterwards and is recorded separately: [save-only wallet](evidence/wallet-hosted-qualification.json), [80 original captures](evidence/original-ticket-cohort-hosted-qualification.json) and [38 original-capture refunds](evidence/original-remedies-hosted-qualification.json). Test fixtures do not establish those external results.
 
 The previously qualified legacy Brightline rental and the fresh hosted protocol-2 rental retain their original identities. Neither rental is recreated, transferred, refunded, or changed by this extension.
 

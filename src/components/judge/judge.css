@@ -1,0 +1,144 @@
+/* Guided tour: docked guide, landing entry and the crew-client device label.
+   Loaded once through the application stylesheet. Colors come from the shared
+   variables so another theme applies here without changes. */
+
+/* ---------- Docked guide ---------- */
+.judge-guide{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:45;display:flex;flex-direction:column;align-items:flex-end;max-width:calc(100vw - 36px);font-size:12px;line-height:1.6;color:var(--text);pointer-events:none}
+.judge-guide>*{pointer-events:auto}
+.judge-pill{display:inline-flex;align-items:center;gap:9px;min-height:40px;max-width:100%;padding:8px 14px;border:1px solid color-mix(in srgb,var(--amber) 55%,var(--line));border-radius:999px;background:var(--panel-up);color:var(--text);font-size:11px;font-weight:600;letter-spacing:.2px;box-shadow:0 10px 34px rgb(0 0 0 / .45);white-space:nowrap}
+.judge-pill>svg:first-child{color:var(--amber);flex:none}
+.judge-pill b{font-size:10px;font-weight:500;color:var(--amber)}
+.judge-pill em{font-style:normal;font-family:var(--font-display);font-size:13px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis}
+.judge-pill.quiet{border-color:var(--line);color:var(--muted);font-weight:500;box-shadow:0 6px 22px rgb(0 0 0 / .3)}
+.judge-pill.quiet>svg:first-child{color:var(--muted)}
+.judge-pill.quiet.attention{border-color:color-mix(in srgb,var(--amber) 55%,var(--line));color:var(--text)}
+.judge-pill:hover{border-color:var(--amber);color:var(--text)}
+.judge-pill:focus-visible,.judge-guide button:focus-visible,.judge-guide a:focus-visible,.judge-guide summary:focus-visible,.judge-landing .button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.judge-panel{display:flex;flex-direction:column;width:min(392px,calc(100vw - 36px));max-height:min(700px,calc(100vh - 132px));max-height:min(700px,calc(100dvh - 132px));border:1px solid color-mix(in srgb,var(--amber) 38%,var(--line));border-radius:10px;background:var(--panel);box-shadow:0 24px 80px rgb(0 0 0 / .6);overflow:hidden}
+.judge-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:9px 8px 9px 16px;border-bottom:1px solid var(--line);background:var(--panel-up)}
+.judge-panel-head .eyebrow{display:flex;align-items:center;gap:10px;margin:0;color:var(--amber);font-size:9px}
+.judge-count{font-size:9px;letter-spacing:.8px;color:var(--muted)}
+.judge-collapse{width:36px;height:36px;flex:none;color:var(--text)}
+.judge-collapse:hover{background:color-mix(in srgb,var(--text) 8%,transparent)}
+.judge-panel-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px 16px 12px;scrollbar-width:thin}
+.judge-panel-actions{flex:none;display:flex;flex-direction:column;gap:9px;padding:12px 16px 14px;border-top:1px solid var(--line);background:var(--panel-up)}
+.judge-panel-actions:empty{display:none}
+
+.judge-cue-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.judge-cue{font-family:var(--font-display);font-size:26px;line-height:1.1;letter-spacing:1.4px;font-weight:500;color:var(--amber);overflow-wrap:anywhere}
+.judge-time{font-size:10px;color:var(--muted);letter-spacing:.4px}
+.judge-state{margin-left:auto;padding:2px 7px;border:1px solid var(--line);border-radius:3px;font-size:8px;font-weight:650;letter-spacing:.8px;color:var(--muted)}
+.judge-state.current{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 45%,transparent)}
+.judge-state.done{color:var(--green);border-color:color-mix(in srgb,var(--green) 35%,transparent)}
+.judge-title{margin:8px 0 6px;font-size:15px;line-height:1.35;font-weight:600;letter-spacing:-.2px;color:var(--text)}
+.judge-summary{margin:0 0 12px;font-size:12px;line-height:1.65;color:var(--muted)}
+.judge-note{display:flex;align-items:flex-start;gap:8px;margin:10px 0;font-size:11px;line-height:1.65;color:var(--muted)}
+.judge-note>svg{flex:none;margin-top:3px}
+.judge-note.strong{display:block;padding:10px 12px;border-left:2px solid var(--amber);background:color-mix(in srgb,var(--amber) 7%,transparent);color:var(--text)}
+.judge-faint{margin:10px 0 0;font-size:10px;line-height:1.6;color:var(--subtle)}
+.judge-panel-actions .judge-faint,.judge-panel-actions .judge-note{margin:0}
+.judge-error{margin:0;padding:9px 11px;border-left:3px solid var(--red);background:color-mix(in srgb,var(--red) 9%,transparent);font-size:11px;line-height:1.6;color:var(--text);overflow-wrap:anywhere}
+.judge-offer .judge-panel-body{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.judge-offer .judge-title,.judge-offer .judge-summary,.judge-offer .judge-note{margin:0}
+
+.judge-steps{list-style:none;margin:0 0 12px;padding:0;border-top:1px solid var(--line)}
+.judge-steps li{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px;line-height:1.5;color:var(--muted)}
+.judge-steps li.done,.judge-steps li.running{color:var(--text)}
+.judge-tick{display:grid;place-items:center;flex:none;width:17px;height:17px;margin-top:1px;border:1px solid var(--line);border-radius:50%;color:var(--bg)}
+.judge-steps li.done .judge-tick{background:var(--green);border-color:var(--green)}
+.judge-steps li.running .judge-tick{border-color:var(--amber);color:var(--amber)}
+.judge-step-label{flex:1;min-width:0;overflow-wrap:anywhere}
+.judge-step-label small{display:block;margin-top:2px;font-size:10px;color:var(--muted)}
+.judge-provenance{display:inline-flex;align-items:center;flex:none;padding:2px 5px;border:1px solid var(--line);border-radius:3px;font-family:var(--font-mono),monospace;font-size:8px;font-weight:600;line-height:1.4;letter-spacing:.7px;white-space:nowrap;color:var(--muted)}
+.judge-provenance.live{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,transparent);background:color-mix(in srgb,var(--green) 7%,transparent)}
+.judge-provenance.replay{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 50%,transparent);background:color-mix(in srgb,var(--amber) 9%,transparent)}
+.judge-provenance.controlled{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 45%,transparent);background:color-mix(in srgb,var(--blue) 8%,transparent)}
+.judge-provenance.judge{color:var(--text);border-color:color-mix(in srgb,var(--text) 45%,transparent);background:color-mix(in srgb,var(--text) 7%,transparent)}
+.judge-payment-notice{display:flex;align-items:flex-start;gap:9px;margin:0 0 12px;padding:10px 12px;border:1px dashed color-mix(in srgb,var(--amber) 55%,transparent);border-radius:5px;background:color-mix(in srgb,var(--amber) 6%,transparent);font-size:11px;line-height:1.6;color:var(--text)}
+.judge-payment-notice .judge-provenance{margin-top:2px}
+
+.judge-ack{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel-up)}
+.judge-ack .eyebrow{margin:0;font-size:8px}
+.judge-ack strong{font-family:var(--font-display);font-size:34px;line-height:1;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text)}
+.judge-ack strong i{font-style:normal;color:var(--subtle);margin:0 2px}
+.judge-crew{display:grid;gap:10px;margin:0 0 12px}
+.judge-crew-card{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:13px;border:1px solid var(--line);border-radius:7px;background:var(--panel-up)}
+.judge-crew-card>header{display:flex;align-items:center;gap:10px;width:100%}
+.judge-crew-card>header div{display:flex;flex-direction:column;min-width:0}
+.judge-crew-card>header strong{font-size:13px;font-weight:600}
+.judge-crew-card>header div span{font-size:10px;color:var(--muted)}
+/* A QR code needs dark modules on a light field in every theme. */
+.judge-qr{align-self:center;width:196px;max-width:100%;aspect-ratio:1;padding:10px;border-radius:6px;background:#fff;color:#000}
+.judge-qr svg{display:block;width:100%;height:100%}
+.judge-crew-copy{margin:0;font-size:11px;line-height:1.65;color:var(--text)}
+.judge-controlled-label{margin:0;padding:6px 9px;border:1px solid color-mix(in srgb,var(--blue) 45%,transparent);border-radius:4px;background:color-mix(in srgb,var(--blue) 8%,transparent);font-family:var(--font-mono),monospace;font-size:9px;line-height:1.6;letter-spacing:.4px;color:var(--blue)}
+.judge-crew-status{display:flex;align-items:center;gap:8px;margin:0;font-size:11px;color:var(--muted)}
+.judge-crew-status.done{color:var(--green);font-weight:600}
+.judge-text-link{display:inline-flex;align-items:center;gap:5px;min-height:28px;font-size:11px;color:var(--amber);text-decoration:underline;text-underline-offset:3px}
+
+.judge-stepper{list-style:none;display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px;margin:4px 0 0;padding:0}
+.judge-stepper button{display:grid;place-items:center;width:100%;min-height:30px;padding:0;border:1px solid var(--line);border-radius:4px;background:transparent;font-family:var(--font-display);font-size:13px;color:var(--subtle)}
+.judge-stepper button.done{color:var(--green);border-color:color-mix(in srgb,var(--green) 30%,var(--line))}
+.judge-stepper button.current{color:var(--bg);background:var(--amber);border-color:var(--amber);font-weight:600}
+.judge-stepper button.shown{outline:1px solid var(--text);outline-offset:1px}
+.judge-stepper button:hover{border-color:var(--amber)}
+.judge-legend{margin-top:12px;font-size:10px;color:var(--muted)}
+.judge-legend summary{display:inline-flex;align-items:center;min-height:28px;cursor:pointer}
+.judge-legend dl{display:grid;gap:7px;margin:6px 0 0}
+.judge-legend dl>div{display:grid;grid-template-columns:82px 1fr;gap:8px;align-items:start}
+.judge-legend dt,.judge-legend dd{margin:0;line-height:1.55}
+
+.judge-action-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.judge-guide .button{min-height:40px;font-size:11px;white-space:normal;text-align:left}
+.judge-action-row .button.primary{flex:1 1 auto;justify-content:center;text-align:center}
+.judge-show-link{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 6px;font-size:11px;font-weight:600;color:var(--amber);text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.judge-here{font-size:10px;color:var(--subtle);white-space:nowrap}
+.judge-progress,.judge-waiting{display:flex;align-items:flex-start;gap:8px;margin:0;font-size:11px;line-height:1.55;color:var(--text)}
+.judge-progress .mono{font-size:10px;color:var(--amber)}
+.judge-waiting .tiny-dot{margin-top:6px}
+.judge-waiting b{color:var(--amber);font-weight:600}
+.judge-restart{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;min-height:28px;padding:0;border:0;background:none;font-size:10px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.judge-restart:hover{color:var(--text)}
+.judge-confirm p{margin:0 0 9px;font-size:11px;line-height:1.6;color:var(--text)}
+
+@media(max-width:760px){
+  /* Bottom sheet. It stays under the navigation drawer and its backdrop. */
+  .judge-guide{left:0;right:0;bottom:0;max-width:none;align-items:stretch}
+  .judge-pill{align-self:flex-end;min-height:44px;max-width:calc(100% - 24px);margin:0 max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) 12px}
+  .judge-panel{width:100%;max-height:62vh;max-height:62dvh;border-width:1px 0 0;border-radius:12px 12px 0 0}
+  .judge-panel-actions{padding-bottom:max(14px,env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+  .judge-collapse{width:44px;height:44px}
+  .judge-guide .button,.judge-show-link{min-height:44px}
+  .judge-restart,.judge-text-link,.judge-legend summary{min-height:44px}
+  .judge-stepper{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .judge-stepper button{min-height:44px}
+  .judge-cue{font-size:23px}
+  /* The collapsed pill never hides the last line of the page. */
+  .app-shell:has(.judge-guide) .workspace-footer{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+}
+@media(max-width:360px){.judge-panel-body{padding:14px 12px 10px}.judge-panel-actions{padding-left:12px;padding-right:12px}.judge-qr{width:180px}.judge-legend dl>div{grid-template-columns:1fr;gap:2px}}
+@media(prefers-reduced-motion:reduce){.judge-guide *,.judge-landing *{animation:none!important;transition:none!important}}
+@media print{.judge-guide,.judge-device-banner{display:none!important}}
+
+/* ---------- Landing entry ---------- */
+.judge-landing{display:flex;flex-direction:column;align-items:flex-start;gap:12px;max-width:520px}
+.judge-landing .button.primary{min-height:48px;padding:14px 21px;font-size:13px}
+.judge-landing-note{margin:0;font-size:12px;line-height:1.75;color:var(--muted)}
+.judge-landing-error{margin:0;padding:9px 11px;border-left:3px solid var(--red);background:color-mix(in srgb,var(--red) 9%,transparent);font-size:12px;line-height:1.6;color:var(--text)}
+.judge-landing-blank{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:10px;padding-top:16px;border-top:1px solid var(--line);width:100%}
+.judge-landing-blank .button{min-height:44px;white-space:normal;text-align:left}
+.judge-landing-blank p{margin:0;font-size:11px;line-height:1.7;color:var(--subtle)}
+.judge-strip{grid-column:1/-1;min-width:0}
+.judge-strip>h2{margin:0 0 12px;font-size:9px;letter-spacing:2px;color:var(--muted)}
+.judge-strip ol{list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:0;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--line);overflow:hidden}
+.judge-strip li{display:flex;flex-direction:column;gap:6px;padding:18px 18px 20px;background:var(--panel)}
+.judge-strip-number{font-family:var(--font-mono),monospace;font-size:9px;letter-spacing:1px;color:var(--subtle)}
+.judge-strip strong{font-family:var(--font-display);font-size:22px;line-height:1.1;letter-spacing:1.6px;font-weight:500;color:var(--amber)}
+.judge-strip p{margin:0;font-size:11px;line-height:1.7;color:var(--muted)}
+@media(max-width:1000px){.judge-strip ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.judge-strip ol{grid-template-columns:1fr}.judge-strip li{padding:15px}.judge-landing .button.primary{width:100%;justify-content:center}}
+
+/* ---------- Crew client device label (guided demonstration only) ---------- */
+.judge-device-banner{position:sticky;top:0;z-index:20;margin:0;padding:8px 14px;padding-top:max(8px,env(safe-area-inset-top));border-bottom:1px solid color-mix(in srgb,var(--blue) 50%,transparent);background:color-mix(in srgb,var(--blue) 16%,var(--bg));font-family:var(--font-mono),monospace;font-size:11px;line-height:1.5;letter-spacing:.5px;text-align:center;color:var(--text)}
+.judge-device-banner.judge{border-bottom-color:color-mix(in srgb,var(--amber) 55%,transparent);background:color-mix(in srgb,var(--amber) 14%,var(--bg))}

@@ -117,4 +117,4 @@ The offline build receives no usable database/session descriptor or license. A n
 
 Mounted DOM tests do not prove native layout, screen-reader behavior, human copy review, physical entry, email delivery, or actual model/provider outcomes. Root owns native desktop/mobile/keyboard review on the frozen 4594 candidate. Shared navigation and later migration 18 integration belong to the integration lead.
 
-The sanitized automated qualification record is [AUDIENCE_QUALIFICATION.json](AUDIENCE_QUALIFICATION.json). Its native-review state remains pending until root observes the frozen runtime.
+The sanitized automated qualification record is [AUDIENCE_QUALIFICATION.json](AUDIENCE_QUALIFICATION.json). That file is a retained record and still shows its native-review state as pending, because it was written before the browser review. The attendee inbox was later accepted into the product; that integration and its hosted release are recorded separately in [product completion](PRODUCT_COMPLETION_STAGE18.md) and the [hosted product receipt](evidence/product-hosted-qualification-stage19.json).

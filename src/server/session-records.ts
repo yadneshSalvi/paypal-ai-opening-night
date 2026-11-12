@@ -5,16 +5,19 @@ import { createFixture } from "@/domain/fixture";
 import { env } from "./env";
 import { claimSessionAdmission, SESSION_ADMISSION_SCOPE } from "./session-admission";
 import { fixtureNextCalls } from "@/domain/crew/policy";
+import type { DemonstrationMarker } from "@/domain/judge/contracts";
 
 export function sessionTokenHash(token: string) { return createHash("sha256").update(`${env.sessionSecret}:${token}`).digest("hex"); }
 
 /** The caller owns the transaction, including its admission reservation and workspace membership. */
-export async function insertProducerRehearsal(client: PoolClient, token: string, admissionScope = SESSION_ADMISSION_SCOPE) {
+export async function insertProducerRehearsal(client: PoolClient, token: string, admissionScope = SESSION_ADMISSION_SCOPE, demonstration?: DemonstrationMarker) {
   await claimSessionAdmission(client, admissionScope);
   const tenantId = randomUUID();
   const actor: Actor = { id: `producer:${randomUUID()}`, tenantId, roles: ["producer", "stage_manager", "department_lead", "foh"], personId: null };
   const show = createFixture(tenantId); show.commercialProtocol = 2; show.rentalExecutions = []; show.events[0]!.id = randomUUID();
   show.crewProtocol = 1; show.crewAttestations = []; show.crewCues = []; show.crewNextCalls = fixtureNextCalls(show);
+  // Only the guided-demonstration director passes this marker; the database refuses any later change to it.
+  if (demonstration) show.demonstration = demonstration;
   await client.query("INSERT INTO on_shows(tenant_id,snapshot,revision) VALUES($1,$2,$3)", [tenantId, show, show.revision]);
   const event = show.events[0]!;
   await client.query("INSERT INTO on_events(id,tenant_id,revision,event) VALUES($1,$2,$3,$4)", [event.id, tenantId, event.revision, event]);

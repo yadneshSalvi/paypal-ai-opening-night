@@ -7,10 +7,13 @@ import { pool } from "./store";
 import { observeOwnedPayment } from "./payment-observations";
 import type { DeliveryTransport } from "./payment-webhooks";
 import { WalletProviderError } from "./wallet-provider";
+import { currentReplayScope, withTenantProviderScope } from "./judge/scope";
 
 const paymentPayload = z.object({ intentId: z.uuid() }).strict();
 const webhookPayload = z.object({ seller: z.enum(["venue", "brightline"]), eventId: z.string().min(3).max(128), rootIntentId: z.uuid() }).strict();
 export async function handleJob(job: Job, signal: AbortSignal): Promise<JobResult> {
+  // Payouts and invoices have no replay. A guided demonstration tenant can never dispatch one.
+  if (currentReplayScope() && ["invoice_operation", "payout_batch", "payout_item", "payout_cancel"].includes(job.kind)) return { status: "needs_attention", code: "DEMONSTRATION_REPLAY_ONLY" };
   if (job.kind === "rental_closeout_dispatch" || job.kind === "rental_closeout_readback" || job.kind === "rental_closeout_retry") {
     const schema = job.kind === "rental_closeout_retry" ? z.object({ intentId: z.uuid(), grantId: z.uuid() }).strict() : z.object({ intentId: z.uuid() }).strict();
     const parsed = schema.safeParse(job.payload);
@@ -114,7 +117,8 @@ export async function runJobTick(options: { tenantId?: string; kinds?: readonly 
   for (let index = 0; index < limit && (index === 0 || until - Date.now() >= minimumStartBudget); index++) {
     const job = await claimJob(options.tenantId, options.kinds); if (!job) break;
     const signal = AbortSignal.timeout(Math.max(1, until - Date.now())); let result: JobResult;
-    try { result = await (options.handler ?? handleJob)(job, signal); }
+    // A guided demonstration tenant's work resolves only the in-process replay provider; other tenants run unchanged.
+    try { result = await withTenantProviderScope(job.tenantId, () => (options.handler ?? handleJob)(job, signal)); }
     catch (error) { result = failure(error); }
     const completed = await paymentTransaction(async client => {
       const claimed = await finishJob(job, result, client);
