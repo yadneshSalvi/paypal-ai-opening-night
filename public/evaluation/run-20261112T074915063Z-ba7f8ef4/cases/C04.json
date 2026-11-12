@@ -1,0 +1,87 @@
+{
+  "contract": {
+    "id": "C04",
+    "group": "time",
+    "title": "Denver and Chicago wall clocks resolve to one instant",
+    "scenario": "cross_zone",
+    "expectation": {
+      "status": "accepted",
+      "requiredCodes": [],
+      "measurements": {
+        "sameInstant": true
+      }
+    },
+    "tags": [
+      "time_zone",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C04",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 0,
+  "toolingIpcSuppressed": 2,
+  "result": {
+    "input": {
+      "scenario": "cross_zone",
+      "timeInputs": [
+        {
+          "local": "2026-11-20T21:00",
+          "zone": "America/Denver",
+          "disambiguation": "reject"
+        },
+        {
+          "local": "2026-11-20T22:00",
+          "zone": "America/Chicago",
+          "disambiguation": "reject"
+        }
+      ],
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "sameInstant": true,
+      "denverOffset": "-07:00",
+      "chicagoOffset": "-06:00"
+    },
+    "observation": {
+      "id": "C04",
+      "state": "pass",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "sameInstant": true,
+        "denverOffset": "-07:00",
+        "chicagoOffset": "-06:00"
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.45,
+      "heapDeltaBytes": 287048,
+      "inputDigest": "498cb1b7bdfd29926656ede6707ab0de78d829b2faf6e0c806a47a4a428a511d",
+      "outputDigest": "71be04bb1c7f6f3be41fbd6f80513bb041d8e6b5fc8ba71816f33c76495b277c",
+      "inputUnchanged": true,
+      "artifact": "cases/C04.json"
+    }
+  },
+  "observation": {
+    "id": "C04",
+    "state": "pass",
+    "observedStatus": "accepted",
+    "findings": [],
+    "measurements": {
+      "sameInstant": true,
+      "denverOffset": "-07:00",
+      "chicagoOffset": "-06:00"
+    },
+    "mismatches": [],
+    "engine": null,
+    "durationMs": 1.45,
+    "heapDeltaBytes": 287048,
+    "inputDigest": "498cb1b7bdfd29926656ede6707ab0de78d829b2faf6e0c806a47a4a428a511d",
+    "outputDigest": "71be04bb1c7f6f3be41fbd6f80513bb041d8e6b5fc8ba71816f33c76495b277c",
+    "inputUnchanged": true,
+    "artifact": "cases/C04.json"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "contract": {
+    "id": "C03",
+    "group": "time",
+    "title": "Earlier and later folded clocks stay one hour apart",
+    "scenario": "dst_fold_choices",
+    "expectation": {
+      "status": "accepted",
+      "requiredCodes": [],
+      "measurements": {
+        "differenceMinutes": 60
+      }
+    },
+    "tags": [
+      "DST",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C03",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 2,
+  "result": {
+    "input": {
+      "scenario": "dst_fold_choices",
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "differenceMinutes": 60,
+      "earlier": "2026-11-01T06:30:00Z",
+      "later": "2026-11-01T07:30:00Z"
+    },
+    "observation": {
+      "id": "C03",
+      "state": "fail",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "differenceMinutes": 60,
+        "earlier": "2026-11-01T06:30:00Z",
+        "later": "2026-11-01T07:30:00Z"
+      },
+      "mismatches": [
+        "Evaluation attempted forbidden transport;the isolation guard blocked it."
+      ],
+      "engine": null,
+      "durationMs": 1.57,
+      "heapDeltaBytes": 288816,
+      "inputDigest": "b227534d6f386541b56d0fa1dc01cb31dfc2c0e4737e8e12395836d915327340",
+      "outputDigest": "3a1cb06a0b7d369e674ebd84ff6bd571c6883a663a59b0f41e0b84448979bd2b",
+      "inputUnchanged": true,
+      "artifact": "cases/C03.json"
+    }
+  },
+  "observation": {
+    "id": "C03",
+    "state": "fail",
+    "observedStatus": "accepted",
+    "findings": [],
+    "measurements": {
+      "differenceMinutes": 60,
+      "earlier": "2026-11-01T06:30:00Z",
+      "later": "2026-11-01T07:30:00Z"
+    },
+    "mismatches": [
+      "Evaluation attempted forbidden transport;the isolation guard blocked it."
+    ],
+    "engine": null,
+    "durationMs": 1.57,
+    "heapDeltaBytes": 288816,
+    "inputDigest": "b227534d6f386541b56d0fa1dc01cb31dfc2c0e4737e8e12395836d915327340",
+    "outputDigest": "3a1cb06a0b7d369e674ebd84ff6bd571c6883a663a59b0f41e0b84448979bd2b",
+    "inputUnchanged": true,
+    "artifact": "cases/C03.json"
+  }
+}

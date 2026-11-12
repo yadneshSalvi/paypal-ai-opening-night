@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "corpus": "src/domain/evaluation/corpus-v2.json",
+  "sha256": "dd7ff2e56babed7b8be5a3316b73626836c43bbb18d4fcd143a13c6fc496a6a2",
+  "bytes": 19458,
+  "frozenAt": "2026-11-12T07:13:45.712839Z",
+  "sourceCommit": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+  "caseCounts": {
+    "single_show": 33,
+    "tour": 24,
+    "time": 6,
+    "readiness": 3
+  },
+  "predecessorSha256": "e4ccd564d63f58a82bc481a8c5bcb82585d969ca64031b12ff7bf9726379f64d",
+  "expectationsUnchanged": true,
+  "expectationBytesSha256": "0b1fd2afe0ed2b57f8f6de41ad273ed9dffed8fd5797526c61aca8fc9fb94826",
+  "constructionCorrection": "S22 now reverses an existing dependency to realize the declared cycle. Prior strike-to-load-in edge was not a cycle in that generated graph. No expected status,code or measurement changed.",
+  "harnessCorrection": "Optional exact tsx parent-pipe startup is suppressed with an unconnected local socket and separately counted;all actual network/database paths remain blocked.",
+  "firstExecution": "Must occur after this freeze;prior first failures remain retained."
+}

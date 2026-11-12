@@ -1,0 +1,81 @@
+{
+  "contract": {
+    "id": "C06",
+    "group": "time",
+    "title": "Midnight rollover retains the next venue date",
+    "scenario": "midnight",
+    "expectation": {
+      "status": "accepted",
+      "requiredCodes": [],
+      "measurements": {
+        "endLocal": "2026-11-15T01:00",
+        "elapsedMinutes": 90
+      }
+    },
+    "tags": [
+      "midnight",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C06",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 0,
+  "toolingIpcSuppressed": 2,
+  "result": {
+    "input": {
+      "scenario": "midnight",
+      "timeInputs": {
+        "start": {
+          "local": "2026-11-14T23:30",
+          "zone": "America/Chicago",
+          "disambiguation": "reject"
+        },
+        "elapsedMinutes": 90
+      },
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "endLocal": "2026-11-15T01:00",
+      "elapsedMinutes": 90
+    },
+    "observation": {
+      "id": "C06",
+      "state": "pass",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "endLocal": "2026-11-15T01:00",
+        "elapsedMinutes": 90
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.84,
+      "heapDeltaBytes": 360696,
+      "inputDigest": "a3ef8957ff67ab8cabf2d637c1d6090d2aec414308ea2d8b09ed535684995630",
+      "outputDigest": "6ab28f80360ef5740b2021295e9393062dad6f3b088c3d0377681fe168fba0d4",
+      "inputUnchanged": true,
+      "artifact": "cases/C06.json"
+    }
+  },
+  "observation": {
+    "id": "C06",
+    "state": "pass",
+    "observedStatus": "accepted",
+    "findings": [],
+    "measurements": {
+      "endLocal": "2026-11-15T01:00",
+      "elapsedMinutes": 90
+    },
+    "mismatches": [],
+    "engine": null,
+    "durationMs": 1.84,
+    "heapDeltaBytes": 360696,
+    "inputDigest": "a3ef8957ff67ab8cabf2d637c1d6090d2aec414308ea2d8b09ed535684995630",
+    "outputDigest": "6ab28f80360ef5740b2021295e9393062dad6f3b088c3d0377681fe168fba0d4",
+    "inputUnchanged": true,
+    "artifact": "cases/C06.json"
+  }
+}

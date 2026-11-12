@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "corpus": "src/domain/evaluation/corpus-v3.json",
+  "sha256": "a03dbd55d02c08bd448d0e1285fffff8b885ca68ee81e87b8813d1d29a97eb3b",
+  "bytes": 19458,
+  "frozenAt": "2026-11-12T07:33:29.567449Z",
+  "sourceCommit": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+  "caseCounts": {
+    "single_show": 33,
+    "tour": 24,
+    "time": 6,
+    "readiness": 3
+  },
+  "predecessorSha256": "dd7ff2e56babed7b8be5a3316b73626836c43bbb18d4fcd143a13c6fc496a6a2",
+  "expectationsUnchanged": true,
+  "expectationBytesSha256": "0b1fd2afe0ed2b57f8f6de41ad273ed9dffed8fd5797526c61aca8fc9fb94826",
+  "constructionCorrection": "S32 now supplies actual successful temporal engine proof before expiring the current quote. Missing engine evidence can no longer independently explain PLAN_NOT_FEASIBLE. All temporal inputs and the exact foreign-tour request are retained in their case artifacts. No expected status,code or measurement changed.",
+  "firstExecution": "Must occur after this freeze;all predecessor runs and first failures remain retained."
+}

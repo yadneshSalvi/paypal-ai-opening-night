@@ -1,0 +1,81 @@
+{
+  "contract": {
+    "id": "C02",
+    "group": "time",
+    "title": "An autumn fold requires an explicit offset choice",
+    "scenario": "dst_fold_reject",
+    "expectation": {
+      "status": "rejected",
+      "requiredCodes": [
+        "TOUR_DST_FOLD"
+      ]
+    },
+    "tags": [
+      "DST",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C02",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 2,
+  "result": {
+    "input": {
+      "scenario": "dst_fold_reject",
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "rejectedCode": "TOUR_DST_FOLD"
+    },
+    "observation": {
+      "id": "C02",
+      "state": "fail",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "TOUR_DST_FOLD",
+          "severity": "hard",
+          "message": "The actual domain boundary rejected the controlled input.",
+          "subjects": []
+        }
+      ],
+      "measurements": {},
+      "mismatches": [
+        "Evaluation attempted forbidden transport;the isolation guard blocked it."
+      ],
+      "engine": null,
+      "durationMs": 1.2,
+      "heapDeltaBytes": 192488,
+      "inputDigest": "41eda44e951e2b7534c4182633a6c4f1452a073314a32ab425ff71636eb4bbca",
+      "outputDigest": "cbd0869e6f7022eb1ae86ab08898ccb6ebbe31f6ca1e462b6cb12c83ff064557",
+      "inputUnchanged": true,
+      "artifact": "cases/C02.json"
+    }
+  },
+  "observation": {
+    "id": "C02",
+    "state": "fail",
+    "observedStatus": "rejected",
+    "findings": [
+      {
+        "code": "TOUR_DST_FOLD",
+        "severity": "hard",
+        "message": "The actual domain boundary rejected the controlled input.",
+        "subjects": []
+      }
+    ],
+    "measurements": {},
+    "mismatches": [
+      "Evaluation attempted forbidden transport;the isolation guard blocked it."
+    ],
+    "engine": null,
+    "durationMs": 1.2,
+    "heapDeltaBytes": 192488,
+    "inputDigest": "41eda44e951e2b7534c4182633a6c4f1452a073314a32ab425ff71636eb4bbca",
+    "outputDigest": "cbd0869e6f7022eb1ae86ab08898ccb6ebbe31f6ca1e462b6cb12c83ff064557",
+    "inputUnchanged": true,
+    "artifact": "cases/C02.json"
+  }
+}

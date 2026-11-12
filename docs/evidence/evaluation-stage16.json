@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "scope": "Controlled deterministic domain/planner and actual licensed engine computation;not model,human,provider or operational completion",
+  "applicationBaseCommit": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+  "evaluationCheckoutAtObservation": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+  "exactSourceManifest": {
+    "path": "/evaluation/run-20261112T074915063Z-ba7f8ef4/source-manifest.json",
+    "sha256": "d1ed3b94a744f7b64c9cf583b29e3f6ce567aaaf4452ff784ccfb412dde3ecce",
+    "bytes": 172694,
+    "label": "Exact source and dependency hashes"
+  },
+  "currentReport": {
+    "path": "/evaluation/run-20261112T074915063Z-ba7f8ef4/report.json",
+    "sha256": "4920dc9eef5448a892b8fd1093527cac247f8589f10a033ea907b22c833df934",
+    "bytes": 190935,
+    "label": "Complete immutable evaluation report"
+  },
+  "frozenCorpus": {
+    "path": "/evaluation/run-20261112T074915063Z-ba7f8ef4/corpus.json",
+    "sha256": "a03dbd55d02c08bd448d0e1285fffff8b885ca68ee81e87b8813d1d29a97eb3b",
+    "bytes": 19458,
+    "label": "Frozen case contract"
+  },
+  "corpusId": "opening-night-controlled-evaluation-v3",
+  "expectationBytesSha256": "0b1fd2afe0ed2b57f8f6de41ad273ed9dffed8fd5797526c61aca8fc9fb94826",
+  "caseCounts": {
+    "singleShow": 33,
+    "tour": 24,
+    "supportingTime": 6,
+    "supportingReadiness": 3,
+    "observed": {
+      "pass": 66,
+      "fail": 0,
+      "unknown": 0,
+      "unsupported": 0
+    }
+  },
+  "boundaryMeasurements": {
+    "operationalCasesObserved": 57,
+    "unsafeCasesTested": 41,
+    "falseFeasibilityCount": 0,
+    "falseFeasibilityCaseIds": [],
+    "uncertaintyCasesTested": 12,
+    "uncertaintyPreservedCount": 12,
+    "uncertaintyPreservedCaseIds": [
+      "S05",
+      "S13",
+      "S14",
+      "S27",
+      "T04",
+      "T05",
+      "T10",
+      "T11",
+      "T19",
+      "T20",
+      "T21",
+      "T22"
+    ],
+    "actualNegativeApprovalBoundariesRejected": 3,
+    "manualBaselineMs": null,
+    "humanInterventions": null,
+    "providerCompletionRate": null,
+    "reconciliationAgeMs": null
+  },
+  "runtime": {
+    "node": "v22.22.3",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "engine": "Bryntum Gantt Enterprise 8.0.0",
+    "repetitions": 3,
+    "licensed": true,
+    "networkAttemptsBlocked": 0,
+    "toolingIpcSuppressed": 146,
+    "fixtureClock": "2026-11-12T06:00:00.000Z"
+  },
+  "benchmarks": [
+    {
+      "id": "B01",
+      "size": 12,
+      "state": "pass",
+      "repetitions": 3,
+      "medianMs": 378.75,
+      "p95ObservedMs": 651.04,
+      "peakObservedHeapBytes": 168484352,
+      "resultDigests": [
+        "7b38a87b1bc9830c45ade8a1fa13bd2f991165a4f8c357cab279c1e8b4778daa",
+        "7b38a87b1bc9830c45ade8a1fa13bd2f991165a4f8c357cab279c1e8b4778daa",
+        "7b38a87b1bc9830c45ade8a1fa13bd2f991165a4f8c357cab279c1e8b4778daa"
+      ]
+    },
+    {
+      "id": "B02",
+      "size": 120,
+      "state": "pass",
+      "repetitions": 3,
+      "medianMs": 66.95,
+      "p95ObservedMs": 247.42,
+      "peakObservedHeapBytes": 124501240,
+      "resultDigests": [
+        "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928",
+        "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928",
+        "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928"
+      ]
+    },
+    {
+      "id": "B02",
+      "size": 500,
+      "state": "pass",
+      "repetitions": 3,
+      "medianMs": 253.61,
+      "p95ObservedMs": 437.75,
+      "peakObservedHeapBytes": 200215136,
+      "resultDigests": [
+        "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf",
+        "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf",
+        "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf"
+      ]
+    },
+    {
+      "id": "B03",
+      "size": 3,
+      "state": "pass",
+      "repetitions": 3,
+      "medianMs": 105.25,
+      "p95ObservedMs": 312.5,
+      "peakObservedHeapBytes": 114029544,
+      "resultDigests": [
+        "cf5219c37a586aaabf706dc798b730cdf9e78398d958549bdd6ee2a3976bc69c",
+        "cf5219c37a586aaabf706dc798b730cdf9e78398d958549bdd6ee2a3976bc69c",
+        "cf5219c37a586aaabf706dc798b730cdf9e78398d958549bdd6ee2a3976bc69c"
+      ]
+    },
+    {
+      "id": "B03",
+      "size": 10,
+      "state": "pass",
+      "repetitions": 3,
+      "medianMs": 316.41,
+      "p95ObservedMs": 526.7,
+      "peakObservedHeapBytes": 143716792,
+      "resultDigests": [
+        "a9aa537dba6021c4dac7a3e0bcc4562b388d8e94acbea0486ba613013d7b31e3",
+        "a9aa537dba6021c4dac7a3e0bcc4562b388d8e94acbea0486ba613013d7b31e3",
+        "a9aa537dba6021c4dac7a3e0bcc4562b388d8e94acbea0486ba613013d7b31e3"
+      ]
+    },
+    {
+      "id": "B03",
+      "size": 30,
+      "state": "pass",
+      "repetitions": 3,
+      "medianMs": 991.05,
+      "p95ObservedMs": 1232.5,
+      "peakObservedHeapBytes": 185617832,
+      "resultDigests": [
+        "1082645e0a5f705f9f3a27ea45405b76643f5e6acb39a74fa53fff6e5fd53387",
+        "1082645e0a5f705f9f3a27ea45405b76643f5e6acb39a74fa53fff6e5fd53387",
+        "1082645e0a5f705f9f3a27ea45405b76643f5e6acb39a74fa53fff6e5fd53387"
+      ]
+    },
+    {
+      "id": "B04",
+      "size": 400,
+      "state": "pass",
+      "repetitions": 3,
+      "medianMs": 11.23,
+      "p95ObservedMs": 18.73,
+      "peakObservedHeapBytes": 32249088,
+      "resultDigests": [
+        "4b70daeffecfc1ab62c232f704d94755fd980dc94cedccc14a4bef599f58aeb1",
+        "4b70daeffecfc1ab62c232f704d94755fd980dc94cedccc14a4bef599f58aeb1",
+        "4b70daeffecfc1ab62c232f704d94755fd980dc94cedccc14a4bef599f58aeb1"
+      ]
+    }
+  ],
+  "retainedExecutions": [
+    {
+      "runId": "run-20261112T074915063Z-ba7f8ef4",
+      "report": {
+        "path": "/evaluation/run-20261112T074915063Z-ba7f8ef4/report.json",
+        "sha256": "4920dc9eef5448a892b8fd1093527cac247f8589f10a033ea907b22c833df934",
+        "bytes": 190935,
+        "label": "Complete immutable evaluation report"
+      },
+      "counts": {
+        "pass": 66,
+        "fail": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "benchmarkPass": 7,
+      "benchmarkTotal": 7,
+      "note": "Current qualified controlled computation; pending real-world qualifications remain explicit."
+    },
+    {
+      "runId": "run-20261112T073329809Z-663e4e30",
+      "report": {
+        "path": "/evaluation/run-20261112T073329809Z-663e4e30/report.json",
+        "sha256": "31958ca0280f258a235ce488093be781925a925a23c7ea019e4b312020edb5ea",
+        "bytes": 190813,
+        "label": "Complete immutable evaluation report"
+      },
+      "counts": {
+        "pass": 66,
+        "fail": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "benchmarkPass": 7,
+      "benchmarkTotal": 7,
+      "note": "Earlier successful computational run retained with its original source and evaluator hashes."
+    },
+    {
+      "runId": "run-20261112T071346000Z-7cbb56e1",
+      "report": {
+        "path": "/evaluation/run-20261112T071346000Z-7cbb56e1/report.json",
+        "sha256": "1570c5226ec8eae8c69162b3adaf5e3f019a3c9e97a7a4c352d5488a9bfad5c7",
+        "bytes": 189022,
+        "label": "Complete immutable evaluation report"
+      },
+      "counts": {
+        "pass": 66,
+        "fail": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "benchmarkPass": 5,
+      "benchmarkTotal": 7,
+      "note": "Intermediate failed run retained. Native assignment construction mutated caller-owned input; the evaluation adapter was corrected to clone it. No expectation changed."
+    },
+    {
+      "runId": "run-20261112T070920923Z-f06b3471",
+      "report": {
+        "path": "/evaluation/run-20261112T070920923Z-f06b3471/report.json",
+        "sha256": "79ad20aee59e70880e4dfec48ff3f052d957b8aa7bdabf8f206f5a034d0e2f2a",
+        "bytes": 194552,
+        "label": "Complete immutable evaluation report"
+      },
+      "counts": {
+        "pass": 0,
+        "fail": 66,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "benchmarkPass": 0,
+      "benchmarkTotal": 7,
+      "note": "First failed run retained. Guard counted optional tsx IPC as egress; S22 did not construct the declared cycle. No result was reclassified."
+    }
+  ],
+  "pending": [
+    {
+      "id": "P01",
+      "title": "Live model proposal quality",
+      "reason": "No model calls are authorized in this unit. Deterministic enumerator results cannot establish AI quality,token cost or model accuracy."
+    },
+    {
+      "id": "P02",
+      "title": "Manual planning baseline and human interventions",
+      "reason": "A witnessed study with real participants and an agreed timing protocol has not been run. No synthetic intervention count substitutes for it."
+    },
+    {
+      "id": "P03",
+      "title": "Publication to eleven real crew acknowledgments",
+      "reason": "This unit grants no approvals and uses no existing sessions or crew clients. The witnessed end-to-end human timing remains unmeasured."
+    },
+    {
+      "id": "P04",
+      "title": "Provider completion and reconciliation age",
+      "reason": "No financial transport,receipts,database or current provider reads are used. Zero simulated calls does not prove provider completion or freshness."
+    },
+    {
+      "id": "P05",
+      "title": "Late-day quote lifecycle and retained-rental integration",
+      "reason": "The independent N1/N1b owner qualifies those source versions. This corpus is attributed to96ff4cd and does not claim later shared-planner changes."
+    },
+    {
+      "id": "P06",
+      "title": "Native browser review",
+      "reason": "Mounted component and production-build tests are supporting evidence;root owns native review at the separately reserved port4587."
+    }
+  ],
+  "qualificationReceipts": {
+    "productionBuild": "Ignored operator artifact .artifacts/evaluation-stage16/qualified-build.json",
+    "exactSourceDependencyBuildFreeze": "Ignored operator artifact .artifacts/evaluation-stage16/freeze-current.json",
+    "readOnlyRuntime": "Ignored operator artifact .artifacts/evaluation-stage16/runtime/viewer4587.json",
+    "httpChecks": "Run tests/evaluation-http.test.ts against the owned frozen viewer;results remain in ignored qualification logs"
+  }
+}

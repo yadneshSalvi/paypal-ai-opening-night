@@ -1,0 +1,82 @@
+{
+  "contract": {
+    "id": "C05",
+    "group": "time",
+    "title": "Elapsed duration survives a DST fallback",
+    "scenario": "dst_elapsed",
+    "expectation": {
+      "status": "accepted",
+      "requiredCodes": [],
+      "measurements": {
+        "elapsedMinutes": 180,
+        "endLocal": "2026-11-01T02:30"
+      }
+    },
+    "tags": [
+      "DST",
+      "duration",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C05",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 0,
+  "toolingIpcSuppressed": 2,
+  "result": {
+    "input": {
+      "scenario": "dst_elapsed",
+      "timeInputs": {
+        "start": {
+          "local": "2026-11-01T00:30",
+          "zone": "America/Chicago",
+          "disambiguation": "reject"
+        },
+        "elapsedMinutes": 180
+      },
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "elapsedMinutes": 180,
+      "endLocal": "2026-11-01T02:30"
+    },
+    "observation": {
+      "id": "C05",
+      "state": "pass",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "elapsedMinutes": 180,
+        "endLocal": "2026-11-01T02:30"
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.93,
+      "heapDeltaBytes": 368544,
+      "inputDigest": "03ca77496b3c812424420a60036a1492a10ce58a89672d65d6f2f177b3b78448",
+      "outputDigest": "4c66b5d9701ef1e9ea9a9cca8b9b827557bd0342ad57eac3adeeaf4ea75b3ade",
+      "inputUnchanged": true,
+      "artifact": "cases/C05.json"
+    }
+  },
+  "observation": {
+    "id": "C05",
+    "state": "pass",
+    "observedStatus": "accepted",
+    "findings": [],
+    "measurements": {
+      "elapsedMinutes": 180,
+      "endLocal": "2026-11-01T02:30"
+    },
+    "mismatches": [],
+    "engine": null,
+    "durationMs": 1.93,
+    "heapDeltaBytes": 368544,
+    "inputDigest": "03ca77496b3c812424420a60036a1492a10ce58a89672d65d6f2f177b3b78448",
+    "outputDigest": "4c66b5d9701ef1e9ea9a9cca8b9b827557bd0342ad57eac3adeeaf4ea75b3ade",
+    "inputUnchanged": true,
+    "artifact": "cases/C05.json"
+  }
+}

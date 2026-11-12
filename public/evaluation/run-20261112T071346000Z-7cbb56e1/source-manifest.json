@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+  "scope": "Exact runtime source/dependency declarations;no environment,license value,database or prior evidence included",
+  "files": [
+    {
+      "path": "node_modules/@bryntum/gantt-node-enterprise/gantt.node.d.ts",
+      "bytes": 6587830,
+      "sha256": "be9ae407504c8a208de798df25ade22ad272b672c1c2948fe144bf0f8b93ce4b"
+    },
+    {
+      "path": "node_modules/@bryntum/gantt-node-enterprise/package.json",
+      "bytes": 1137,
+      "sha256": "a75c0ff0d5623934048a40c983479b8bd0543bc6a1a6061326e9cf015d097df2"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 304652,
+      "sha256": "2475cda8b35b7fb09fce17f69b3ffe162cdd61caf25d82cfe60c135a6575e7c9"
+    },
+    {
+      "path": "package.json",
+      "bytes": 5274,
+      "sha256": "7d744a3b790612e0ad4e7923625b713aabbca43b5716c7e91203af29f22cd999"
+    },
+    {
+      "path": "scripts/evaluation/io.ts",
+      "bytes": 4426,
+      "sha256": "ff969b67099254dde5877b7e50f1fa9b8794cb38f54451bb15fe6c38ae6d8784"
+    },
+    {
+      "path": "scripts/evaluation/isolate.mjs",
+      "bytes": 2934,
+      "sha256": "c09942a855c8c935ade882705a2cee427e48c4b8e174acb7243ab866cb727700"
+    },
+    {
+      "path": "scripts/evaluation/run.ts",
+      "bytes": 11136,
+      "sha256": "d834fe8b08889c66f90e096693e6bbc9be792fd8890de5098ab56cf57206f3a4"
+    },
+    {
+      "path": "scripts/evaluation/worker.ts",
+      "bytes": 2256,
+      "sha256": "b5f56dbdd5ffc77b96a2d3d55edbc7b60461823f7367c4bccd7819e655796b58"
+    },
+    {
+      "path": "src/domain/adapters.ts",
+      "bytes": 2733,
+      "sha256": "a024228a5a14e90e9e56d760878f3112a5b8f4228d19ed88fc9f1877c088deda"
+    },
+    {
+      "path": "src/domain/canonical.ts",
+      "bytes": 456,
+      "sha256": "768a8bbce074d294763df8c671f18605af8bbf3d9b35c512a5db9e1e0aab8538"
+    },
+    {
+      "path": "src/domain/commands.ts",
+      "bytes": 16971,
+      "sha256": "6e7fed39fecf824ad908b83b478c3dc2a9149ffff617d845379fa5b679ed8bea"
+    },
+    {
+      "path": "src/domain/commerce-contracts.ts",
+      "bytes": 2874,
+      "sha256": "7ac39f38041d918f7229f3ede9e5391b77bdb7b5a18e684c97ae839bd87fdc3d"
+    },
+    {
+      "path": "src/domain/contracts.ts",
+      "bytes": 9948,
+      "sha256": "b0ce147e1742597bbc43ed58f4a0488a83a1b518c3894b0f1fc76ae1553389da"
+    },
+    {
+      "path": "src/domain/crew/commands.ts",
+      "bytes": 5420,
+      "sha256": "b36f542c0c713bf61a443aa670ef64fff43bd43e0b9692fedb5d6a21d45aba5f"
+    },
+    {
+      "path": "src/domain/crew/contracts.ts",
+      "bytes": 8660,
+      "sha256": "58fb6b8e575eb0b7fdd2d002b52e59ef3c1407aa6d90eb538a9f4e5e001c0f7d"
+    },
+    {
+      "path": "src/domain/crew/policy.ts",
+      "bytes": 16821,
+      "sha256": "34b2d0a7a4baa9efb256687074c92b582a908107b0919ae6cb77b9644d4539b2"
+    },
+    {
+      "path": "src/domain/disruptions.ts",
+      "bytes": 8637,
+      "sha256": "50c2aa814712d271e7e9d22ded6cb23dcf39bd406b5d6320bbfd2a5a984c740c"
+    },
+    {
+      "path": "src/domain/evaluation/benchmarks.ts",
+      "bytes": 12313,
+      "sha256": "a55d17e45b170889e00def5490fdf2a028d5c88f3fcf9afbde35268417d0f3dd"
+    },
+    {
+      "path": "src/domain/evaluation/cases.ts",
+      "bytes": 20276,
+      "sha256": "9f04906a78fee8cfaa84d336b9941db24c93028bc9e1b1285ae36a2f11f426ac"
+    },
+    {
+      "path": "src/domain/evaluation/contracts.ts",
+      "bytes": 3399,
+      "sha256": "a0c1f0fbb69d59924078fe181b9c53b76a3f5d273a88cc009c6e47d4cbea693a"
+    },
+    {
+      "path": "src/domain/evaluation/corpus-v1.json",
+      "bytes": 19458,
+      "sha256": "e4ccd564d63f58a82bc481a8c5bcb82585d969ca64031b12ff7bf9726379f64d"
+    },
+    {
+      "path": "src/domain/evaluation/corpus-v2.json",
+      "bytes": 19458,
+      "sha256": "dd7ff2e56babed7b8be5a3316b73626836c43bbb18d4fcd143a13c6fc496a6a2"
+    },
+    {
+      "path": "src/domain/evaluation/fixtures.ts",
+      "bytes": 7477,
+      "sha256": "5f0f24f7ab87eb1f334f1a73fad8ff3c409edc6a7b90e0b79b0cf3d4957a7900"
+    },
+    {
+      "path": "src/domain/finance.ts",
+      "bytes": 7737,
+      "sha256": "81594e4080856b9f6430625ed5842c29892c1d8ab2d9a35e3de601d1c3ac9fa7"
+    },
+    {
+      "path": "src/domain/fixture.ts",
+      "bytes": 12312,
+      "sha256": "e19f4f774165b72140a96506561709008e2d7564cff66fdb19085b73bad82cc3"
+    },
+    {
+      "path": "src/domain/hash.ts",
+      "bytes": 243,
+      "sha256": "0d7626d0cb4185957597d0f07dee5b87152a5222798bcba6dc90aee80a06c1a0"
+    },
+    {
+      "path": "src/domain/intelligence.ts",
+      "bytes": 8487,
+      "sha256": "b471aff9b9e1272529917ea815862e30db20357a23dd8606ddd328b9b8603474"
+    },
+    {
+      "path": "src/domain/labels.ts",
+      "bytes": 1622,
+      "sha256": "a815954ad9475f8c6072271afcef1b1e22638a1ee559e8ea3dc94130326d6abd"
+    },
+    {
+      "path": "src/domain/milestones.ts",
+      "bytes": 2610,
+      "sha256": "e23caed0862b2fc592c6271869cd8e17a11894348776c74da81b39a68216c7ed"
+    },
+    {
+      "path": "src/domain/payment-authority.ts",
+      "bytes": 16784,
+      "sha256": "d7f70970bca719d95d7cf715c50984abf05a6f3a714a3c9686d28f259d59c69e"
+    },
+    {
+      "path": "src/domain/payouts/contracts.ts",
+      "bytes": 8382,
+      "sha256": "b79e06d1fa86f7cf6987f965a8ef934e741f53c7c5e2d3181d6e710fd130f0e6"
+    },
+    {
+      "path": "src/domain/payouts/policy.ts",
+      "bytes": 14939,
+      "sha256": "b17abd3af71d0a7810d0c426aafd732c400637b0d25aca11340fd4b1164a5e67"
+    },
+    {
+      "path": "src/domain/readiness.ts",
+      "bytes": 11481,
+      "sha256": "034d4c2898d88738d0fb416d440d2f326bd0dcf861e997f5bd13a2131e4cc8ee"
+    },
+    {
+      "path": "src/domain/rehearsal-contracts.ts",
+      "bytes": 695,
+      "sha256": "2ea9e2ebdc64641c8c6aa074b8cf5f6356ccbcc9a7fc5e99f5b2adeba63b1a31"
+    },
+    {
+      "path": "src/domain/scheduling.ts",
+      "bytes": 19324,
+      "sha256": "4345f6ca8a5e4d8619136ae5eed83dda46f473eb5f191b243c6d92420bc3bea0"
+    },
+    {
+      "path": "src/domain/settlement/commands.ts",
+      "bytes": 16751,
+      "sha256": "9a8bb3593d117377b327605b8b1999c9a5bd40bd271e803bcdb42b1da1d7f1c5"
+    },
+    {
+      "path": "src/domain/settlement/contracts.ts",
+      "bytes": 6587,
+      "sha256": "ee001b6784825d56f8acfb4e90705161fc401741be54d77c88a3a6294117cec7"
+    },
+    {
+      "path": "src/domain/settlement/money.ts",
+      "bytes": 747,
+      "sha256": "c5564d92ff8490908edeed62dd67f1369ff88addd95375328e3107d8c7ebb500"
+    },
+    {
+      "path": "src/domain/sources.ts",
+      "bytes": 11199,
+      "sha256": "57a8860c99210f5285f7d970527672083199dee3b3c05103d85f182f3bddb724"
+    },
+    {
+      "path": "src/domain/supplier-contracts.ts",
+      "bytes": 4286,
+      "sha256": "7568615eb38b5d29a924adf82f9fd44bc85c715c02510fdf343e8b865db0b7da"
+    },
+    {
+      "path": "src/domain/task-presentation.ts",
+      "bytes": 3924,
+      "sha256": "e2bedd57637988e9a24ee26f96e39a0ce8e737636ac8499d858940cdb26b93af"
+    },
+    {
+      "path": "src/domain/time.ts",
+      "bytes": 1745,
+      "sha256": "bcff6c119b26b32f51d11c55e6f1b44178786b19b95c06b8f1d2683b7ee50fca"
+    },
+    {
+      "path": "src/domain/tour/constraints.ts",
+      "bytes": 24012,
+      "sha256": "65575c0126a9b959e31475ded454771d9923618a0a867b30d9871846777bd9cd"
+    },
+    {
+      "path": "src/domain/tour/contracts.ts",
+      "bytes": 15601,
+      "sha256": "8f8741258f0002dffbedb02ee631e07dbd0954fbab736c0dc6e8ce31db94f5f7"
+    },
+    {
+      "path": "src/domain/tour/fixture.ts",
+      "bytes": 8192,
+      "sha256": "abbc2f1432721bb3e3b515d8a8eb357279805c67342599fdc7b1b0855369c520"
+    },
+    {
+      "path": "src/domain/tour/templates.ts",
+      "bytes": 16214,
+      "sha256": "1c1edd6222f716faf5ea369387dfc4a5ada498a394708915f8a1fc6a286dfa6d"
+    },
+    {
+      "path": "src/domain/tour/time.ts",
+      "bytes": 2671,
+      "sha256": "e0276a76a51be333fc39017885626de47933c6499928d6af663a016a8b17aaa3"
+    },
+    {
+      "path": "src/domain/voice.ts",
+      "bytes": 3005,
+      "sha256": "6d99e56dd2c898930cd737693f993f3753518b60c1015936e2bb9559551fef0d"
+    },
+    {
+      "path": "src/domain/wrap/assistant.ts",
+      "bytes": 1704,
+      "sha256": "1d2f25b09d90a9a17c8ea60891d80bf189c2f30b05e05e081416bbc8e4ecaa95"
+    },
+    {
+      "path": "src/domain/wrap/contracts.ts",
+      "bytes": 14915,
+      "sha256": "e3e2ec942f4908b57a9209795676389cbf7881f187b54fcbfae0ded2991be61f"
+    },
+    {
+      "path": "src/domain/wrap/invoices.ts",
+      "bytes": 20987,
+      "sha256": "635634583ed4ec36f19708d8dca9eebf2af9d60b3eb3b2c6c28a471d993286f6"
+    },
+    {
+      "path": "src/domain/wrap/presentation.ts",
+      "bytes": 4273,
+      "sha256": "d9fd62c33d7790e8ff1f9f32ef4e23893774eb05e4384878e866be948f31aadb"
+    },
+    {
+      "path": "src/domain/wrap/report.ts",
+      "bytes": 41023,
+      "sha256": "3bcce1785100b870e0e76807a91b6163b78137499617ab6f5dea0096b944ce24"
+    },
+    {
+      "path": "src/server/engine.ts",
+      "bytes": 4828,
+      "sha256": "f1d633ecece4567f68f8073223d40df4b80badc553d411880ff30987bab8cdcb"
+    },
+    {
+      "path": "src/server/env.ts",
+      "bytes": 1824,
+      "sha256": "ce3877b609af3f278fccfa5daf56c0e485117570474c2b62545879359b02c4bb"
+    },
+    {
+      "path": "src/server/tour/engine.ts",
+      "bytes": 1581,
+      "sha256": "01229d82890b63c35d960986f9652bab12857ee47d15828baeab614a0a293630"
+    }
+  ]
+}

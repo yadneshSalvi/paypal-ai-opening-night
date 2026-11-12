@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "scope": "Exact approved accepted Latin variable-font bytes;APFS COW copy;no network request",
+  "faces": [
+    {
+      "family": "Inter",
+      "file": "07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "bytes": 48432,
+      "sha256": "c940764593d0fe5d596be327ca7558855e018039fb78509aa21921fd3644c3e4",
+      "copyright": "Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)",
+      "license": "SIL Open Font License 1.1",
+      "licenseUrl": "https://openfontlicense.org"
+    },
+    {
+      "family": "Oswald",
+      "file": "47bc4ee240b788ba-s.p.3nglv5iys3s0a.woff2",
+      "bytes": 28456,
+      "sha256": "c36937da4c39049704f1def587f7837a24ad52d3bfd2d27d3b6eb9f4220b2e3a",
+      "copyright": "Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont)",
+      "license": "SIL Open Font License 1.1",
+      "licenseUrl": "https://scripts.sil.org/OFL"
+    },
+    {
+      "family": "JetBrains Mono",
+      "file": "53897e768d329f66-s.p.3t6q91iet4nsy.woff2",
+      "bytes": 40480,
+      "sha256": "1e06740a02a443fb7f3eeda8fcaa685a0f6c620e3f01e6666e847295469ce3ad",
+      "copyright": "Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)",
+      "license": "SIL Open Font License 1.1",
+      "licenseUrl": "https://scripts.sil.org/OFL"
+    }
+  ]
+}

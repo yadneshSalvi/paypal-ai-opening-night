@@ -1,0 +1,78 @@
+{
+  "contract": {
+    "id": "C04",
+    "group": "time",
+    "title": "Denver and Chicago wall clocks resolve to one instant",
+    "scenario": "cross_zone",
+    "expectation": {
+      "status": "accepted",
+      "requiredCodes": [],
+      "measurements": {
+        "sameInstant": true
+      }
+    },
+    "tags": [
+      "time_zone",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C04",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 2,
+  "result": {
+    "input": {
+      "scenario": "cross_zone",
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "sameInstant": true,
+      "denverOffset": "-07:00",
+      "chicagoOffset": "-06:00"
+    },
+    "observation": {
+      "id": "C04",
+      "state": "fail",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "sameInstant": true,
+        "denverOffset": "-07:00",
+        "chicagoOffset": "-06:00"
+      },
+      "mismatches": [
+        "Evaluation attempted forbidden transport;the isolation guard blocked it."
+      ],
+      "engine": null,
+      "durationMs": 1.52,
+      "heapDeltaBytes": 268952,
+      "inputDigest": "c0cc3afe4c349b94a268a345b4584f5933f463546969789124a19ac698b77151",
+      "outputDigest": "71be04bb1c7f6f3be41fbd6f80513bb041d8e6b5fc8ba71816f33c76495b277c",
+      "inputUnchanged": true,
+      "artifact": "cases/C04.json"
+    }
+  },
+  "observation": {
+    "id": "C04",
+    "state": "fail",
+    "observedStatus": "accepted",
+    "findings": [],
+    "measurements": {
+      "sameInstant": true,
+      "denverOffset": "-07:00",
+      "chicagoOffset": "-06:00"
+    },
+    "mismatches": [
+      "Evaluation attempted forbidden transport;the isolation guard blocked it."
+    ],
+    "engine": null,
+    "durationMs": 1.52,
+    "heapDeltaBytes": 268952,
+    "inputDigest": "c0cc3afe4c349b94a268a345b4584f5933f463546969789124a19ac698b77151",
+    "outputDigest": "71be04bb1c7f6f3be41fbd6f80513bb041d8e6b5fc8ba71816f33c76495b277c",
+    "inputUnchanged": true,
+    "artifact": "cases/C04.json"
+  }
+}

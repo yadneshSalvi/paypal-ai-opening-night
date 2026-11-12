@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "title": "Opening Night · The rehearsal ledger",
+  "currentRunId": "run-20261112T074915063Z-ba7f8ef4",
+  "runs": [
+    {
+      "runId": "run-20261112T074915063Z-ba7f8ef4",
+      "report": {
+        "path": "/evaluation/run-20261112T074915063Z-ba7f8ef4/report.json",
+        "sha256": "4920dc9eef5448a892b8fd1093527cac247f8589f10a033ea907b22c833df934",
+        "bytes": 190935,
+        "label": "Complete immutable evaluation report"
+      },
+      "corpus": {
+        "path": "/evaluation/run-20261112T074915063Z-ba7f8ef4/corpus.json",
+        "sha256": "a03dbd55d02c08bd448d0e1285fffff8b885ca68ee81e87b8813d1d29a97eb3b",
+        "bytes": 19458,
+        "label": "Frozen case contract"
+      },
+      "sourceManifest": {
+        "path": "/evaluation/run-20261112T074915063Z-ba7f8ef4/source-manifest.json",
+        "sha256": "d1ed3b94a744f7b64c9cf583b29e3f6ce567aaaf4452ff784ccfb412dde3ecce",
+        "bytes": 172694,
+        "label": "Exact source and dependency hashes"
+      },
+      "completedAt": "2026-11-12T07:49:51.271Z",
+      "corpusId": "opening-night-controlled-evaluation-v3",
+      "counts": {
+        "pass": 66,
+        "fail": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "benchmarkPass": 7,
+      "benchmarkTotal": 7,
+      "note": "Current qualified controlled computation; pending real-world qualifications remain explicit."
+    },
+    {
+      "runId": "run-20261112T073329809Z-663e4e30",
+      "report": {
+        "path": "/evaluation/run-20261112T073329809Z-663e4e30/report.json",
+        "sha256": "31958ca0280f258a235ce488093be781925a925a23c7ea019e4b312020edb5ea",
+        "bytes": 190813,
+        "label": "Complete immutable evaluation report"
+      },
+      "corpus": {
+        "path": "/evaluation/run-20261112T073329809Z-663e4e30/corpus.json",
+        "sha256": "a03dbd55d02c08bd448d0e1285fffff8b885ca68ee81e87b8813d1d29a97eb3b",
+        "bytes": 19458,
+        "label": "Frozen case contract"
+      },
+      "sourceManifest": {
+        "path": "/evaluation/run-20261112T073329809Z-663e4e30/source-manifest.json",
+        "sha256": "a951006cc74cf4c69a64a291e30c252e74ec7cdc3eb58f61608fb3df8d9d7357",
+        "bytes": 172441,
+        "label": "Exact source and dependency hashes"
+      },
+      "completedAt": "2026-11-12T07:34:07.109Z",
+      "corpusId": "opening-night-controlled-evaluation-v3",
+      "counts": {
+        "pass": 66,
+        "fail": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "benchmarkPass": 7,
+      "benchmarkTotal": 7,
+      "note": "Earlier successful computational run retained with its original source and evaluator hashes."
+    },
+    {
+      "runId": "run-20261112T071346000Z-7cbb56e1",
+      "report": {
+        "path": "/evaluation/run-20261112T071346000Z-7cbb56e1/report.json",
+        "sha256": "1570c5226ec8eae8c69162b3adaf5e3f019a3c9e97a7a4c352d5488a9bfad5c7",
+        "bytes": 189022,
+        "label": "Complete immutable evaluation report"
+      },
+      "corpus": {
+        "path": "/evaluation/run-20261112T071346000Z-7cbb56e1/corpus.json",
+        "sha256": "dd7ff2e56babed7b8be5a3316b73626836c43bbb18d4fcd143a13c6fc496a6a2",
+        "bytes": 19458,
+        "label": "Frozen case contract"
+      },
+      "sourceManifest": {
+        "path": "/evaluation/run-20261112T071346000Z-7cbb56e1/source-manifest.json",
+        "sha256": "c29736524fc7afae0989c2c30aa593743f211edcd272944191a79a35d3d43814",
+        "bytes": 9345,
+        "label": "Exact source and dependency hashes"
+      },
+      "completedAt": "2026-11-12T07:14:20.465Z",
+      "corpusId": "opening-night-controlled-evaluation-v2",
+      "counts": {
+        "pass": 66,
+        "fail": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "benchmarkPass": 5,
+      "benchmarkTotal": 7,
+      "note": "Intermediate failed run retained. Native assignment construction mutated caller-owned input; the evaluation adapter was corrected to clone it. No expectation changed."
+    },
+    {
+      "runId": "run-20261112T070920923Z-f06b3471",
+      "report": {
+        "path": "/evaluation/run-20261112T070920923Z-f06b3471/report.json",
+        "sha256": "79ad20aee59e70880e4dfec48ff3f052d957b8aa7bdabf8f206f5a034d0e2f2a",
+        "bytes": 194552,
+        "label": "Complete immutable evaluation report"
+      },
+      "corpus": {
+        "path": "/evaluation/run-20261112T070920923Z-f06b3471/corpus.json",
+        "sha256": "e4ccd564d63f58a82bc481a8c5bcb82585d969ca64031b12ff7bf9726379f64d",
+        "bytes": 19458,
+        "label": "Frozen case contract"
+      },
+      "sourceManifest": {
+        "path": "/evaluation/run-20261112T070920923Z-f06b3471/source-manifest.json",
+        "sha256": "6e675dce92ca3e3f7090f8e5f59118e6f3a7b153df8659b6234bd441067fb725",
+        "bytes": 9173,
+        "label": "Exact source and dependency hashes"
+      },
+      "completedAt": "2026-11-12T07:09:55.581Z",
+      "corpusId": "opening-night-controlled-evaluation-v1",
+      "counts": {
+        "pass": 0,
+        "fail": 66,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "benchmarkPass": 0,
+      "benchmarkTotal": 7,
+      "note": "First failed run retained. Guard counted optional tsx IPC as egress; S22 did not construct the declared cycle. No result was reclassified."
+    }
+  ]
+}

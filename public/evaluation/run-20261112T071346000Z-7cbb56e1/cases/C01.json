@@ -1,0 +1,82 @@
+{
+  "contract": {
+    "id": "C01",
+    "group": "time",
+    "title": "A spring clock gap cannot name an instant",
+    "scenario": "dst_gap",
+    "expectation": {
+      "status": "rejected",
+      "requiredCodes": [
+        "TOUR_DST_GAP"
+      ]
+    },
+    "tags": [
+      "DST",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C01",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 0,
+  "toolingIpcSuppressed": 2,
+  "result": {
+    "input": {
+      "scenario": "dst_gap",
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "choicesRejected": 3
+    },
+    "observation": {
+      "id": "C01",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "TOUR_DST_GAP",
+          "severity": "hard",
+          "message": "All three offset choices reject the nonexistent local clock.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "choicesRejected": 3
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.85,
+      "heapDeltaBytes": 416656,
+      "inputDigest": "05f7f680d35b97453e9d5203afd6d05bacb4d8ab72ad01a51d1ea95b26a4205b",
+      "outputDigest": "51d200575d8e0d64b7f50630c533462c68bf91b709069857666e8f434ce4c757",
+      "inputUnchanged": true,
+      "artifact": "cases/C01.json"
+    }
+  },
+  "observation": {
+    "id": "C01",
+    "state": "pass",
+    "observedStatus": "rejected",
+    "findings": [
+      {
+        "code": "TOUR_DST_GAP",
+        "severity": "hard",
+        "message": "All three offset choices reject the nonexistent local clock.",
+        "subjects": []
+      }
+    ],
+    "measurements": {
+      "choicesRejected": 3
+    },
+    "mismatches": [],
+    "engine": null,
+    "durationMs": 1.85,
+    "heapDeltaBytes": 416656,
+    "inputDigest": "05f7f680d35b97453e9d5203afd6d05bacb4d8ab72ad01a51d1ea95b26a4205b",
+    "outputDigest": "51d200575d8e0d64b7f50630c533462c68bf91b709069857666e8f434ce4c757",
+    "inputUnchanged": true,
+    "artifact": "cases/C01.json"
+  }
+}

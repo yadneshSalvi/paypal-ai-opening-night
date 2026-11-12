@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "corpus": "src/domain/evaluation/corpus-v1.json",
+  "sha256": "e4ccd564d63f58a82bc481a8c5bcb82585d969ca64031b12ff7bf9726379f64d",
+  "bytes": 19458,
+  "frozenAt": "2026-11-12T07:02:57.561457Z",
+  "sourceCommit": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+  "caseCounts": {
+    "single_show": 33,
+    "tour": 24,
+    "time": 6,
+    "readiness": 3
+  },
+  "firstExecution": "Must occur after this freeze;executions are append-only and retain first failures",
+  "expectationChanges": "Create a separately versioned corpus;never replace this contract to fit observed results"
+}

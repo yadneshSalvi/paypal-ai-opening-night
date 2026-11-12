@@ -1,0 +1,5739 @@
+{
+  "schemaVersion": 1,
+  "runId": "run-20261112T071346000Z-7cbb56e1",
+  "createdAt": "2026-11-12T07:13:46.000Z",
+  "completedAt": "2026-11-12T07:14:20.465Z",
+  "sourceCommit": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+  "corpusSha256": "dd7ff2e56babed7b8be5a3316b73626836c43bbb18d4fcd143a13c6fc496a6a2",
+  "corpusId": "opening-night-controlled-evaluation-v2",
+  "runnerSha256": "d834fe8b08889c66f90e096693e6bbc9be792fd8890de5098ab56cf57206f3a4",
+  "sourceManifestSha256": "c29736524fc7afae0989c2c30aa593743f211edcd272944191a79a35d3d43814",
+  "runtime": {
+    "node": "v22.22.3",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "engine": "Bryntum Gantt Enterprise 8.0.0",
+    "repetitions": 3,
+    "licensed": true,
+    "networkAttemptsBlocked": 0,
+    "toolingIpcSuppressed": 146,
+    "fixtureClock": "2026-11-12T06:00:00.000Z"
+  },
+  "scope": {
+    "label": "Provider-disabled controlled computation;no production authority",
+    "operationalCaseCount": 57,
+    "supportingCaseCount": 9,
+    "productionWrites": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "databaseConnections": 0,
+    "approvalsGranted": 0
+  },
+  "counts": {
+    "pass": 66,
+    "fail": 0,
+    "unknown": 0,
+    "unsupported": 0
+  },
+  "cases": [
+    {
+      "id": "S01",
+      "state": "pass",
+      "observedStatus": "feasible_with_approval",
+      "findings": [],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 211,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 245.65,
+      "heapDeltaBytes": 83933952,
+      "inputDigest": "0cf0d34f843ed2970172ccfc5a8092ee206b567f2b527486b9ea4fe3f07c46d5",
+      "outputDigest": "b239403aefbedceb10ea847e744bb1085cccb00b2ea1304c67db784c2ecfc328",
+      "inputUnchanged": true,
+      "artifact": "cases/S01.json"
+    },
+    {
+      "id": "S02",
+      "state": "pass",
+      "observedStatus": "feasible_with_approval",
+      "findings": [],
+      "measurements": {
+        "costMinor": 114000,
+        "doorsLocal": "20:05",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": true,
+        "approvalsGranted": 0,
+        "changedPeople": 6
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 206,
+        "inputDigest": "a8302f0799b222e879d1561d15e23430dd33c8c05a1f07de6ebc02cc41fdfb60",
+        "resultDigest": "2fd0eeaece3d95a75a8d3b78c989ff147164bf5a5789231a8b00a638c790fdf1",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 239.39,
+      "heapDeltaBytes": 83882416,
+      "inputDigest": "4925ee40d613715d53705e68c95169fe531ecf9b6583c343b1403a7b014f72ac",
+      "outputDigest": "9c3ace5852b4a17083d1a27853b8a584f2ac7c9860394de28ee78e51e37c473f",
+      "inputUnchanged": true,
+      "artifact": "cases/S02.json"
+    },
+    {
+      "id": "S03",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Sam Rivera: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "sam",
+            "strike",
+            "crew-policy-v1"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Priya Shah: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "priya",
+            "strike",
+            "crew-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 141000,
+        "doorsLocal": "20:35",
+        "crewRestMinutes": 570,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 6
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 202,
+        "inputDigest": "f34ac76bb8703fc838002571d7dc33e093c1613d29748afb9a492afe7dbf6a66",
+        "resultDigest": "b69e90732a7903a02db38a4360775208ba273fff53b3f76178b42fad30b5e435",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 235.67,
+      "heapDeltaBytes": 84064752,
+      "inputDigest": "b6779cdf2ac0ee298422e08feac884cb7f3d2b19f81a2e6507427e53503ed7cd",
+      "outputDigest": "61debb138b194fb161e9e02de352a829032a6b31d8d9231996493f9b3abdfb92",
+      "inputUnchanged": true,
+      "artifact": "cases/S03.json"
+    },
+    {
+      "id": "S04",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "LX focus starts before Rental fee captured · PayPal clears.",
+          "subjects": [
+            "lx-focus",
+            "venue-policy-v1"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx programming.",
+          "subjects": [
+            "tom",
+            "lx-program",
+            "crew-policy-v1"
+          ]
+        },
+        {
+          "code": "DELIVERY_WINDOW",
+          "severity": "hard",
+          "message": "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.",
+          "subjects": [
+            "console",
+            "lx-focus",
+            "offer-brightline-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "rejected",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 202,
+        "inputDigest": "d4305edbb38bd2687111d83d18b50de58c3c32bfa26bc19dc2a9fc8a91ecb956",
+        "resultDigest": "42c98fd8bf44373a531cd4386d33aee55c558ef827305c6e1bc03587e92a2c28",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": "The engine moved 2 constrained tasks; the proposed times are inconsistent."
+      },
+      "durationMs": 234.45,
+      "heapDeltaBytes": 83870888,
+      "inputDigest": "46b5a0d6b524b41a52b7d632ecd743f9d9d354efb6fbecd3b56aa9eb1569bd17",
+      "outputDigest": "cfd5981779b9505c7e0c4052330951b620d21bd91e393d41a68f706b6b9eb83b",
+      "inputUnchanged": true,
+      "artifact": "cases/S04.json"
+    },
+    {
+      "id": "S05",
+      "state": "pass",
+      "observedStatus": "unknown_pending_evidence",
+      "findings": [
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "rental-delivery",
+            "offer-sister-1"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "console",
+            "rental-delivery",
+            "offer-sister-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 75000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 210,
+        "inputDigest": "2c76bc7395e8932706932e92425cc18515e4099557dcc057b3766b9c90b2ceb4",
+        "resultDigest": "f3c42b7b1a89d9d636dd1545a18983b4c50a2ef95b6316c67b9716e59de1dcb3",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 244.41,
+      "heapDeltaBytes": 83999200,
+      "inputDigest": "790eb1ca87864cf4bbfadc9f38996ad01b84d77cf41fd437514f214181a0190a",
+      "outputDigest": "df40e489419f31c102e14c16caccdfd3fb1b3cd56ca9d312e9c391bc08cc64e2",
+      "inputUnchanged": true,
+      "artifact": "cases/S05.json"
+    },
+    {
+      "id": "S06",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "QUOTE_EXPIRED",
+          "severity": "hard",
+          "message": "This quote expired. Request current terms before approval.",
+          "subjects": [
+            "offer-brightline-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 203,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 236.53,
+      "heapDeltaBytes": 84020976,
+      "inputDigest": "11880649d74de38972ad7a5e03b255e1fe9e591bdc57586628c72874f2f460b4",
+      "outputDigest": "b3a2336b44d5a396b68e26ec5357c052143e2aa5a1e753a67b48ea98d10913b0",
+      "inputUnchanged": true,
+      "artifact": "cases/S06.json"
+    },
+    {
+      "id": "S07",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "QUOTE_CHANGED",
+          "severity": "hard",
+          "message": "The supplier revised this quote; generate a new candidate.",
+          "subjects": [
+            "offer-brightline-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 202,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 234.46,
+      "heapDeltaBytes": 84023368,
+      "inputDigest": "8a93711fbdac67cdd190a88c15f8d66eb90f6b93ee9ce49f557add5fff60f302",
+      "outputDigest": "6504115c8425e08b717a93325089cb478469aaf0138ebbce0472adb481cd44f3",
+      "inputUnchanged": true,
+      "artifact": "cases/S07.json"
+    },
+    {
+      "id": "S08",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "POLICY_CHANGED",
+          "severity": "hard",
+          "message": "The operating policy changed after this proposal.",
+          "subjects": [
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 207,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 239.45,
+      "heapDeltaBytes": 84022656,
+      "inputDigest": "a2598257d25686b5b8c4242e7f78f61785396915c7c4e386aa1509acb423ae2b",
+      "outputDigest": "b11572f1e82cd5959628c2d54dccf0e998d884043480fdf1a7efb1c204c7bee8",
+      "inputUnchanged": true,
+      "artifact": "cases/S08.json"
+    },
+    {
+      "id": "S09",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "CURFEW",
+          "severity": "hard",
+          "message": "Amplified audio ends 22:15 after the hard 23:00 curfew.",
+          "subjects": [
+            "headliner",
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 202,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 235.42,
+      "heapDeltaBytes": 84034120,
+      "inputDigest": "5ac9f52ebca3efa6826d954937532707bb72ae1bec53f86b275400b7de079393",
+      "outputDigest": "5d19af916fd827744b2561d1479c7f935581627ca38f251755627ba94e5c973e",
+      "inputUnchanged": true,
+      "artifact": "cases/S09.json"
+    },
+    {
+      "id": "S10",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "VENUE_ACCESS",
+          "severity": "hard",
+          "message": "Quiet strike extends beyond the authorized 00:45 access window.",
+          "subjects": [
+            "strike",
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 203,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 235.91,
+      "heapDeltaBytes": 84017896,
+      "inputDigest": "268556812ca7c9a6b0335a1e4380621e44e22661d821903f49fd86348912f904",
+      "outputDigest": "b16a83ebd2ae7fae74bbf147b44c76b5ddf62c283f55d2b40f65c4bd7b3f6da3",
+      "inputUnchanged": true,
+      "artifact": "cases/S10.json"
+    },
+    {
+      "id": "S11",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Sam Rivera: rest 10h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "sam",
+            "strike",
+            "crew-policy-v1"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Priya Shah: rest 10h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "priya",
+            "strike",
+            "crew-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 204,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 236.73,
+      "heapDeltaBytes": 83928752,
+      "inputDigest": "b2af9b44bc65147a36202d588a1ead2c121f251422513310c6c164b87e5daca7",
+      "outputDigest": "137e84a8a2ee82ae9f23cbd8bb93ceb4ec55693d113186b623c02be74b7e23a0",
+      "inputUnchanged": true,
+      "artifact": "cases/S11.json"
+    },
+    {
+      "id": "S12",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "console",
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 205,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 237.6,
+      "heapDeltaBytes": 84057032,
+      "inputDigest": "d7af9b9b82590e3610a9b83a325ceaac02de822cb82f304982a5078ecb68997d",
+      "outputDigest": "92cf54557be1906d04d562308d18ac79d89e115bd2da0f8895d79220804ed6c3",
+      "inputUnchanged": true,
+      "artifact": "cases/S12.json"
+    },
+    {
+      "id": "S13",
+      "state": "pass",
+      "observedStatus": "unknown_pending_evidence",
+      "findings": [
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "rental-delivery",
+            "offer-brightline-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 206,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 239.11,
+      "heapDeltaBytes": 83775240,
+      "inputDigest": "1420f19a9f130c9788d13b16b4507e65f234bad6c6658c4f1dca0bc1ad99c67d",
+      "outputDigest": "5fdbe8aef372ef139111f659386a3129ce9c355b39e73d5fbb6864f2a6fc31f7",
+      "inputUnchanged": true,
+      "artifact": "cases/S13.json"
+    },
+    {
+      "id": "S14",
+      "state": "pass",
+      "observedStatus": "unknown_pending_evidence",
+      "findings": [
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "console",
+            "rental-delivery",
+            "offer-brightline-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 203,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 236.05,
+      "heapDeltaBytes": 84008248,
+      "inputDigest": "98dbe93518338516ab4e77ee9872c6ccebb8b2b95c43f8958abc5b319a441bd4",
+      "outputDigest": "6a1ac9c3898d649fd2a134b266283092662409667e2b28e10405e282382448b3",
+      "inputUnchanged": true,
+      "artifact": "cases/S14.json"
+    },
+    {
+      "id": "S15",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "SOURCE_EARLIEST_START",
+          "severity": "hard",
+          "message": "LX focus begins before its reviewed source window.",
+          "subjects": [
+            "lx-focus",
+            "rider-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 204,
+        "inputDigest": "21fa7f0265f3fc713c793361a20685d50eca14fc21529f4f63074cb569a877b6",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 236.61,
+      "heapDeltaBytes": 84088744,
+      "inputDigest": "67a1bdba7146442f5119775db22c1937579cdb6012014242fb805a9579039314",
+      "outputDigest": "1fba67ba1b42b46e954e62eeffbd1bd1a06f289415ee5cb3d3677b1a5962ebe5",
+      "inputUnchanged": true,
+      "artifact": "cases/S15.json"
+    },
+    {
+      "id": "S16",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "SOURCE_LATEST_END",
+          "severity": "hard",
+          "message": "LX programming & cue validation ends after its reviewed source window.",
+          "subjects": [
+            "lx-program",
+            "rider-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 206,
+        "inputDigest": "33b4868c9c718de4421734bcd21699af3ed9af3aa009951369fad2c0ed0f66be",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 239.17,
+      "heapDeltaBytes": 84209608,
+      "inputDigest": "4c1cb071ad592ddf2e072cbc7e60bd6f50cc13b863aa63147e2981998182af33",
+      "outputDigest": "e39dfccbc4cf9945d36a03a2d135560bf0bef97b7b4abbfcb9f79ee8f7069fd4",
+      "inputUnchanged": true,
+      "artifact": "cases/S16.json"
+    },
+    {
+      "id": "S17",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "SOURCE_AMPLIFIED_CURFEW",
+          "severity": "hard",
+          "message": "The Night Ferries extends beyond the reviewed amplified audio curfew.",
+          "subjects": [
+            "headliner",
+            "rider-v1"
+          ]
+        },
+        {
+          "code": "CURFEW",
+          "severity": "hard",
+          "message": "Amplified audio ends 22:15 after the hard 23:00 curfew.",
+          "subjects": [
+            "headliner",
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 203,
+        "inputDigest": "244dbc96d270f7d86838a078dddae83ef132ad289778a89dcae2595613d87af7",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 236.86,
+      "heapDeltaBytes": 84191224,
+      "inputDigest": "23c572d7bd6d46ffc077fafe5f2cafdccc87b39c8641677529656c793c846d5f",
+      "outputDigest": "79501ec73edd917d70965b13543e087db847558b12a992d64d0469bbd43844be",
+      "inputUnchanged": true,
+      "artifact": "cases/S17.json"
+    },
+    {
+      "id": "S18",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "RESOURCE_OVERLAP",
+          "severity": "hard",
+          "message": "Priya Shah: LX focus overlaps LX focus.",
+          "subjects": [
+            "priya",
+            "computational-second-focus",
+            "crew-policy-v1"
+          ]
+        },
+        {
+          "code": "RESOURCE_OVERLAP",
+          "severity": "hard",
+          "message": "Tom Chen: LX focus overlaps LX focus.",
+          "subjects": [
+            "tom",
+            "computational-second-focus",
+            "crew-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 207,
+        "inputDigest": "9844aa711130ffa47e3cfcbedb073894baba92c92d660d903448479acbd0029c",
+        "resultDigest": "2d5a12dbcbadfba84f8c3ff86ea0d21039c47c926d2908cf7b6741b9c9339ab2",
+        "taskCount": 85,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 240.42,
+      "heapDeltaBytes": 84772712,
+      "inputDigest": "eb998007d8b5d20128871d4a621e62a44fceb0baa44eb7e5f05cc29a83253df1",
+      "outputDigest": "7dc4a8f51e0a34c0fbd14fda87c8da3fbfe7c934a4c265b129cb227298780b02",
+      "inputUnchanged": true,
+      "artifact": "cases/S18.json"
+    },
+    {
+      "id": "S19",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Priya Shah lacks lx programming.",
+          "subjects": [
+            "priya",
+            "lx-program",
+            "crew-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 209,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 242.87,
+      "heapDeltaBytes": 84263616,
+      "inputDigest": "6b41f721f850d0cd5480fe9238ac844879a6da073d8bc5661e5e9a938dd55f8d",
+      "outputDigest": "5749e709a89a9c40d6e31b2ed615d5995ac256f29a48a275bbe292c06006fc42",
+      "inputUnchanged": true,
+      "artifact": "cases/S19.json"
+    },
+    {
+      "id": "S20",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "DURATION_INVALID",
+          "severity": "hard",
+          "message": "LX programming & cue validation has an invalid time interval.",
+          "subjects": [
+            "lx-program",
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "rejected",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 211,
+        "inputDigest": "9454ae5a68336b92ef22cc70ac59572e50cc5cc641bb67a360f772cab752bcee",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": "The engine moved 1 constrained tasks; the proposed times are inconsistent."
+      },
+      "durationMs": 244.16,
+      "heapDeltaBytes": 84145648,
+      "inputDigest": "219d38b9f7d30fe8121d62e40da5b21f55c4302072677775eabc2f31811557b9",
+      "outputDigest": "3908f8a6297f19f86f4c4b39bba9b1a96f7c1d59da17473edf8411c2acef002c",
+      "inputUnchanged": true,
+      "artifact": "cases/S20.json"
+    },
+    {
+      "id": "S21",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "GRAPH_INVALID",
+          "severity": "hard",
+          "message": "Duplicate task identity",
+          "subjects": [
+            "venue-policy-v1"
+          ]
+        },
+        {
+          "code": "GRAPH_INVALID",
+          "severity": "hard",
+          "message": "Dependency cycle",
+          "subjects": [
+            "venue-policy-v1"
+          ]
+        },
+        {
+          "code": "RESOURCE_OVERLAP",
+          "severity": "hard",
+          "message": "Alex Moreno: Venue load-in & rigging overlaps Venue load-in & rigging.",
+          "subjects": [
+            "alex",
+            "load-in",
+            "crew-policy-v1"
+          ]
+        },
+        {
+          "code": "RESOURCE_OVERLAP",
+          "severity": "hard",
+          "message": "Robin Ellis: Venue load-in & rigging overlaps Venue load-in & rigging.",
+          "subjects": [
+            "robin",
+            "load-in",
+            "crew-policy-v1"
+          ]
+        },
+        {
+          "code": "RESOURCE_OVERLAP",
+          "severity": "hard",
+          "message": "Morgan Vale: Venue load-in & rigging overlaps Venue load-in & rigging.",
+          "subjects": [
+            "morgan",
+            "load-in",
+            "crew-policy-v1"
+          ]
+        },
+        {
+          "code": "RESOURCE_OVERLAP",
+          "severity": "hard",
+          "message": "Casey Stone: Venue load-in & rigging overlaps Venue load-in & rigging.",
+          "subjects": [
+            "casey",
+            "load-in",
+            "crew-policy-v1"
+          ]
+        },
+        {
+          "code": "RESOURCE_OVERLAP",
+          "severity": "hard",
+          "message": "Jules Reed: Venue load-in & rigging overlaps Venue load-in & rigging.",
+          "subjects": [
+            "jules",
+            "load-in",
+            "crew-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 24.01,
+      "heapDeltaBytes": 1126272,
+      "inputDigest": "da7048141c543cbd2a00159c1775097106f97cd7c6cf7e2bb80a8da34101792a",
+      "outputDigest": "138745b568faf5f156d02cc14cb3bb8ce276267d5f7b42fa4d5b304b1a4a614e",
+      "inputUnchanged": true,
+      "artifact": "cases/S21.json"
+    },
+    {
+      "id": "S22",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "GRAPH_INVALID",
+          "severity": "hard",
+          "message": "Dependency cycle",
+          "subjects": [
+            "venue-policy-v1"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "Venue load-in & rigging starts before Lighting hang & patch clears.",
+          "subjects": [
+            "load-in",
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 23.05,
+      "heapDeltaBytes": 1132544,
+      "inputDigest": "10b110d5058ee64105e42aff3f86cb32d007270936168f0df3e4d86241323213",
+      "outputDigest": "db0bdf936c7aa2317fcf6a8bb54b620627afa4204bca56ff67f38cde13eb284c",
+      "inputUnchanged": true,
+      "artifact": "cases/S22.json"
+    },
+    {
+      "id": "S23",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "GRAPH_INVALID",
+          "severity": "hard",
+          "message": "Missing dependency computational-missing",
+          "subjects": [
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 23,
+      "heapDeltaBytes": 1007216,
+      "inputDigest": "20ed14c669552bb457bfacbe0538fecc232a105cda06361449adb4b2fda3119e",
+      "outputDigest": "c424a64057295bb8cc8f941b6f428cc828c79140dc97907530a31498559a4de9",
+      "inputUnchanged": true,
+      "artifact": "cases/S23.json"
+    },
+    {
+      "id": "S24",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "GRAPH_INVALID",
+          "severity": "hard",
+          "message": "Duplicate dependency identity",
+          "subjects": [
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 23.34,
+      "heapDeltaBytes": 1049320,
+      "inputDigest": "50adf2b8e6f3b34a2dfe0e7e01a104ed2aed0cb32a83dfb6994b6ccf289d2334",
+      "outputDigest": "1052c3d3d40e54e79e975c9e71ac92b1268dc7d4a5989091edd45ad7de914a25",
+      "inputUnchanged": true,
+      "artifact": "cases/S24.json"
+    },
+    {
+      "id": "S25",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "INVALID_MONEY",
+          "severity": "hard",
+          "message": "All financial amounts must be nonnegative integer cents.",
+          "subjects": [
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 207,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 240.16,
+      "heapDeltaBytes": 84297576,
+      "inputDigest": "24e5b10ccdcf34646d1e040194dedbfdefa2e6aadc67facafa013aaf05bbe11a",
+      "outputDigest": "b4643212d570a88db9a776f499734d22f6fcd2b0561000936859fcd814b3ca16",
+      "inputUnchanged": true,
+      "artifact": "cases/S25.json"
+    },
+    {
+      "id": "S26",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "INVALID_MONEY",
+          "severity": "hard",
+          "message": "All financial amounts must be nonnegative integer cents.",
+          "subjects": [
+            "venue-policy-v1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 207,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 239.46,
+      "heapDeltaBytes": 84028112,
+      "inputDigest": "398a939c4dd19d56fcd43b922223b95a95697b110c967c1401841826cb9d373f",
+      "outputDigest": "baf11ce7bd565bd89fe468472044b5bfd175f1dda9eb802af15f04e5db38a1bf",
+      "inputUnchanged": true,
+      "artifact": "cases/S26.json"
+    },
+    {
+      "id": "S27",
+      "state": "pass",
+      "observedStatus": "unknown_pending_evidence",
+      "findings": [
+        {
+          "code": "AUTHENTICATED_QUOTE_REQUIRED",
+          "severity": "unknown",
+          "message": "Request the enrolled supplier's authenticated current terms before approving this plan.",
+          "subjects": [
+            "offer-brightline-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 204,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 236.75,
+      "heapDeltaBytes": 84112608,
+      "inputDigest": "d63b60b214490e8606727e06f150032e688291c41bbb10c560cfbc590bdefd19",
+      "outputDigest": "3d6ace5058f4a17037c81abb2f289a5a27f1a6d87df320317fe41ba17bfe33ed",
+      "inputUnchanged": true,
+      "artifact": "cases/S27.json"
+    },
+    {
+      "id": "S28",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "DELIVERY_WINDOW",
+          "severity": "hard",
+          "message": "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.",
+          "subjects": [
+            "console",
+            "lx-focus",
+            "offer-brightline-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "costMinor": 123000,
+        "doorsLocal": "19:00",
+        "crewRestMinutes": 630,
+        "artistApprovalRequired": false,
+        "approvalsGranted": 0,
+        "changedPeople": 4
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 210,
+        "inputDigest": "49ee6990fe0112c7f6d2d5ffdbbb9c317a52a1564f7e6195d8ff92206877d5b0",
+        "resultDigest": "055b7fa709c4a9933bc40c33aa626117037ba69fb0f46fd2f4ac612b5ebbaa9d",
+        "taskCount": 84,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 243.33,
+      "heapDeltaBytes": 83838440,
+      "inputDigest": "7038e094ba4afdc0fbd146f40306e7bd2cec2def268bd7f32999da3b063e7c9d",
+      "outputDigest": "8f140c61837cc0da9eb0fc1e4ef9ca1899eb15f3cbb89e1b0321b575ffbdb0c8",
+      "inputUnchanged": true,
+      "artifact": "cases/S28.json"
+    },
+    {
+      "id": "S29",
+      "state": "pass",
+      "observedStatus": "no_approvable",
+      "findings": [
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "doors-brightline-1",
+            "console"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "budget-brightline-1",
+            "console"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Sam Rivera: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-brightline-1",
+            "sam",
+            "strike"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Priya Shah: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-brightline-1",
+            "priya",
+            "strike"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "artist-brightline-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "LX focus starts before Rental fee captured · PayPal clears.",
+          "subjects": [
+            "direct-brightline-1",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx programming.",
+          "subjects": [
+            "direct-brightline-1",
+            "tom",
+            "lx-program"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "direct-brightline-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DELIVERY_WINDOW",
+          "severity": "hard",
+          "message": "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.",
+          "subjects": [
+            "direct-brightline-1",
+            "console",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "ENGINE_REJECTED",
+          "severity": "hard",
+          "message": "The engine moved 2 constrained tasks; the proposed times are inconsistent.",
+          "subjects": [
+            "direct-brightline-1"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "DOORS · house open starts before DOORS readiness check clears.",
+          "subjects": [
+            "doors-northside-1",
+            "doors"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "doors-northside-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DOORS_SEQUENCE",
+          "severity": "hard",
+          "message": "Cue validation finishes 20:00; doors need a five-minute handover.",
+          "subjects": [
+            "doors-northside-1",
+            "doors"
+          ]
+        },
+        {
+          "code": "ENGINE_REJECTED",
+          "severity": "hard",
+          "message": "The engine moved 1 constrained tasks; the proposed times are inconsistent.",
+          "subjects": [
+            "doors-northside-1"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "budget-northside-1",
+            "console"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Sam Rivera: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-northside-1",
+            "sam",
+            "strike"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Priya Shah: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-northside-1",
+            "priya",
+            "strike"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "artist-northside-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "LX focus starts before Rental fee captured · PayPal clears.",
+          "subjects": [
+            "direct-northside-1",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx programming.",
+          "subjects": [
+            "direct-northside-1",
+            "tom",
+            "lx-program"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "direct-northside-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DELIVERY_WINDOW",
+          "severity": "hard",
+          "message": "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.",
+          "subjects": [
+            "direct-northside-1",
+            "console",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "ENGINE_REJECTED",
+          "severity": "hard",
+          "message": "The engine moved 4 constrained tasks; the proposed times are inconsistent.",
+          "subjects": [
+            "direct-northside-1"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "doors-sister-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "doors-sister-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "doors-sister-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "budget-sister-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "budget-sister-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "budget-sister-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Sam Rivera: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-sister-1",
+            "sam",
+            "strike"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Priya Shah: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-sister-1",
+            "priya",
+            "strike"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "artist-sister-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "artist-sister-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "artist-sister-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "LX focus starts before Rental fee captured · PayPal clears.",
+          "subjects": [
+            "direct-sister-1",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx programming.",
+          "subjects": [
+            "direct-sister-1",
+            "tom",
+            "lx-program"
+          ]
+        },
+        {
+          "code": "CONSOLE_COMPATIBILITY",
+          "severity": "hard",
+          "message": "The offered console does not meet the approved compatibility requirement.",
+          "subjects": [
+            "direct-sister-1",
+            "console"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "direct-sister-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "direct-sister-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DELIVERY_WINDOW",
+          "severity": "hard",
+          "message": "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.",
+          "subjects": [
+            "direct-sister-1",
+            "console",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "ENGINE_REJECTED",
+          "severity": "hard",
+          "message": "The engine moved 2 constrained tasks; the proposed times are inconsistent.",
+          "subjects": [
+            "direct-sister-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "generated": 12,
+        "approvable": 0,
+        "unresolved": 0,
+        "engineUnavailable": 0
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 666.44,
+      "heapDeltaBytes": 122331144,
+      "inputDigest": "99b0cee90721bb1f3b9a818cab19e0a00f317316683e743224cd6b033de8d070",
+      "outputDigest": "52c117be4b3dad43b73c00345d6730acd4706d28d61050733a5f5b603b73a48a",
+      "inputUnchanged": true,
+      "artifact": "cases/S29.json"
+    },
+    {
+      "id": "S30",
+      "state": "pass",
+      "observedStatus": "no_approvable",
+      "findings": [
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "doors-brightline-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "doors-brightline-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "budget-brightline-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "budget-brightline-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Sam Rivera: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-brightline-1",
+            "sam",
+            "strike"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Priya Shah: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-brightline-1",
+            "priya",
+            "strike"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "artist-brightline-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "artist-brightline-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "LX focus starts before Rental fee captured · PayPal clears.",
+          "subjects": [
+            "direct-brightline-1",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx programming.",
+          "subjects": [
+            "direct-brightline-1",
+            "tom",
+            "lx-program"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "direct-brightline-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "direct-brightline-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DELIVERY_WINDOW",
+          "severity": "hard",
+          "message": "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.",
+          "subjects": [
+            "direct-brightline-1",
+            "console",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "ENGINE_REJECTED",
+          "severity": "hard",
+          "message": "The engine moved 2 constrained tasks; the proposed times are inconsistent.",
+          "subjects": [
+            "direct-brightline-1"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "DOORS · house open starts before DOORS readiness check clears.",
+          "subjects": [
+            "doors-northside-1",
+            "doors"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "doors-northside-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "doors-northside-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DOORS_SEQUENCE",
+          "severity": "hard",
+          "message": "Cue validation finishes 20:00; doors need a five-minute handover.",
+          "subjects": [
+            "doors-northside-1",
+            "doors"
+          ]
+        },
+        {
+          "code": "ENGINE_REJECTED",
+          "severity": "hard",
+          "message": "The engine moved 1 constrained tasks; the proposed times are inconsistent.",
+          "subjects": [
+            "doors-northside-1"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "budget-northside-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "budget-northside-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Sam Rivera: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-northside-1",
+            "sam",
+            "strike"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Priya Shah: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-northside-1",
+            "priya",
+            "strike"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "artist-northside-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "artist-northside-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "LX focus starts before Rental fee captured · PayPal clears.",
+          "subjects": [
+            "direct-northside-1",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx programming.",
+          "subjects": [
+            "direct-northside-1",
+            "tom",
+            "lx-program"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "direct-northside-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "direct-northside-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DELIVERY_WINDOW",
+          "severity": "hard",
+          "message": "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.",
+          "subjects": [
+            "direct-northside-1",
+            "console",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "ENGINE_REJECTED",
+          "severity": "hard",
+          "message": "The engine moved 4 constrained tasks; the proposed times are inconsistent.",
+          "subjects": [
+            "direct-northside-1"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "doors-sister-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "doors-sister-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "budget-sister-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "budget-sister-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Sam Rivera: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-sister-1",
+            "sam",
+            "strike"
+          ]
+        },
+        {
+          "code": "CREW_REST",
+          "severity": "hard",
+          "message": "Priya Shah: rest 9h30 < 10h before Sunday’s call.",
+          "subjects": [
+            "artist-sister-1",
+            "priya",
+            "strike"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "artist-sister-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "artist-sister-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DEPENDENCY_ORDER",
+          "severity": "hard",
+          "message": "LX focus starts before Rental fee captured · PayPal clears.",
+          "subjects": [
+            "direct-sister-1",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx programming.",
+          "subjects": [
+            "direct-sister-1",
+            "tom",
+            "lx-program"
+          ]
+        },
+        {
+          "code": "DRIVER_UNKNOWN",
+          "severity": "unknown",
+          "message": "A qualified collection driver has not been confirmed.",
+          "subjects": [
+            "direct-sister-1",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "CONDITION_UNKNOWN",
+          "severity": "unknown",
+          "message": "The loan console’s condition report is still missing.",
+          "subjects": [
+            "direct-sister-1",
+            "console",
+            "rental-delivery"
+          ]
+        },
+        {
+          "code": "DELIVERY_WINDOW",
+          "severity": "hard",
+          "message": "Lighting focus begins before the latest attributed delivery, acceptance and handover can clear.",
+          "subjects": [
+            "direct-sister-1",
+            "console",
+            "lx-focus"
+          ]
+        },
+        {
+          "code": "ENGINE_REJECTED",
+          "severity": "hard",
+          "message": "The engine moved 2 constrained tasks; the proposed times are inconsistent.",
+          "subjects": [
+            "direct-sister-1"
+          ]
+        }
+      ],
+      "measurements": {
+        "generated": 12,
+        "approvable": 0,
+        "unresolved": 5,
+        "engineUnavailable": 0
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 667.54,
+      "heapDeltaBytes": 133013928,
+      "inputDigest": "b9484c2d698471d2c08d2c2061b9c46aef2ba1f135c3fc97c406aec016464b4a",
+      "outputDigest": "09a5312f5eda3c68d7d1a71bf0bc0795f46e74e1752815e26814878841cdbbf1",
+      "inputUnchanged": true,
+      "artifact": "cases/S30.json"
+    },
+    {
+      "id": "S31",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "STALE_CANDIDATE",
+          "severity": "hard",
+          "message": "The actual domain boundary rejected the controlled input.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "approved": false,
+        "sourceStillCurrent": false
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 22.46,
+      "heapDeltaBytes": 1384736,
+      "inputDigest": "a7a41273a6aac919169087c4bca841a0ab9f61b87ea9c7df7da1a911f33cc4a2",
+      "outputDigest": "094d2495928a17fb13ab6468d99c8c6d64bb7c0b776901e174b029aaf3850d1e",
+      "inputUnchanged": true,
+      "artifact": "cases/S31.json"
+    },
+    {
+      "id": "S32",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "PLAN_NOT_FEASIBLE",
+          "severity": "hard",
+          "message": "The actual domain boundary rejected the controlled input.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "approved": false,
+        "sourceStillCurrent": true
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 24.23,
+      "heapDeltaBytes": 3233672,
+      "inputDigest": "4d6fc0a94ffef9b4c43a8b630bd70a7e5e4b9c5cf8df09a04df73f4111075299",
+      "outputDigest": "aff27e94424c733273e0161ee1f76ea397a0d7c5ed649fb591d074887716d86a",
+      "inputUnchanged": true,
+      "artifact": "cases/S32.json"
+    },
+    {
+      "id": "S33",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "ROLE_REQUIRED",
+          "severity": "hard",
+          "message": "The actual domain boundary rejected the controlled input.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "approved": false,
+        "sourceStillCurrent": true
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 23.38,
+      "heapDeltaBytes": 590784,
+      "inputDigest": "8c02e07024a0555099f71e9bcffa5ede5fa39991628df4d7eeecc347a09c2272",
+      "outputDigest": "9b115ce69cf107934b4d5fb27be4a0e75aac0dd87daa958de9ea4388c0ead90a",
+      "inputUnchanged": true,
+      "artifact": "cases/S33.json"
+    },
+    {
+      "id": "T01",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "MINIMUM_REST",
+          "severity": "hard",
+          "message": "Sam Rivera has 390 minutes of uninterrupted rest; 600 are required. Travel, loading and unloading are duty.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 2040 minutes without a complete rest break; the maximum is 1440.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "sam"
+          ]
+        },
+        {
+          "code": "MINIMUM_REST",
+          "severity": "hard",
+          "message": "Priya Shah has 510 minutes of uninterrupted rest; 600 are required. Travel, loading and unloading are duty.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 1920 minutes without a complete rest break; the maximum is 1440.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "priya"
+          ]
+        },
+        {
+          "code": "MINIMUM_REST",
+          "severity": "hard",
+          "message": "Tom Chen has 390 minutes of uninterrupted rest; 600 are required. Travel, loading and unloading are duty.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "tom",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 2040 minutes without a complete rest break; the maximum is 1440.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "tom"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 390,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 178,
+        "inputDigest": "e2280b2cc4a6ebbf04206acf5a8c6aca215bd02ae15e11bc7f9a152be1239dcf",
+        "resultDigest": "aa327f922ada1a1e3cf08976d7f3e306134bc44fa5cd5b81cfcb200d3907ee77",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 212.36,
+      "heapDeltaBytes": 70231368,
+      "inputDigest": "4323a2f0868ba799d1a87ab8279164f42c215d722fb497582382646aaba93a19",
+      "outputDigest": "b8cf6fa943d01aa8d972f4aa8c2c345e6855b0c3cec1725ae0d4512a7d471e9c",
+      "inputUnchanged": true,
+      "artifact": "cases/T01.json"
+    },
+    {
+      "id": "T02",
+      "state": "pass",
+      "observedStatus": "feasible",
+      "findings": [],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 177,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 211.92,
+      "heapDeltaBytes": 70239464,
+      "inputDigest": "89f024ffd766304781c1dfbfcb8e8e30f0b82da3b675ac6a617019a51c85044a",
+      "outputDigest": "732998ef1dab3d513d87b784e09a04e0a38ffa80233e2ac9db5582e2bb9ea8a5",
+      "inputUnchanged": true,
+      "artifact": "cases/T02.json"
+    },
+    {
+      "id": "T03",
+      "state": "pass",
+      "observedStatus": "feasible",
+      "findings": [],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 840,
+        "travelForecastMinor": 58000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 172,
+        "inputDigest": "65b246548f8cb098997093e394665556c8a37f14c6d517583ddd5ad5b1300d49",
+        "resultDigest": "c8b2a4286b8dbf12938239f36101d2b5b4ea944aff6594b42b829fc565bf1217",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 207.97,
+      "heapDeltaBytes": 70312520,
+      "inputDigest": "1c41c50670f9f8bd4ff5d13e446ed6e4e35a3b250ad8fdcfcefb9c7693c02826",
+      "outputDigest": "9d667a2d39c9b8cc9ef953a0de8690354137ebe193b49433b74b885200b61fda",
+      "inputUnchanged": true,
+      "artifact": "cases/T03.json"
+    },
+    {
+      "id": "T04",
+      "state": "pass",
+      "observedStatus": "unknown",
+      "findings": [
+        {
+          "code": "TRAVEL_UNKNOWN",
+          "severity": "unknown",
+          "message": "Omaha → Chicago · rail enquiry: duration or route evidence is unknown.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "sam",
+            "priya",
+            "tom",
+            "tour-console",
+            "fixture-rail"
+          ]
+        },
+        {
+          "code": "TRAVEL_SOURCE_UNKNOWN",
+          "severity": "unknown",
+          "message": "No timetable or carrier evidence is supplied. Travel time and cost remain unknown.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "sam",
+            "priya",
+            "tom",
+            "tour-console",
+            "fixture-rail"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": null,
+        "travelMinutes": null,
+        "travelForecastMinor": 26000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 173,
+        "inputDigest": "e2280b2cc4a6ebbf04206acf5a8c6aca215bd02ae15e11bc7f9a152be1239dcf",
+        "resultDigest": "aa327f922ada1a1e3cf08976d7f3e306134bc44fa5cd5b81cfcb200d3907ee77",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 207.49,
+      "heapDeltaBytes": 70210624,
+      "inputDigest": "26d16eba3b3952ce442424d319e199fe84d89f55aa42a345cbb02d89feef666b",
+      "outputDigest": "5167352fb744215e559dc009726523b3de1b737be17599d2abecee1f3b180265",
+      "inputUnchanged": true,
+      "artifact": "cases/T04.json"
+    },
+    {
+      "id": "T05",
+      "state": "pass",
+      "observedStatus": "unknown",
+      "findings": [
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Sam Rivera has no complete explicit move between Lantern Theatre and Prairie Rooms.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "sam"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Sam Rivera has no complete explicit move between Prairie Rooms and Mercury Hall.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "sam"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Priya Shah has no complete explicit move between Lantern Theatre and Prairie Rooms.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "priya"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Priya Shah has no complete explicit move between Prairie Rooms and Mercury Hall.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "priya"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Tom Chen has no complete explicit move between Lantern Theatre and Prairie Rooms.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "tom"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Tom Chen has no complete explicit move between Prairie Rooms and Mercury Hall.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "tom"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Console A · planned tour unit has no complete explicit move between Lantern Theatre and Prairie Rooms.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Console A · planned tour unit has no complete explicit move between Prairie Rooms and Mercury Hall.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "tour-console"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": null,
+        "travelMinutes": 0,
+        "travelForecastMinor": 0,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 180,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 209.87,
+      "heapDeltaBytes": 73554528,
+      "inputDigest": "04ac73587bdd2e176d8a88ce8771656a34ea1fac033a761190a609603146c365",
+      "outputDigest": "dbce8a093350f47ef9f799315ed096cc4b7cf479557b8cd691ac94c779058002",
+      "inputUnchanged": true,
+      "artifact": "cases/T05.json"
+    },
+    {
+      "id": "T06",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx_programming for LX focus & programming.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "focus",
+            "tom",
+            "fixture-rider",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx_programming for The Night Ferries · performance.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "show",
+            "tom",
+            "fixture-rider",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Tom Chen lacks lx_programming for Quiet strike & release.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "tom",
+            "fixture-rider",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Tom Chen needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "strike",
+            "tom"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 175,
+        "inputDigest": "9c601102432753fd810f7f106ac2be360f0ffb71bd25e2ab6ea73e755da5b603",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 212.47,
+      "heapDeltaBytes": 70288256,
+      "inputDigest": "74d060e8abdc9b1b373aaf4525690b6bc5d32093abe540f2b8c72a9cf0582526",
+      "outputDigest": "7375baec537d1fbc3f5e0f947aaf7f369d91561d3083fea46d64f13990034ad1",
+      "inputUnchanged": true,
+      "artifact": "cases/T06.json"
+    },
+    {
+      "id": "T07",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Sam Rivera needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "load-in",
+            "load-in",
+            "sam"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Sam Rivera needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "show",
+            "show",
+            "sam"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Sam Rivera needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "strike",
+            "strike",
+            "sam"
+          ]
+        },
+        {
+          "code": "MINIMUM_REST",
+          "severity": "hard",
+          "message": "Sam Rivera has 0 minutes of uninterrupted rest; 600 are required. Travel, loading and unloading are duty.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "sam",
+            "fixture-route",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Priya Shah needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "focus",
+            "focus",
+            "priya"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Priya Shah needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "show",
+            "show",
+            "priya"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Priya Shah needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "strike",
+            "strike",
+            "priya"
+          ]
+        },
+        {
+          "code": "MINIMUM_REST",
+          "severity": "hard",
+          "message": "Priya Shah has 0 minutes of uninterrupted rest; 600 are required. Travel, loading and unloading are duty.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "priya",
+            "fixture-route",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Tom Chen needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "load-in",
+            "load-in",
+            "tom"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Tom Chen needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "line-check",
+            "line-check",
+            "tom"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Tom Chen needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "strike",
+            "strike",
+            "tom"
+          ]
+        },
+        {
+          "code": "MINIMUM_REST",
+          "severity": "hard",
+          "message": "Tom Chen has 0 minutes of uninterrupted rest; 600 are required. Travel, loading and unloading are duty.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "tom",
+            "fixture-route",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "load-in",
+            "load-in",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "focus",
+            "focus",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "line-check",
+            "line-check",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "show",
+            "show",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "strike",
+            "strike",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Sam Rivera has no complete explicit move between Lantern Theatre and Prairie Rooms.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "sam"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Priya Shah has no complete explicit move between Lantern Theatre and Prairie Rooms.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "priya"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Tom Chen has no complete explicit move between Lantern Theatre and Prairie Rooms.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "tom"
+          ]
+        },
+        {
+          "code": "TRAVEL_PATH_MISSING",
+          "severity": "unknown",
+          "message": "Console A · planned tour unit has no complete explicit move between Lantern Theatre and Prairie Rooms.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000099",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "tour-console"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 4,
+        "taskCount": 20,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 177,
+        "inputDigest": "29497f7ce34f2e961360ab7e53794e040b84e5a4873a156f217db03f0749e624",
+        "resultDigest": "25484cf7f6a222e4793d7fb170822cc95bc49d61b4a4365b2a4272f38ae889e0",
+        "taskCount": 20,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 216.46,
+      "heapDeltaBytes": 74050360,
+      "inputDigest": "00e1249d6a445b2664455e71c709a04c75f2a46c712a6aadca733562804c3259",
+      "outputDigest": "efb4f03840e1bd70cbda0a5f913e1886f10f56facea16c7da2ebf53cf0b96e0f",
+      "inputUnchanged": true,
+      "artifact": "cases/T07.json"
+    },
+    {
+      "id": "T08",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "RESOURCE_CAPACITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit provides capacity 1; Portable lighting console requires 2.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "tour-console",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_CAPACITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit provides capacity 1; Portable lighting console requires 2.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "focus",
+            "tour-console",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_CAPACITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit provides capacity 1; Portable lighting console requires 2.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "line-check",
+            "tour-console",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_CAPACITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit provides capacity 1; Portable lighting console requires 2.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "show",
+            "tour-console",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_CAPACITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit provides capacity 1; Portable lighting console requires 2.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "tour-console",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 1 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 1 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "focus",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 1 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "line-check",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 1 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "show",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 1 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "tour-console"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 173,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 208.46,
+      "heapDeltaBytes": 70238608,
+      "inputDigest": "f3430504d71032d31f0670055e47ad1bb5240d0d10d6e3106609488ac6297629",
+      "outputDigest": "13f7019c38ea1a1652be344758afc177928f37d62bd45e8024a37b9ba1ad373e",
+      "inputUnchanged": true,
+      "artifact": "cases/T08.json"
+    },
+    {
+      "id": "T09",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "RESOURCE_KIND",
+          "severity": "hard",
+          "message": "Console A · planned tour unit is not the required person.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Console A · planned tour unit lacks lx_focus for Load-in & stage access.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "tour-console",
+            "fixture-rider",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_KIND",
+          "severity": "hard",
+          "message": "Console A · planned tour unit is not the required person.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "line-check",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Console A · planned tour unit lacks lx_focus for Lighting line check.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "line-check",
+            "tour-console",
+            "fixture-rider",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_KIND",
+          "severity": "hard",
+          "message": "Console A · planned tour unit is not the required person.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "QUALIFICATION",
+          "severity": "hard",
+          "message": "Console A · planned tour unit lacks lx_focus for Quiet strike & release.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "tour-console",
+            "fixture-rider",
+            "fixture-rider"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "load-in",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "line-check",
+            "line-check",
+            "tour-console"
+          ]
+        },
+        {
+          "code": "RESOURCE_EXCLUSIVITY",
+          "severity": "hard",
+          "message": "Console A · planned tour unit needs 2 capacity units across 2 overlapping calls or journeys; 1 are available.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "strike",
+            "tour-console"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 174,
+        "inputDigest": "4bbd7463412d70efad547ab6f38808be64926f953e5640d02710aa3cf442658e",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 209.86,
+      "heapDeltaBytes": 70293992,
+      "inputDigest": "8fc9849fd10e8b8fb80fce9a51b53cea3484ec939a4e488cfbb709d3fd8fc0e8",
+      "outputDigest": "cdd3753a40fa24eb42ceb437a564414a4fcd05f4913595fc6b24432e7654c90b",
+      "inputUnchanged": true,
+      "artifact": "cases/T09.json"
+    },
+    {
+      "id": "T10",
+      "state": "pass",
+      "observedStatus": "unknown",
+      "findings": [
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "focus",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "show",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "focus",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "show",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "strike",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "focus",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "show",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Priya Shah's availability is not established.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "strike",
+            "priya",
+            "fixture-route"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 174,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 210.42,
+      "heapDeltaBytes": 72296160,
+      "inputDigest": "e2e5762d7012fc95b944e63c888c2747e28d499bec6f1ca1b0d2417825138f12",
+      "outputDigest": "897e3f92b659b24132d63398ee85b82db0d40dac88aabdad9a95577be53c78f3",
+      "inputUnchanged": true,
+      "artifact": "cases/T10.json"
+    },
+    {
+      "id": "T11",
+      "state": "pass",
+      "observedStatus": "needs_review",
+      "findings": [
+        {
+          "code": "AVAILABILITY_REVIEW",
+          "severity": "approval",
+          "message": "Review the declared availability assumption for Priya Shah.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_REVIEW",
+          "severity": "approval",
+          "message": "Review the declared availability assumption for Priya Shah.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "priya",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY_REVIEW",
+          "severity": "approval",
+          "message": "Review the declared availability assumption for Priya Shah.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "priya",
+            "fixture-route"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 177,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 212.51,
+      "heapDeltaBytes": 72316560,
+      "inputDigest": "a25e3cbfaf4c3e5dec238654c6df1a3ead7e8a5de6becfb7930c4b1d9911023b",
+      "outputDigest": "0223296dcc64bb8ec566adfba564a25b12ac7ed03f60ce23f1bc40ff94806799",
+      "inputUnchanged": true,
+      "artifact": "cases/T11.json"
+    },
+    {
+      "id": "T12",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is unavailable for The Night Ferries · performance.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "show",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is unavailable for Quiet strike & release.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is unavailable for Load-in & stage access.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "load-in",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is unavailable for The Night Ferries · performance.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "show",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is unavailable for Quiet strike & release.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "strike",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is unavailable for Load-in & stage access.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "load-in",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is unavailable for The Night Ferries · performance.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "show",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is unavailable for Quiet strike & release.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "strike",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "TRAVEL_AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is not available throughout Denver → Omaha · declared road move.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "sam",
+            "fixture-route"
+          ]
+        },
+        {
+          "code": "TRAVEL_AVAILABILITY",
+          "severity": "hard",
+          "message": "Sam Rivera is not available throughout Omaha → Chicago · overnight move.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "sam",
+            "fixture-route"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 174,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 209.76,
+      "heapDeltaBytes": 70316024,
+      "inputDigest": "93daf29b6e3f636dea12da002101a65f418476b7e09b4e0b4b669a3589028317",
+      "outputDigest": "193549b4eb60bc4940a766fe96dd18d05c58925a1c321df434156edf453f3fa7",
+      "inputUnchanged": true,
+      "artifact": "cases/T12.json"
+    },
+    {
+      "id": "T13",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 1050 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 360 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 480 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "priya"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "priya"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 480 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "priya"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 930 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "priya"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "tom"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "tom"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "tom"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 1050 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "tom"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 360 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "tom"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 175,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 210.7,
+      "heapDeltaBytes": 70288248,
+      "inputDigest": "0f7b815ed86d4ac4cb855de5d27cc5e8d462ad5876882452a39a135384eb5ae3",
+      "outputDigest": "013a6923fd481c104c7f1c130534dcc2c6603085b873cee915e92f2b4f5ee4e9",
+      "inputUnchanged": true,
+      "artifact": "cases/T13.json"
+    },
+    {
+      "id": "T14",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "CURFEW",
+          "severity": "hard",
+          "message": "The Night Ferries · performance exceeds the hard amplified-audio curfew.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "show",
+            "fixture-rider"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 174,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 209.09,
+      "heapDeltaBytes": 70285192,
+      "inputDigest": "c397991cf28b1307aee1de455b789628138ab143d5a5f3ef7185f4d729e03ce2",
+      "outputDigest": "bce9b02aaca809e1af029a20069de9c0560c985133774cc9bac35943df1309c2",
+      "inputUnchanged": true,
+      "artifact": "cases/T14.json"
+    },
+    {
+      "id": "T15",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "VENUE_ACCESS",
+          "severity": "hard",
+          "message": "Load-in & stage access begins before venue access.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "fixture-rider"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 176,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 211.4,
+      "heapDeltaBytes": 70296056,
+      "inputDigest": "78cd5d0b1f42af6a4039ad8c6d15bf707da06c705a8c4163fff0f6fdda31d5b2",
+      "outputDigest": "112f62ac17da44e09abd6a03dfb844ee391a5df80f498a507c02a536db4e3468",
+      "inputUnchanged": true,
+      "artifact": "cases/T15.json"
+    },
+    {
+      "id": "T16",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "EARLIEST_START",
+          "severity": "hard",
+          "message": "Load-in & stage access begins before its retained source window.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "fixture-rider"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 177,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 213.02,
+      "heapDeltaBytes": 70197616,
+      "inputDigest": "93824f08b396d06d2390b2d9d792f5f103ffbfd3e5b83e892cba30bdf8756f89",
+      "outputDigest": "a092b8005ec007f083e692e4a3499670434f9627426b89c359122b7f7834c1df",
+      "inputUnchanged": true,
+      "artifact": "cases/T16.json"
+    },
+    {
+      "id": "T17",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "LATEST_END",
+          "severity": "hard",
+          "message": "Load-in & stage access ends after its retained source window.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "fixture-rider"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 175,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 210.78,
+      "heapDeltaBytes": 70274200,
+      "inputDigest": "e951c71cbbca12dd9f0ed0fd6698f6089022ef208db103197f1ec80cee13e312",
+      "outputDigest": "12294a41bd3afcc8a0affb718683ac358cc8b22102d708ddac619916918558f0",
+      "inputUnchanged": true,
+      "artifact": "cases/T17.json"
+    },
+    {
+      "id": "T18",
+      "state": "pass",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "DEPENDENCY_LAG",
+          "severity": "hard",
+          "message": "LX focus & programming starts before Load-in & stage access and its 300-minute buffer finish.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in",
+            "focus",
+            "fixture-rider"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "rejected",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 175,
+        "inputDigest": "d106881cd5479c2a9be9daf48074080ffef3b28884b12f6bbce7e3b466e7f11e",
+        "resultDigest": "37b7001eb6a7711a58bd8e2d26dd45b02426953ee7c0355d1e918243f9259689",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 210.71,
+      "heapDeltaBytes": 70186184,
+      "inputDigest": "8825236479804a2886e1e2bbe8c5a5d7d22e2dacc1781bdc1c081727fd41e997",
+      "outputDigest": "817812da27c7483239e52d94e4367a1d66d7c5540af9a73883e3d2d32a6a8cf8",
+      "inputUnchanged": true,
+      "artifact": "cases/T18.json"
+    },
+    {
+      "id": "T19",
+      "state": "pass",
+      "observedStatus": "unknown",
+      "findings": [
+        {
+          "code": "SOURCE_UNKNOWN",
+          "severity": "unknown",
+          "message": "Night Ferries touring requirements · sample v1: Synthetic planning inputs for deterministic qualification. No physical work, booking, availability or market price is asserted.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "fixture-rider"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 175,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 212.32,
+      "heapDeltaBytes": 70232864,
+      "inputDigest": "c8e59f7a80be3a9dc59b7beaf205d6bb24fae06768688ee00879c1a621c9fc52",
+      "outputDigest": "3eb25e745bc0c18c3fbc3b3461be4b39fd1ad856cc0ed2452a1567aa5d849b8c",
+      "inputUnchanged": true,
+      "artifact": "cases/T19.json"
+    },
+    {
+      "id": "T20",
+      "state": "pass",
+      "observedStatus": "needs_review",
+      "findings": [
+        {
+          "code": "ASSUMPTION_REVIEW",
+          "severity": "approval",
+          "message": "Review Night Ferries touring requirements · sample v1: Synthetic planning inputs for deterministic qualification. No physical work, booking, availability or market price is asserted.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "fixture-rider"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 176,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 213.07,
+      "heapDeltaBytes": 70175016,
+      "inputDigest": "5985cb318433e6d5854e42d9ec8047ded07fe2ffe29d50f195a36503af4f1d87",
+      "outputDigest": "b5303e4492a5642f9bbff89e6bee6f5a4ea0f3ea6277890140f1e2d76636e0af",
+      "inputUnchanged": true,
+      "artifact": "cases/T20.json"
+    },
+    {
+      "id": "T21",
+      "state": "pass",
+      "observedStatus": "unknown",
+      "findings": [
+        {
+          "code": "RESOURCE_UNASSIGNED",
+          "severity": "unknown",
+          "message": "Load-in & stage access: Portable lighting console is not allocated to a current tour resource.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "load-in"
+          ]
+        },
+        {
+          "code": "RESOURCE_UNASSIGNED",
+          "severity": "unknown",
+          "message": "LX focus & programming: Portable lighting console is not allocated to a current tour resource.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "focus"
+          ]
+        },
+        {
+          "code": "RESOURCE_UNASSIGNED",
+          "severity": "unknown",
+          "message": "Lighting line check: Portable lighting console is not allocated to a current tour resource.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "line-check"
+          ]
+        },
+        {
+          "code": "RESOURCE_UNASSIGNED",
+          "severity": "unknown",
+          "message": "The Night Ferries · performance: Portable lighting console is not allocated to a current tour resource.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "show"
+          ]
+        },
+        {
+          "code": "RESOURCE_UNASSIGNED",
+          "severity": "unknown",
+          "message": "Quiet strike & release: Portable lighting console is not allocated to a current tour resource.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "strike"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 175,
+        "inputDigest": "d38a0abe59c0d4cf0efddbe3b330ee95270ed6542094a6a660e5df4d38044cbf",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 210.16,
+      "heapDeltaBytes": 70252672,
+      "inputDigest": "c042deaac0c480f2ef27cae815ae3682912f21f9159c804162cddd146f66ebe4",
+      "outputDigest": "302eb48737175e2c29c0c1c05f14817bc9afe491b52082744b21b0c767b2ebed",
+      "inputUnchanged": true,
+      "artifact": "cases/T21.json"
+    },
+    {
+      "id": "T22",
+      "state": "pass",
+      "observedStatus": "unknown",
+      "findings": [
+        {
+          "code": "POLICY_UNKNOWN",
+          "severity": "unknown",
+          "message": "Computational Night Ferries · Denver is missing its rest or maximum-duty policy.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 175,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 210.41,
+      "heapDeltaBytes": 72243248,
+      "inputDigest": "488ed34ff33bf6cbbba004248aa45298e5c3dfff8001dee71dec5ade76895925",
+      "outputDigest": "924e291cdcc3b12649e8e171e27fb9e2ed6145d4ff244fce0aceb3701ffa19ad",
+      "inputUnchanged": true,
+      "artifact": "cases/T22.json"
+    },
+    {
+      "id": "T23",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "TOUR_CANDIDATE_SCOPE",
+          "severity": "hard",
+          "message": "The actual domain boundary rejected the controlled input.",
+          "subjects": []
+        }
+      ],
+      "measurements": {},
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 15.71,
+      "heapDeltaBytes": -1993656,
+      "inputDigest": "89f024ffd766304781c1dfbfcb8e8e30f0b82da3b675ac6a617019a51c85044a",
+      "outputDigest": "20a6fda5dca16c5cc558904d1b119ee49ed75dc492765df7cffe72325af85f70",
+      "inputUnchanged": true,
+      "artifact": "cases/T23.json"
+    },
+    {
+      "id": "T24",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "TOUR_AMBIGUOUS_PATH",
+          "severity": "hard",
+          "message": "The actual domain boundary rejected the controlled input.",
+          "subjects": []
+        }
+      ],
+      "measurements": {},
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 16.28,
+      "heapDeltaBytes": -1656160,
+      "inputDigest": "9c3e5aaf9d783a12659a35273a129648bc82fe8fdc18f321e464ad1959c6e71a",
+      "outputDigest": "5ce816f91c6ba26b63bc53f447c201eb0695d9890d8d15b6f691ef1456295b6f",
+      "inputUnchanged": true,
+      "artifact": "cases/T24.json"
+    },
+    {
+      "id": "C01",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "TOUR_DST_GAP",
+          "severity": "hard",
+          "message": "All three offset choices reject the nonexistent local clock.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "choicesRejected": 3
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.85,
+      "heapDeltaBytes": 416656,
+      "inputDigest": "05f7f680d35b97453e9d5203afd6d05bacb4d8ab72ad01a51d1ea95b26a4205b",
+      "outputDigest": "51d200575d8e0d64b7f50630c533462c68bf91b709069857666e8f434ce4c757",
+      "inputUnchanged": true,
+      "artifact": "cases/C01.json"
+    },
+    {
+      "id": "C02",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "TOUR_DST_FOLD",
+          "severity": "hard",
+          "message": "The actual domain boundary rejected the controlled input.",
+          "subjects": []
+        }
+      ],
+      "measurements": {},
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.19,
+      "heapDeltaBytes": 192496,
+      "inputDigest": "41eda44e951e2b7534c4182633a6c4f1452a073314a32ab425ff71636eb4bbca",
+      "outputDigest": "cbd0869e6f7022eb1ae86ab08898ccb6ebbe31f6ca1e462b6cb12c83ff064557",
+      "inputUnchanged": true,
+      "artifact": "cases/C02.json"
+    },
+    {
+      "id": "C03",
+      "state": "pass",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "differenceMinutes": 60,
+        "earlier": "2026-11-01T06:30:00Z",
+        "later": "2026-11-01T07:30:00Z"
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.57,
+      "heapDeltaBytes": 290248,
+      "inputDigest": "b227534d6f386541b56d0fa1dc01cb31dfc2c0e4737e8e12395836d915327340",
+      "outputDigest": "3a1cb06a0b7d369e674ebd84ff6bd571c6883a663a59b0f41e0b84448979bd2b",
+      "inputUnchanged": true,
+      "artifact": "cases/C03.json"
+    },
+    {
+      "id": "C04",
+      "state": "pass",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "sameInstant": true,
+        "denverOffset": "-07:00",
+        "chicagoOffset": "-06:00"
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.64,
+      "heapDeltaBytes": 270360,
+      "inputDigest": "c0cc3afe4c349b94a268a345b4584f5933f463546969789124a19ac698b77151",
+      "outputDigest": "71be04bb1c7f6f3be41fbd6f80513bb041d8e6b5fc8ba71816f33c76495b277c",
+      "inputUnchanged": true,
+      "artifact": "cases/C04.json"
+    },
+    {
+      "id": "C05",
+      "state": "pass",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "elapsedMinutes": 180,
+        "endLocal": "2026-11-01T02:30"
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.92,
+      "heapDeltaBytes": 356128,
+      "inputDigest": "87dfc7713508a0a7f7dc13895ade1051810cc19333c0fdee2205a0120d227dd2",
+      "outputDigest": "4c66b5d9701ef1e9ea9a9cca8b9b827557bd0342ad57eac3adeeaf4ea75b3ade",
+      "inputUnchanged": true,
+      "artifact": "cases/C05.json"
+    },
+    {
+      "id": "C06",
+      "state": "pass",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "endLocal": "2026-11-15T01:00",
+        "elapsedMinutes": 90
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.82,
+      "heapDeltaBytes": 348304,
+      "inputDigest": "53c88a08f1739e32bd2fc4557d28fbde055d1a964de968d85d7a0245d81ffd28",
+      "outputDigest": "6ab28f80360ef5740b2021295e9393062dad6f3b088c3d0377681fe168fba0d4",
+      "inputUnchanged": true,
+      "artifact": "cases/C06.json"
+    },
+    {
+      "id": "R01",
+      "state": "pass",
+      "observedStatus": "blocked",
+      "findings": [
+        {
+          "code": "plan",
+          "severity": "unknown",
+          "message": "Publish the approved plan and record the support-first FOH contingency.",
+          "subjects": []
+        },
+        {
+          "code": "authorization",
+          "severity": "unknown",
+          "message": "Verified supplier authorization for the $480 fee and $300 refundable hold.",
+          "subjects": []
+        },
+        {
+          "code": "supplier",
+          "severity": "unknown",
+          "message": "The supplier must confirm the selected equipment and delivery window.",
+          "subjects": []
+        },
+        {
+          "code": "delivery",
+          "severity": "unknown",
+          "message": "An authorized department lead records delivery and condition acceptance.",
+          "subjects": []
+        },
+        {
+          "code": "capture",
+          "severity": "unknown",
+          "message": "Verified partial fee capture follows accepted delivery; the deposit remains separate.",
+          "subjects": []
+        },
+        {
+          "code": "technical",
+          "severity": "unknown",
+          "message": "Current department sign-offs follow accepted console delivery and fee capture.",
+          "subjects": []
+        },
+        {
+          "code": "refunds",
+          "severity": "unknown",
+          "message": "All 38 original-capture $15 refunds must be verified; a pending request does not count.",
+          "subjects": []
+        },
+        {
+          "code": "crew",
+          "severity": "unknown",
+          "message": "All active critical crew acknowledge this exact published version. The reserve is excluded.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "ready": false,
+        "approved": false,
+        "acknowledgments": 0,
+        "ticketRows": 0,
+        "providerEvidence": 0,
+        "capturedTickets": 0,
+        "grossCapturedMinor": 0
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 18.13,
+      "heapDeltaBytes": 1804400,
+      "inputDigest": "ad7d9fb5a2b199e2ffc711baa693713118d642675ef6bb0f68b46937da6426e3",
+      "outputDigest": "252b70273d0b4c480cda45da1c95422c88f147fef6deb81b16acd59387a71bb0",
+      "inputUnchanged": true,
+      "artifact": "cases/R01.json"
+    },
+    {
+      "id": "R02",
+      "state": "pass",
+      "observedStatus": "blocked",
+      "findings": [
+        {
+          "code": "plan",
+          "severity": "unknown",
+          "message": "Publish the approved plan and record the support-first FOH contingency.",
+          "subjects": []
+        },
+        {
+          "code": "authorization",
+          "severity": "unknown",
+          "message": "Verified supplier authorization for the $480 fee and $300 refundable hold.",
+          "subjects": []
+        },
+        {
+          "code": "supplier",
+          "severity": "unknown",
+          "message": "The supplier must confirm the selected equipment and delivery window.",
+          "subjects": []
+        },
+        {
+          "code": "delivery",
+          "severity": "unknown",
+          "message": "An authorized department lead records delivery and condition acceptance.",
+          "subjects": []
+        },
+        {
+          "code": "capture",
+          "severity": "unknown",
+          "message": "Verified partial fee capture follows accepted delivery; the deposit remains separate.",
+          "subjects": []
+        },
+        {
+          "code": "technical",
+          "severity": "unknown",
+          "message": "Current department sign-offs follow accepted console delivery and fee capture.",
+          "subjects": []
+        },
+        {
+          "code": "refunds",
+          "severity": "unknown",
+          "message": "All 38 original-capture $15 refunds must be verified; a pending request does not count.",
+          "subjects": []
+        },
+        {
+          "code": "crew",
+          "severity": "unknown",
+          "message": "All active critical crew acknowledge this exact published version. The reserve is excluded.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "ready": false,
+        "approved": false,
+        "acknowledgments": 0,
+        "ticketRows": 0,
+        "providerEvidence": 0,
+        "capturedTickets": 0,
+        "grossCapturedMinor": 0
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 668.58,
+      "heapDeltaBytes": 141615768,
+      "inputDigest": "a94d0cfa58aeeea5253cda39fbd1a2859898e07089488795fb31fb157861a8cc",
+      "outputDigest": "252b70273d0b4c480cda45da1c95422c88f147fef6deb81b16acd59387a71bb0",
+      "inputUnchanged": true,
+      "artifact": "cases/R02.json"
+    },
+    {
+      "id": "R03",
+      "state": "pass",
+      "observedStatus": "blocked",
+      "findings": [
+        {
+          "code": "plan",
+          "severity": "unknown",
+          "message": "Publish the approved plan and record the support-first FOH contingency.",
+          "subjects": []
+        },
+        {
+          "code": "authorization",
+          "severity": "unknown",
+          "message": "Verified supplier authorization for the $480 fee and $300 refundable hold.",
+          "subjects": []
+        },
+        {
+          "code": "supplier",
+          "severity": "unknown",
+          "message": "The supplier must confirm the selected equipment and delivery window.",
+          "subjects": []
+        },
+        {
+          "code": "delivery",
+          "severity": "unknown",
+          "message": "An authorized department lead records delivery and condition acceptance.",
+          "subjects": []
+        },
+        {
+          "code": "capture",
+          "severity": "unknown",
+          "message": "Verified partial fee capture follows accepted delivery; the deposit remains separate.",
+          "subjects": []
+        },
+        {
+          "code": "technical",
+          "severity": "unknown",
+          "message": "Current department sign-offs follow accepted console delivery and fee capture.",
+          "subjects": []
+        },
+        {
+          "code": "refunds",
+          "severity": "unknown",
+          "message": "All 38 original-capture $15 refunds must be verified; a pending request does not count.",
+          "subjects": []
+        },
+        {
+          "code": "crew",
+          "severity": "unknown",
+          "message": "All active critical crew acknowledge this exact published version. The reserve is excluded.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "ready": false,
+        "approved": false,
+        "acknowledgments": 0,
+        "ticketRows": 400,
+        "providerEvidence": 0,
+        "capturedTickets": 0,
+        "grossCapturedMinor": 0
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 19.17,
+      "heapDeltaBytes": 4859568,
+      "inputDigest": "df947c2696eb1eda4109cc9b009387b87f2e33fa10e0cc71700794c94ccf7085",
+      "outputDigest": "252b70273d0b4c480cda45da1c95422c88f147fef6deb81b16acd59387a71bb0",
+      "inputUnchanged": true,
+      "artifact": "cases/R03.json"
+    }
+  ],
+  "benchmarks": [
+    {
+      "id": "B01",
+      "title": "Twelve-candidate rescue planner",
+      "size": 12,
+      "state": "pass",
+      "samples": [
+        {
+          "repetition": 1,
+          "durationMs": 665.74,
+          "heapBeforeBytes": 21836056,
+          "heapAfterBytes": 142358184,
+          "rssAfterBytes": 312098816,
+          "inputUnchanged": true,
+          "inputDigest": "c48c908399c48dbe22a62bc01414a1d1b69d829986b9e89e82b9c9c7d103fca8",
+          "resultDigest": "7b38a87b1bc9830c45ade8a1fa13bd2f991165a4f8c357cab279c1e8b4778daa",
+          "status": "completed",
+          "measurements": {
+            "generated": 12,
+            "approvable": 3,
+            "rejected": 7,
+            "pending": 2,
+            "operationallyDistinct": 10,
+            "familyLabels": 4,
+            "engineUnavailable": 0,
+            "approvalsGranted": 0,
+            "usefulBatchReadyUpperBoundMs": 665.25
+          },
+          "engine": null
+        },
+        {
+          "repetition": 2,
+          "durationMs": 394.3,
+          "heapBeforeBytes": 143697440,
+          "heapAfterBytes": 168030248,
+          "rssAfterBytes": 334675968,
+          "inputUnchanged": true,
+          "inputDigest": "c48c908399c48dbe22a62bc01414a1d1b69d829986b9e89e82b9c9c7d103fca8",
+          "resultDigest": "7b38a87b1bc9830c45ade8a1fa13bd2f991165a4f8c357cab279c1e8b4778daa",
+          "status": "completed",
+          "measurements": {
+            "generated": 12,
+            "approvable": 3,
+            "rejected": 7,
+            "pending": 2,
+            "operationallyDistinct": 10,
+            "familyLabels": 4,
+            "engineUnavailable": 0,
+            "approvalsGranted": 0,
+            "usefulBatchReadyUpperBoundMs": 393.78
+          },
+          "engine": null
+        },
+        {
+          "repetition": 3,
+          "durationMs": 374.63,
+          "heapBeforeBytes": 169363848,
+          "heapAfterBytes": 172099632,
+          "rssAfterBytes": 343916544,
+          "inputUnchanged": true,
+          "inputDigest": "c48c908399c48dbe22a62bc01414a1d1b69d829986b9e89e82b9c9c7d103fca8",
+          "resultDigest": "7b38a87b1bc9830c45ade8a1fa13bd2f991165a4f8c357cab279c1e8b4778daa",
+          "status": "completed",
+          "measurements": {
+            "generated": 12,
+            "approvable": 3,
+            "rejected": 7,
+            "pending": 2,
+            "operationallyDistinct": 10,
+            "familyLabels": 4,
+            "engineUnavailable": 0,
+            "approvalsGranted": 0,
+            "usefulBatchReadyUpperBoundMs": 374.14
+          },
+          "engine": null
+        }
+      ],
+      "medianMs": 394.3,
+      "p95Ms": 665.74,
+      "peakObservedHeapBytes": 172099632,
+      "reason": "All three measured repetitions met the frozen invariants. First repetition includes cold module loading;later repetitions reuse this worker's module cache. Heap values are pre/post observations,not transient peak allocation.",
+      "artifact": "benchmarks/B01-12.json"
+    },
+    {
+      "id": "B02",
+      "title": "Native tasks and resource assignments",
+      "size": 120,
+      "state": "fail",
+      "samples": [
+        {
+          "repetition": 1,
+          "durationMs": 248.52,
+          "heapBeforeBytes": 21851656,
+          "heapAfterBytes": 105564960,
+          "rssAfterBytes": 266780672,
+          "inputUnchanged": false,
+          "inputDigest": "e3f9c9cd2f0bfa15e5b6c57c4a2cee5639298dc99822565987829fb186c987db",
+          "resultDigest": "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928",
+          "status": "passed",
+          "measurements": {
+            "tasks": 120,
+            "resources": 100,
+            "assignments": 120,
+            "dependencies": 20,
+            "automaticLevelingProven": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "native_resources",
+            "version": "8.0.0",
+            "durationMs": 239.09,
+            "inputDigest": "e033c031cd6a3314e47044d8cf70a8c108080854d1808887d272f1f076e20654",
+            "resultDigest": "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928",
+            "taskCount": 120,
+            "resourceCount": 100,
+            "assignmentCount": 120,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 2,
+          "durationMs": 68.7,
+          "heapBeforeBytes": 107420096,
+          "heapAfterBytes": 124382136,
+          "rssAfterBytes": 279216128,
+          "inputUnchanged": false,
+          "inputDigest": "e3f9c9cd2f0bfa15e5b6c57c4a2cee5639298dc99822565987829fb186c987db",
+          "resultDigest": "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928",
+          "status": "passed",
+          "measurements": {
+            "tasks": 120,
+            "resources": 100,
+            "assignments": 120,
+            "dependencies": 20,
+            "automaticLevelingProven": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "native_resources",
+            "version": "8.0.0",
+            "durationMs": 62.5,
+            "inputDigest": "e033c031cd6a3314e47044d8cf70a8c108080854d1808887d272f1f076e20654",
+            "resultDigest": "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928",
+            "taskCount": 120,
+            "resourceCount": 100,
+            "assignmentCount": 120,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 3,
+          "durationMs": 74.99,
+          "heapBeforeBytes": 110570712,
+          "heapAfterBytes": 90095648,
+          "rssAfterBytes": 283738112,
+          "inputUnchanged": false,
+          "inputDigest": "e3f9c9cd2f0bfa15e5b6c57c4a2cee5639298dc99822565987829fb186c987db",
+          "resultDigest": "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928",
+          "status": "passed",
+          "measurements": {
+            "tasks": 120,
+            "resources": 100,
+            "assignments": 120,
+            "dependencies": 20,
+            "automaticLevelingProven": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "native_resources",
+            "version": "8.0.0",
+            "durationMs": 67.44,
+            "inputDigest": "e033c031cd6a3314e47044d8cf70a8c108080854d1808887d272f1f076e20654",
+            "resultDigest": "07d98036b4d352bdb8a5a04b62dbe688e3d7f8dcabff563d6b0d26d3d0734928",
+            "taskCount": 120,
+            "resourceCount": 100,
+            "assignmentCount": 120,
+            "reason": null
+          }
+        }
+      ],
+      "medianMs": 74.99,
+      "p95Ms": 248.52,
+      "peakObservedHeapBytes": 124382136,
+      "reason": "A frozen invariant failed;inspect each retained sample.",
+      "artifact": "benchmarks/B02-120.json"
+    },
+    {
+      "id": "B02",
+      "title": "Native tasks and resource assignments",
+      "size": 500,
+      "state": "fail",
+      "samples": [
+        {
+          "repetition": 1,
+          "durationMs": 438.2,
+          "heapBeforeBytes": 21924320,
+          "heapAfterBytes": 139017512,
+          "rssAfterBytes": 304365568,
+          "inputUnchanged": false,
+          "inputDigest": "a969241aff965a3c9eab620207a47f40fc63fb7aa6b2cf6d187e1e7221d4c169",
+          "resultDigest": "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf",
+          "status": "passed",
+          "measurements": {
+            "tasks": 500,
+            "resources": 100,
+            "assignments": 500,
+            "dependencies": 400,
+            "automaticLevelingProven": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "native_resources",
+            "version": "8.0.0",
+            "durationMs": 413.47,
+            "inputDigest": "7807c90933143950b83bfd6d5996fc5c8bb0dd4160560582af7778e382c7a03f",
+            "resultDigest": "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf",
+            "taskCount": 500,
+            "resourceCount": 100,
+            "assignmentCount": 500,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 2,
+          "durationMs": 226.65,
+          "heapBeforeBytes": 133275648,
+          "heapAfterBytes": 199994488,
+          "rssAfterBytes": 357203968,
+          "inputUnchanged": false,
+          "inputDigest": "a969241aff965a3c9eab620207a47f40fc63fb7aa6b2cf6d187e1e7221d4c169",
+          "resultDigest": "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf",
+          "status": "passed",
+          "measurements": {
+            "tasks": 500,
+            "resources": 100,
+            "assignments": 500,
+            "dependencies": 400,
+            "automaticLevelingProven": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "native_resources",
+            "version": "8.0.0",
+            "durationMs": 208.44,
+            "inputDigest": "7807c90933143950b83bfd6d5996fc5c8bb0dd4160560582af7778e382c7a03f",
+            "resultDigest": "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf",
+            "taskCount": 500,
+            "resourceCount": 100,
+            "assignmentCount": 500,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 3,
+          "durationMs": 228.43,
+          "heapBeforeBytes": 194421528,
+          "heapAfterBytes": 147013432,
+          "rssAfterBytes": 369410048,
+          "inputUnchanged": false,
+          "inputDigest": "a969241aff965a3c9eab620207a47f40fc63fb7aa6b2cf6d187e1e7221d4c169",
+          "resultDigest": "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf",
+          "status": "passed",
+          "measurements": {
+            "tasks": 500,
+            "resources": 100,
+            "assignments": 500,
+            "dependencies": 400,
+            "automaticLevelingProven": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "native_resources",
+            "version": "8.0.0",
+            "durationMs": 212.25,
+            "inputDigest": "7807c90933143950b83bfd6d5996fc5c8bb0dd4160560582af7778e382c7a03f",
+            "resultDigest": "bc185ef41abbc0b95c737390d1f81876790325d5dc00de15439e2aca47880faf",
+            "taskCount": 500,
+            "resourceCount": 100,
+            "assignmentCount": 500,
+            "reason": null
+          }
+        }
+      ],
+      "medianMs": 228.43,
+      "p95Ms": 438.2,
+      "peakObservedHeapBytes": 199994488,
+      "reason": "A frozen invariant failed;inspect each retained sample.",
+      "artifact": "benchmarks/B02-500.json"
+    },
+    {
+      "id": "B03",
+      "title": "Cross-zone tour portfolio",
+      "size": 3,
+      "state": "pass",
+      "samples": [
+        {
+          "repetition": 1,
+          "durationMs": 309.64,
+          "heapBeforeBytes": 21911008,
+          "heapAfterBytes": 100938912,
+          "rssAfterBytes": 265371648,
+          "inputUnchanged": true,
+          "inputDigest": "afd9fac9de0651fe3cf2ce6ad790bef8adbdfa10d4e0cb1733ebfe32f628e5be",
+          "resultDigest": "cf5219c37a586aaabf706dc798b730cdf9e78398d958549bdd6ee2a3976bc69c",
+          "status": "feasible",
+          "measurements": {
+            "productions": 3,
+            "calls": 90,
+            "modeledResources": 100,
+            "travelLegs": 2,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 40,
+            "forecastTotalMinor": 85625,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 217,
+            "inputDigest": "3d2da7a8b991f047245fde549f58a4e9c6e5211f6493b6ea4b3b0f895a77f515",
+            "resultDigest": "ee6b5e4aafa73db5e02e02427150da7ae1d6203225986f9e135c6f6d196222e3",
+            "taskCount": 90,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 2,
+          "durationMs": 107.67,
+          "heapBeforeBytes": 104712360,
+          "heapAfterBytes": 108752640,
+          "rssAfterBytes": 267763712,
+          "inputUnchanged": true,
+          "inputDigest": "afd9fac9de0651fe3cf2ce6ad790bef8adbdfa10d4e0cb1733ebfe32f628e5be",
+          "resultDigest": "cf5219c37a586aaabf706dc798b730cdf9e78398d958549bdd6ee2a3976bc69c",
+          "status": "feasible",
+          "measurements": {
+            "productions": 3,
+            "calls": 90,
+            "modeledResources": 100,
+            "travelLegs": 2,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 40,
+            "forecastTotalMinor": 85625,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 51,
+            "inputDigest": "3d2da7a8b991f047245fde549f58a4e9c6e5211f6493b6ea4b3b0f895a77f515",
+            "resultDigest": "ee6b5e4aafa73db5e02e02427150da7ae1d6203225986f9e135c6f6d196222e3",
+            "taskCount": 90,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 3,
+          "durationMs": 94.54,
+          "heapBeforeBytes": 112531768,
+          "heapAfterBytes": 113804664,
+          "rssAfterBytes": 276676608,
+          "inputUnchanged": true,
+          "inputDigest": "afd9fac9de0651fe3cf2ce6ad790bef8adbdfa10d4e0cb1733ebfe32f628e5be",
+          "resultDigest": "cf5219c37a586aaabf706dc798b730cdf9e78398d958549bdd6ee2a3976bc69c",
+          "status": "feasible",
+          "measurements": {
+            "productions": 3,
+            "calls": 90,
+            "modeledResources": 100,
+            "travelLegs": 2,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 40,
+            "forecastTotalMinor": 85625,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 44,
+            "inputDigest": "3d2da7a8b991f047245fde549f58a4e9c6e5211f6493b6ea4b3b0f895a77f515",
+            "resultDigest": "ee6b5e4aafa73db5e02e02427150da7ae1d6203225986f9e135c6f6d196222e3",
+            "taskCount": 90,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        }
+      ],
+      "medianMs": 107.67,
+      "p95Ms": 309.64,
+      "peakObservedHeapBytes": 113804664,
+      "reason": "All three measured repetitions met the frozen invariants. First repetition includes cold module loading;later repetitions reuse this worker's module cache. Heap values are pre/post observations,not transient peak allocation.",
+      "artifact": "benchmarks/B03-3.json"
+    },
+    {
+      "id": "B03",
+      "title": "Cross-zone tour portfolio",
+      "size": 10,
+      "state": "pass",
+      "samples": [
+        {
+          "repetition": 1,
+          "durationMs": 525.71,
+          "heapBeforeBytes": 21996200,
+          "heapAfterBytes": 133039608,
+          "rssAfterBytes": 293584896,
+          "inputUnchanged": true,
+          "inputDigest": "c1148ca009581e309687c962b0b2db1af3fea71f45c7e400947df9fc12c1256a",
+          "resultDigest": "a9aa537dba6021c4dac7a3e0bcc4562b388d8e94acbea0486ba613013d7b31e3",
+          "status": "feasible",
+          "measurements": {
+            "productions": 10,
+            "calls": 300,
+            "modeledResources": 100,
+            "travelLegs": 9,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 180,
+            "forecastTotalMinor": 308750,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 297,
+            "inputDigest": "21153653626dc9ec399350b2a19055ebe0a285e185fa698ef5111780d415918f",
+            "resultDigest": "e70f8c03ff5a98c722b38177177c7cb5f804ab2fd6fa7e7a4359b65451ea7f64",
+            "taskCount": 300,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 2,
+          "durationMs": 315.09,
+          "heapBeforeBytes": 126840928,
+          "heapAfterBytes": 106419728,
+          "rssAfterBytes": 298663936,
+          "inputUnchanged": true,
+          "inputDigest": "c1148ca009581e309687c962b0b2db1af3fea71f45c7e400947df9fc12c1256a",
+          "resultDigest": "a9aa537dba6021c4dac7a3e0bcc4562b388d8e94acbea0486ba613013d7b31e3",
+          "status": "feasible",
+          "measurements": {
+            "productions": 10,
+            "calls": 300,
+            "modeledResources": 100,
+            "travelLegs": 9,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 180,
+            "forecastTotalMinor": 308750,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 135,
+            "inputDigest": "21153653626dc9ec399350b2a19055ebe0a285e185fa698ef5111780d415918f",
+            "resultDigest": "e70f8c03ff5a98c722b38177177c7cb5f804ab2fd6fa7e7a4359b65451ea7f64",
+            "taskCount": 300,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 3,
+          "durationMs": 294.28,
+          "heapBeforeBytes": 116767992,
+          "heapAfterBytes": 142364968,
+          "rssAfterBytes": 309526528,
+          "inputUnchanged": true,
+          "inputDigest": "c1148ca009581e309687c962b0b2db1af3fea71f45c7e400947df9fc12c1256a",
+          "resultDigest": "a9aa537dba6021c4dac7a3e0bcc4562b388d8e94acbea0486ba613013d7b31e3",
+          "status": "feasible",
+          "measurements": {
+            "productions": 10,
+            "calls": 300,
+            "modeledResources": 100,
+            "travelLegs": 9,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 180,
+            "forecastTotalMinor": 308750,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 114,
+            "inputDigest": "21153653626dc9ec399350b2a19055ebe0a285e185fa698ef5111780d415918f",
+            "resultDigest": "e70f8c03ff5a98c722b38177177c7cb5f804ab2fd6fa7e7a4359b65451ea7f64",
+            "taskCount": 300,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        }
+      ],
+      "medianMs": 315.09,
+      "p95Ms": 525.71,
+      "peakObservedHeapBytes": 142364968,
+      "reason": "All three measured repetitions met the frozen invariants. First repetition includes cold module loading;later repetitions reuse this worker's module cache. Heap values are pre/post observations,not transient peak allocation.",
+      "artifact": "benchmarks/B03-10.json"
+    },
+    {
+      "id": "B03",
+      "title": "Cross-zone tour portfolio",
+      "size": 30,
+      "state": "pass",
+      "samples": [
+        {
+          "repetition": 1,
+          "durationMs": 1248.54,
+          "heapBeforeBytes": 21990136,
+          "heapAfterBytes": 171943008,
+          "rssAfterBytes": 335298560,
+          "inputUnchanged": true,
+          "inputDigest": "f16cd3ea1aeb6a0d571dcf2995ad8e07adc05991aa6664f280952ab80bcee77e",
+          "resultDigest": "1082645e0a5f705f9f3a27ea45405b76643f5e6acb39a74fa53fff6e5fd53387",
+          "status": "feasible",
+          "measurements": {
+            "productions": 30,
+            "calls": 900,
+            "modeledResources": 100,
+            "travelLegs": 29,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 580,
+            "forecastTotalMinor": 946250,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 546,
+            "inputDigest": "6e17170bd540263acbe2db418ffd08708017a02d09d19b8a1a8c5e671334d0ea",
+            "resultDigest": "0e38c46baab881738c5ce31239e4cd37c6b2ef7ebc2d44de7bcf43093a718087",
+            "taskCount": 900,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 2,
+          "durationMs": 997.46,
+          "heapBeforeBytes": 177018184,
+          "heapAfterBytes": 183654976,
+          "rssAfterBytes": 405471232,
+          "inputUnchanged": true,
+          "inputDigest": "f16cd3ea1aeb6a0d571dcf2995ad8e07adc05991aa6664f280952ab80bcee77e",
+          "resultDigest": "1082645e0a5f705f9f3a27ea45405b76643f5e6acb39a74fa53fff6e5fd53387",
+          "status": "feasible",
+          "measurements": {
+            "productions": 30,
+            "calls": 900,
+            "modeledResources": 100,
+            "travelLegs": 29,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 580,
+            "forecastTotalMinor": 946250,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 352,
+            "inputDigest": "6e17170bd540263acbe2db418ffd08708017a02d09d19b8a1a8c5e671334d0ea",
+            "resultDigest": "0e38c46baab881738c5ce31239e4cd37c6b2ef7ebc2d44de7bcf43093a718087",
+            "taskCount": 900,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        },
+        {
+          "repetition": 3,
+          "durationMs": 985.4,
+          "heapBeforeBytes": 188751264,
+          "heapAfterBytes": 180810672,
+          "rssAfterBytes": 426393600,
+          "inputUnchanged": true,
+          "inputDigest": "f16cd3ea1aeb6a0d571dcf2995ad8e07adc05991aa6664f280952ab80bcee77e",
+          "resultDigest": "1082645e0a5f705f9f3a27ea45405b76643f5e6acb39a74fa53fff6e5fd53387",
+          "status": "feasible",
+          "measurements": {
+            "productions": 30,
+            "calls": 900,
+            "modeledResources": 100,
+            "travelLegs": 29,
+            "hardFindings": 0,
+            "unknownFindings": 0,
+            "restComparisons": 580,
+            "forecastTotalMinor": 946250,
+            "forecastIsActualSpend": false
+          },
+          "engine": {
+            "status": "passed",
+            "scope": "product_temporal",
+            "version": "8.0.0",
+            "durationMs": 339,
+            "inputDigest": "6e17170bd540263acbe2db418ffd08708017a02d09d19b8a1a8c5e671334d0ea",
+            "resultDigest": "0e38c46baab881738c5ce31239e4cd37c6b2ef7ebc2d44de7bcf43093a718087",
+            "taskCount": 900,
+            "resourceCount": 0,
+            "assignmentCount": 0,
+            "reason": null
+          }
+        }
+      ],
+      "medianMs": 997.46,
+      "p95Ms": 1248.54,
+      "peakObservedHeapBytes": 188751264,
+      "reason": "All three measured repetitions met the frozen invariants. First repetition includes cold module loading;later repetitions reuse this worker's module cache. Heap values are pre/post observations,not transient peak allocation.",
+      "artifact": "benchmarks/B03-30.json"
+    },
+    {
+      "id": "B04",
+      "title": "Reserved-only ticket computation",
+      "size": 400,
+      "state": "pass",
+      "samples": [
+        {
+          "repetition": 1,
+          "durationMs": 19.56,
+          "heapBeforeBytes": 21928264,
+          "heapAfterBytes": 24001784,
+          "rssAfterBytes": 131596288,
+          "inputUnchanged": true,
+          "inputDigest": "0f9fe02476afe0be18b469abbbb134c56ff9bdb11cac09ae0d7c1412b76d2fb8",
+          "resultDigest": "4b70daeffecfc1ab62c232f704d94755fd980dc94cedccc14a4bef599f58aeb1",
+          "status": "blocked",
+          "measurements": {
+            "ticketRows": 400,
+            "capturedTickets": 0,
+            "capturedMinor": 0,
+            "refundedMinor": 0,
+            "providerEvidence": 0,
+            "ready": false
+          },
+          "engine": null
+        },
+        {
+          "repetition": 2,
+          "durationMs": 11.66,
+          "heapBeforeBytes": 26800816,
+          "heapAfterBytes": 29415696,
+          "rssAfterBytes": 134791168,
+          "inputUnchanged": true,
+          "inputDigest": "0f9fe02476afe0be18b469abbbb134c56ff9bdb11cac09ae0d7c1412b76d2fb8",
+          "resultDigest": "4b70daeffecfc1ab62c232f704d94755fd980dc94cedccc14a4bef599f58aeb1",
+          "status": "blocked",
+          "measurements": {
+            "ticketRows": 400,
+            "capturedTickets": 0,
+            "capturedMinor": 0,
+            "refundedMinor": 0,
+            "providerEvidence": 0,
+            "ready": false
+          },
+          "engine": null
+        },
+        {
+          "repetition": 3,
+          "durationMs": 10.68,
+          "heapBeforeBytes": 32196152,
+          "heapAfterBytes": 27035288,
+          "rssAfterBytes": 141918208,
+          "inputUnchanged": true,
+          "inputDigest": "0f9fe02476afe0be18b469abbbb134c56ff9bdb11cac09ae0d7c1412b76d2fb8",
+          "resultDigest": "4b70daeffecfc1ab62c232f704d94755fd980dc94cedccc14a4bef599f58aeb1",
+          "status": "blocked",
+          "measurements": {
+            "ticketRows": 400,
+            "capturedTickets": 0,
+            "capturedMinor": 0,
+            "refundedMinor": 0,
+            "providerEvidence": 0,
+            "ready": false
+          },
+          "engine": null
+        }
+      ],
+      "medianMs": 11.66,
+      "p95Ms": 19.56,
+      "peakObservedHeapBytes": 32196152,
+      "reason": "All three measured repetitions met the frozen invariants. First repetition includes cold module loading;later repetitions reuse this worker's module cache. Heap values are pre/post observations,not transient peak allocation.",
+      "artifact": "benchmarks/B04-400.json"
+    }
+  ],
+  "pending": [
+    {
+      "id": "P01",
+      "title": "Live model proposal quality",
+      "reason": "No model calls are authorized in this unit. Deterministic enumerator results cannot establish AI quality,token cost or model accuracy."
+    },
+    {
+      "id": "P02",
+      "title": "Manual planning baseline and human interventions",
+      "reason": "A witnessed study with real participants and an agreed timing protocol has not been run. No synthetic intervention count substitutes for it."
+    },
+    {
+      "id": "P03",
+      "title": "Publication to eleven real crew acknowledgments",
+      "reason": "This unit grants no approvals and uses no existing sessions or crew clients. The witnessed end-to-end human timing remains unmeasured."
+    },
+    {
+      "id": "P04",
+      "title": "Provider completion and reconciliation age",
+      "reason": "No financial transport,receipts,database or current provider reads are used. Zero simulated calls does not prove provider completion or freshness."
+    },
+    {
+      "id": "P05",
+      "title": "Late-day quote lifecycle and retained-rental integration",
+      "reason": "The independent N1/N1b owner qualifies those source versions. This corpus is attributed to96ff4cd and does not claim later shared-planner changes."
+    },
+    {
+      "id": "P06",
+      "title": "Native browser review",
+      "reason": "Mounted component and production-build tests are supporting evidence;root owns native review at the separately reserved port4587."
+    }
+  ],
+  "limitations": [
+    "The operational pass count includes correctly rejected unsafe proposals;it is not a feasible-plan count.",
+    "Product engine adapters commit temporal graphs only. Domain resource findings and the evaluation-owned native resource/assignment benchmark are separate evidence.",
+    "A synthetic reviewed source or computational person identity is not a real supplier fact,admission,approval or completed physical task.",
+    "Only three repetitions per benchmark. p95 is the largest of three observed samples,not a population estimate. First sample includes cold module loading.",
+    "Heap is observed immediately before and after each repetition;transient peak allocation is not instrumented. Runtime and machine differences limit comparisons.",
+    "Useful-batch time is an upper bound measured when generateCandidates returns;the runner does not instrument the first individual useful proposal.",
+    "The declared corpus is purposefully adversarial and not a statistical sample. There are no confidence intervals or claims about unseen productions.",
+    "Model,human,provider,live reconciliation and native-browser qualifications remain separately pending.",
+    "This source version is independent of the retained-rental and fresh late-day quote lifecycle units."
+  ],
+  "artifacts": [
+    {
+      "path": "corpus.json",
+      "sha256": "dd7ff2e56babed7b8be5a3316b73626836c43bbb18d4fcd143a13c6fc496a6a2",
+      "bytes": 19458,
+      "label": "Frozen case contract"
+    },
+    {
+      "path": "source-manifest.json",
+      "sha256": "c29736524fc7afae0989c2c30aa593743f211edcd272944191a79a35d3d43814",
+      "bytes": 9345,
+      "label": "Exact source and dependency hashes"
+    },
+    {
+      "path": "cases/S01.json",
+      "sha256": "dcdbaa07366d82e32b19ca25a014774c87aaf63340200691b58492758f438a97",
+      "bytes": 249965,
+      "label": "S01 exact input and observation"
+    },
+    {
+      "path": "cases/S02.json",
+      "sha256": "76c6e206c1819b03671b945e8c2080a1fcb3736d2b78a1ab298e4c77139bb4ee",
+      "bytes": 250351,
+      "label": "S02 exact input and observation"
+    },
+    {
+      "path": "cases/S03.json",
+      "sha256": "6f57479b057dc4052eca509fd2cc4429ae46d673e1dc299142b1d824dcbf539a",
+      "bytes": 252296,
+      "label": "S03 exact input and observation"
+    },
+    {
+      "path": "cases/S04.json",
+      "sha256": "c38abda14eb53cd5323587674ca4f540dfffd899409f6d7293aef4ca4437aa7a",
+      "bytes": 253710,
+      "label": "S04 exact input and observation"
+    },
+    {
+      "path": "cases/S05.json",
+      "sha256": "9a5047a7beba5587b59393aec6d189e2ec48a7d4acfd2a1051a2742e38ab927d",
+      "bytes": 252247,
+      "label": "S05 exact input and observation"
+    },
+    {
+      "path": "cases/S06.json",
+      "sha256": "e741b74a37396bc2000294254ac582169de1b0ed0f75f79205cbf8b316b8e62d",
+      "bytes": 250545,
+      "label": "S06 exact input and observation"
+    },
+    {
+      "path": "cases/S07.json",
+      "sha256": "df0b98966501d21e3ceae83017cddae0aaa724af139fa0c3470fe02240930402",
+      "bytes": 250549,
+      "label": "S07 exact input and observation"
+    },
+    {
+      "path": "cases/S08.json",
+      "sha256": "6b02268659012da769094feecb3f73ff1b2ef5f7ffb35c8c9eb7e48bb6a4bc0a",
+      "bytes": 250545,
+      "label": "S08 exact input and observation"
+    },
+    {
+      "path": "cases/S09.json",
+      "sha256": "c2632089bb555b05ee72f4d531190560d4618f408a8437c307a0e4bc0b0f7431",
+      "bytes": 250560,
+      "label": "S09 exact input and observation"
+    },
+    {
+      "path": "cases/S10.json",
+      "sha256": "bbf156a1706525f5d748d96b41a980b22104e849fe7f73f78a11f72138a05644",
+      "bytes": 250601,
+      "label": "S10 exact input and observation"
+    },
+    {
+      "path": "cases/S11.json",
+      "sha256": "49f3da7c4517b66c475e18bd4034f57c879550b73ddfc51ce9ad30fd88963735",
+      "bytes": 251427,
+      "label": "S11 exact input and observation"
+    },
+    {
+      "path": "cases/S12.json",
+      "sha256": "3299cb762dd9e55c8b370996d3545d6d9b986b1b7170c9310e52f2b76f3632ee",
+      "bytes": 250691,
+      "label": "S12 exact input and observation"
+    },
+    {
+      "path": "cases/S13.json",
+      "sha256": "cffe6f80b26fa46f5a69a02d650d007deb7facb7c74f8ce5b2d0e835677d9201",
+      "bytes": 250702,
+      "label": "S13 exact input and observation"
+    },
+    {
+      "path": "cases/S14.json",
+      "sha256": "e8a4491f1e04ed6966e869f8910ceba7d8c4d407a5be827ce1e2a190581d9bb7",
+      "bytes": 250765,
+      "label": "S14 exact input and observation"
+    },
+    {
+      "path": "cases/S15.json",
+      "sha256": "db36cf3976980efd29c8133ef4356e74ceb6fb28803ee234700b370d46e48fcd",
+      "bytes": 251087,
+      "label": "S15 exact input and observation"
+    },
+    {
+      "path": "cases/S16.json",
+      "sha256": "6bdbfd147177b8e573e9f8e52f8050e6475bea6efa754e2cfe16d948112673cc",
+      "bytes": 251139,
+      "label": "S16 exact input and observation"
+    },
+    {
+      "path": "cases/S17.json",
+      "sha256": "ba5bafa6ad2eba24b4377bf14f4d143911c8099a754e5bbe779c457b29b7f403",
+      "bytes": 251914,
+      "label": "S17 exact input and observation"
+    },
+    {
+      "path": "cases/S18.json",
+      "sha256": "d51d2b3503632d8d843d58065f882f6c16ac71ff4fbba76fa1beebcd2f66dab1",
+      "bytes": 252861,
+      "label": "S18 exact input and observation"
+    },
+    {
+      "path": "cases/S19.json",
+      "sha256": "6cb2b8e4821cd92e99f9f1ecd5905b27b21e2276c107e83db439a7011f754dc3",
+      "bytes": 250554,
+      "label": "S19 exact input and observation"
+    },
+    {
+      "path": "cases/S20.json",
+      "sha256": "b94392b1590ecb50ac18c9a10fff8a543c16f64f0c0541d5b61fa15fbcaddcae",
+      "bytes": 250864,
+      "label": "S20 exact input and observation"
+    },
+    {
+      "path": "cases/S21.json",
+      "sha256": "94397c8ec6de9893d1411b97df5e4f7e5785041384bfeb59279112e2659a3c47",
+      "bytes": 255833,
+      "label": "S21 exact input and observation"
+    },
+    {
+      "path": "cases/S22.json",
+      "sha256": "f0bfb024ad1ee51cce9b75f8da5e5255113c95fcf965708d7cb61bafd6ba5865",
+      "bytes": 250425,
+      "label": "S22 exact input and observation"
+    },
+    {
+      "path": "cases/S23.json",
+      "sha256": "007df8787a50c55a9661f8272dbca2aa38f1a223f0bc7956cd626853f6dc54cb",
+      "bytes": 249683,
+      "label": "S23 exact input and observation"
+    },
+    {
+      "path": "cases/S24.json",
+      "sha256": "b8ead8b18295920facff649c7e8ccb36448958a7f2de5b992f9dfb47de4d54b4",
+      "bytes": 249613,
+      "label": "S24 exact input and observation"
+    },
+    {
+      "path": "cases/S25.json",
+      "sha256": "9ba79bb7802ebcee149992c1ae8f941ba69878b9fa9e42e6be828c384323af44",
+      "bytes": 250540,
+      "label": "S25 exact input and observation"
+    },
+    {
+      "path": "cases/S26.json",
+      "sha256": "3070f79aa979c2d4162be3a46ba1b62521ca51131a7fa49aaaaa93009f4bab0c",
+      "bytes": 250555,
+      "label": "S26 exact input and observation"
+    },
+    {
+      "path": "cases/S27.json",
+      "sha256": "e2eb95d6a3ddd8e4e59dba21a98357b6767a99bf06a7b68d70229de2ee38f57e",
+      "bytes": 250833,
+      "label": "S27 exact input and observation"
+    },
+    {
+      "path": "cases/S28.json",
+      "sha256": "2bf8e5615c7a539dee4af396bef0828c20d41f30b8ff2ac763e67272b83d514d",
+      "bytes": 250797,
+      "label": "S28 exact input and observation"
+    },
+    {
+      "path": "cases/S29.json",
+      "sha256": "2c781ad9d257da7185cd2e13368aaaa50e377806edcc01a233881a910a58edd4",
+      "bytes": 1133982,
+      "label": "S29 exact input and observation"
+    },
+    {
+      "path": "cases/S30.json",
+      "sha256": "ed387f3f1ffa7de8f689d75dd93d1e3bc181550f5d16fe7fc008517193bedaa9",
+      "bytes": 1137563,
+      "label": "S30 exact input and observation"
+    },
+    {
+      "path": "cases/S31.json",
+      "sha256": "52bff38bdc35c335ec1432f85420111981f9d7447c7e467b46d3a8aee6671956",
+      "bytes": 206357,
+      "label": "S31 exact input and observation"
+    },
+    {
+      "path": "cases/S32.json",
+      "sha256": "cd3a2cfde3f69518cfa3b47e0e9ed975628805bd4471fc5897837c904b7c224f",
+      "bytes": 206353,
+      "label": "S32 exact input and observation"
+    },
+    {
+      "path": "cases/S33.json",
+      "sha256": "689c81b8a5eb66ca53ee6bf8ee237ff423dd7d2463bad0ef5047ba68d56127fc",
+      "bytes": 206305,
+      "label": "S33 exact input and observation"
+    },
+    {
+      "path": "cases/T01.json",
+      "sha256": "477eb013a7eead414eea89751a59abd3d2c2c5c9a8ac588563a65141621a5075",
+      "bytes": 57897,
+      "label": "T01 exact input and observation"
+    },
+    {
+      "path": "cases/T02.json",
+      "sha256": "e9d3b9b52160abbe27b7f4a14020de1b7f1bbffa48d1a4fcb8dccad02c4a0e0d",
+      "bytes": 49891,
+      "label": "T02 exact input and observation"
+    },
+    {
+      "path": "cases/T03.json",
+      "sha256": "2dc0852a32bfc17cdf8e24bf6cdac85694da70b71fa6d56a34abb77eb1e28401",
+      "bytes": 49994,
+      "label": "T03 exact input and observation"
+    },
+    {
+      "path": "cases/T04.json",
+      "sha256": "477817708ff28e74057a50fd2ad04ee970e8bae15317021899b4d6893f581d87",
+      "bytes": 53056,
+      "label": "T04 exact input and observation"
+    },
+    {
+      "path": "cases/T05.json",
+      "sha256": "d04fe1be99e58233d0391ba651b10403b2c754673a23c135c73a5e80bd1679ac",
+      "bytes": 58400,
+      "label": "T05 exact input and observation"
+    },
+    {
+      "path": "cases/T06.json",
+      "sha256": "2dc6d94b738ce66288a7b43dc42b26c3fa81863865ff959269dd767de6f75a5a",
+      "bytes": 54448,
+      "label": "T06 exact input and observation"
+    },
+    {
+      "path": "cases/T07.json",
+      "sha256": "5c7a90b5ddd74efb2fee231f123683416ab9daf65ffad54a41ad1d06f0b6a1e1",
+      "bytes": 93137,
+      "label": "T07 exact input and observation"
+    },
+    {
+      "path": "cases/T08.json",
+      "sha256": "8cb326a3daf787ecf2773c78d37cadacb5f543672bd3fa02371ed24692220add",
+      "bytes": 62837,
+      "label": "T08 exact input and observation"
+    },
+    {
+      "path": "cases/T09.json",
+      "sha256": "acfd44b1da578bc774bc968ebc596b524950aada9ba495a8d7940ca024c28a23",
+      "bytes": 60791,
+      "label": "T09 exact input and observation"
+    },
+    {
+      "path": "cases/T10.json",
+      "sha256": "3c627738d26f7a732c49877670f6fc6ba36eb0f9b7e1a2f8e7b91373c3a5c698",
+      "bytes": 60424,
+      "label": "T10 exact input and observation"
+    },
+    {
+      "path": "cases/T11.json",
+      "sha256": "e47119275f49c5bf5265f71c0331175a109617b1ad7501fc78ecc78b3a762389",
+      "bytes": 53349,
+      "label": "T11 exact input and observation"
+    },
+    {
+      "path": "cases/T12.json",
+      "sha256": "2e87ff265117232acb1440169edd709187680a8d0426e6f178c92deb6a633c4c",
+      "bytes": 61820,
+      "label": "T12 exact input and observation"
+    },
+    {
+      "path": "cases/T13.json",
+      "sha256": "2f7f42bdf26a6abd62c13e6a84914383af7c179812aab7477ba4dedb04d4d311",
+      "bytes": 64944,
+      "label": "T13 exact input and observation"
+    },
+    {
+      "path": "cases/T14.json",
+      "sha256": "849953216762a200467efb4518db105d00d56d44e831b75b39ae30bbc3aac4d0",
+      "bytes": 51001,
+      "label": "T14 exact input and observation"
+    },
+    {
+      "path": "cases/T15.json",
+      "sha256": "3c42f333664d01344a6fce5633808f1628afeafc43f8b89291d7de5ddd616342",
+      "bytes": 50985,
+      "label": "T15 exact input and observation"
+    },
+    {
+      "path": "cases/T16.json",
+      "sha256": "9c1a584214ec3b3e045015747bef3a33ff7a390eb68f64eb9c4be4cceec5f10f",
+      "bytes": 51272,
+      "label": "T16 exact input and observation"
+    },
+    {
+      "path": "cases/T17.json",
+      "sha256": "10c5da2cb312f1f284a6c975e28dc08b88935f59419a1172373692a2b505c464",
+      "bytes": 51239,
+      "label": "T17 exact input and observation"
+    },
+    {
+      "path": "cases/T18.json",
+      "sha256": "7f962ec48b3998bd8250710c29a0a0e1dc893be23e8fb961ba7d2587adb05479",
+      "bytes": 51238,
+      "label": "T18 exact input and observation"
+    },
+    {
+      "path": "cases/T19.json",
+      "sha256": "367b900ad0428d1e4ff581366640cbfa6a97d41cc4cc2701b0dde415c9d4d214",
+      "bytes": 51309,
+      "label": "T19 exact input and observation"
+    },
+    {
+      "path": "cases/T20.json",
+      "sha256": "c64d976d9dd2697be0e2532ca83d2166cbfc1c2f4cc432cdfd5fc8f90027a55c",
+      "bytes": 51367,
+      "label": "T20 exact input and observation"
+    },
+    {
+      "path": "cases/T21.json",
+      "sha256": "cc3fba892637c482628d8ddb234233151ab1e33154d23540ab09b885df7bfe20",
+      "bytes": 55599,
+      "label": "T21 exact input and observation"
+    },
+    {
+      "path": "cases/T22.json",
+      "sha256": "31627f9915e34c2374b10dfe8c0b0ba2f25d033c9732d82d132576a88f643810",
+      "bytes": 50916,
+      "label": "T22 exact input and observation"
+    },
+    {
+      "path": "cases/T23.json",
+      "sha256": "7e46a4a943b29aab5bbf9cfd6a6add7b5ac7ce12c83d878770ba873e95f8988e",
+      "bytes": 45509,
+      "label": "T23 exact input and observation"
+    },
+    {
+      "path": "cases/T24.json",
+      "sha256": "ec658de5d68bd4d841c8ddd3376f121ac0616587b3f84d1c9cece153194df51a",
+      "bytes": 46369,
+      "label": "T24 exact input and observation"
+    },
+    {
+      "path": "cases/C01.json",
+      "sha256": "c1e878b8bcfbf6da79cc240ec2b3fd373f0c4fad689aef8c1b4a6a8177ddca2a",
+      "bytes": 2090,
+      "label": "C01 exact input and observation"
+    },
+    {
+      "path": "cases/C02.json",
+      "sha256": "bc63dbd1b8370dc8e8889fa73f4187d3c614ddfdd8692971fc2e6200e2d6ca9b",
+      "bytes": 2054,
+      "label": "C02 exact input and observation"
+    },
+    {
+      "path": "cases/C03.json",
+      "sha256": "f17b904ed3f433e29962eb1e9ad6fdfb7b90243573d6992708089e2fb17d94ac",
+      "bytes": 2018,
+      "label": "C03 exact input and observation"
+    },
+    {
+      "path": "cases/C04.json",
+      "sha256": "d0f2f9a6ad4c8a43ef5f8c067bc76e53e6e52ef2fad5247ddc7fb5129449fbdc",
+      "bytes": 1953,
+      "label": "C04 exact input and observation"
+    },
+    {
+      "path": "cases/C05.json",
+      "sha256": "ac67e9b6110bfd61140336d0a6eb0319b4605d4b92a2dfb346cf80e70f3e2729",
+      "bytes": 1919,
+      "label": "C05 exact input and observation"
+    },
+    {
+      "path": "cases/C06.json",
+      "sha256": "9176b869ba8052ce7b1ae83b290ff4b1d6f669087f8b2f7d7ef543897dbebe95",
+      "bytes": 1901,
+      "label": "C06 exact input and observation"
+    },
+    {
+      "path": "cases/R01.json",
+      "sha256": "c5dd6f9d20af113c24b1eabad2886b4fa1ea636711e0671160ca1d0c02171ecc",
+      "bytes": 129309,
+      "label": "R01 exact input and observation"
+    },
+    {
+      "path": "cases/R02.json",
+      "sha256": "34e77013d4142c621b396290724871455e4e9a984a8c7ee61768a18872d2d3f5",
+      "bytes": 1222787,
+      "label": "R02 exact input and observation"
+    },
+    {
+      "path": "cases/R03.json",
+      "sha256": "bc623a879d2900aaee2a8f4d2a3b2d5013d3729676785de8ef874fd766b499f7",
+      "bytes": 239288,
+      "label": "R03 exact input and observation"
+    },
+    {
+      "path": "benchmarks/B01-12.json",
+      "sha256": "abaeba69a9b819665f76437058b71773f6f70231b34d1819c460bc93d438a581",
+      "bytes": 141987,
+      "label": "B01 size 12 measured repetitions"
+    },
+    {
+      "path": "benchmarks/B02-120.json",
+      "sha256": "09471793bf224f04a0138efaae9c117ae234c4c3ed9e6046a4020edf4d69af84",
+      "bytes": 252661,
+      "label": "B02 size 120 measured repetitions"
+    },
+    {
+      "path": "benchmarks/B02-500.json",
+      "sha256": "337e575a5c0d3604a60db1ebd7a9d8f8a15762498c07777d9ad739243f370932",
+      "bytes": 1014628,
+      "label": "B02 size 500 measured repetitions"
+    },
+    {
+      "path": "benchmarks/B03-3.json",
+      "sha256": "8e9738ef25b181124f75f60ffa3d39a608c9832488d3509a59fcc28b1820d317",
+      "bytes": 384834,
+      "label": "B03 size 3 measured repetitions"
+    },
+    {
+      "path": "benchmarks/B03-10.json",
+      "sha256": "cbdaedf30cf663f41174e86386d2699b06dd516dfab0a76697e0321b366c3284",
+      "bytes": 1136498,
+      "label": "B03 size 10 measured repetitions"
+    },
+    {
+      "path": "benchmarks/B03-30.json",
+      "sha256": "c3c4e388edbeecfec10586fe8c5ac666d3d2f42e7e0af042a1d3cd911fba288c",
+      "bytes": 3284206,
+      "label": "B03 size 30 measured repetitions"
+    },
+    {
+      "path": "benchmarks/B04-400.json",
+      "sha256": "da0ce8399323d7ddde588dcdce747a5a71eebaf5d1fcc3f215f2930c119f738c",
+      "bytes": 250945,
+      "label": "B04 size 400 measured repetitions"
+    }
+  ]
+}

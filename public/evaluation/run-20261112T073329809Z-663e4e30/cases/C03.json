@@ -1,0 +1,87 @@
+{
+  "contract": {
+    "id": "C03",
+    "group": "time",
+    "title": "Earlier and later folded clocks stay one hour apart",
+    "scenario": "dst_fold_choices",
+    "expectation": {
+      "status": "accepted",
+      "requiredCodes": [],
+      "measurements": {
+        "differenceMinutes": 60
+      }
+    },
+    "tags": [
+      "DST",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C03",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 0,
+  "toolingIpcSuppressed": 2,
+  "result": {
+    "input": {
+      "scenario": "dst_fold_choices",
+      "timeInputs": [
+        {
+          "local": "2026-11-01T01:30",
+          "zone": "America/Chicago",
+          "disambiguation": "earlier"
+        },
+        {
+          "local": "2026-11-01T01:30",
+          "zone": "America/Chicago",
+          "disambiguation": "later"
+        }
+      ],
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "differenceMinutes": 60,
+      "earlier": "2026-11-01T06:30:00Z",
+      "later": "2026-11-01T07:30:00Z"
+    },
+    "observation": {
+      "id": "C03",
+      "state": "pass",
+      "observedStatus": "accepted",
+      "findings": [],
+      "measurements": {
+        "differenceMinutes": 60,
+        "earlier": "2026-11-01T06:30:00Z",
+        "later": "2026-11-01T07:30:00Z"
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 1.75,
+      "heapDeltaBytes": 307256,
+      "inputDigest": "c686f657e899188a9e791fb2218f37dd18d5d451b6c4f1950624d13a563c73d6",
+      "outputDigest": "3a1cb06a0b7d369e674ebd84ff6bd571c6883a663a59b0f41e0b84448979bd2b",
+      "inputUnchanged": true,
+      "artifact": "cases/C03.json"
+    }
+  },
+  "observation": {
+    "id": "C03",
+    "state": "pass",
+    "observedStatus": "accepted",
+    "findings": [],
+    "measurements": {
+      "differenceMinutes": 60,
+      "earlier": "2026-11-01T06:30:00Z",
+      "later": "2026-11-01T07:30:00Z"
+    },
+    "mismatches": [],
+    "engine": null,
+    "durationMs": 1.75,
+    "heapDeltaBytes": 307256,
+    "inputDigest": "c686f657e899188a9e791fb2218f37dd18d5d451b6c4f1950624d13a563c73d6",
+    "outputDigest": "3a1cb06a0b7d369e674ebd84ff6bd571c6883a663a59b0f41e0b84448979bd2b",
+    "inputUnchanged": true,
+    "artifact": "cases/C03.json"
+  }
+}

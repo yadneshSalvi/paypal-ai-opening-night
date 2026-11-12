@@ -1,0 +1,99 @@
+{
+  "contract": {
+    "id": "C01",
+    "group": "time",
+    "title": "A spring clock gap cannot name an instant",
+    "scenario": "dst_gap",
+    "expectation": {
+      "status": "rejected",
+      "requiredCodes": [
+        "TOUR_DST_GAP"
+      ]
+    },
+    "tags": [
+      "DST",
+      "supporting"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:C01",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 0,
+  "toolingIpcSuppressed": 2,
+  "result": {
+    "input": {
+      "scenario": "dst_gap",
+      "timeInputs": [
+        {
+          "local": "2026-03-08T02:30",
+          "zone": "America/Chicago",
+          "disambiguation": "reject"
+        },
+        {
+          "local": "2026-03-08T02:30",
+          "zone": "America/Chicago",
+          "disambiguation": "earlier"
+        },
+        {
+          "local": "2026-03-08T02:30",
+          "zone": "America/Chicago",
+          "disambiguation": "later"
+        }
+      ],
+      "clockLibrary": "@js-temporal/polyfill@0.5.1",
+      "fictional": true
+    },
+    "output": {
+      "choicesRejected": 3
+    },
+    "observation": {
+      "id": "C01",
+      "state": "pass",
+      "observedStatus": "rejected",
+      "findings": [
+        {
+          "code": "TOUR_DST_GAP",
+          "severity": "hard",
+          "message": "All three offset choices reject the nonexistent local clock.",
+          "subjects": []
+        }
+      ],
+      "measurements": {
+        "choicesRejected": 3
+      },
+      "mismatches": [],
+      "engine": null,
+      "durationMs": 2.24,
+      "heapDeltaBytes": 434520,
+      "inputDigest": "25137072df926d078e0094280cec4075f3598ed79215ead459d5be10c2ba382f",
+      "outputDigest": "51d200575d8e0d64b7f50630c533462c68bf91b709069857666e8f434ce4c757",
+      "inputUnchanged": true,
+      "artifact": "cases/C01.json"
+    }
+  },
+  "observation": {
+    "id": "C01",
+    "state": "pass",
+    "observedStatus": "rejected",
+    "findings": [
+      {
+        "code": "TOUR_DST_GAP",
+        "severity": "hard",
+        "message": "All three offset choices reject the nonexistent local clock.",
+        "subjects": []
+      }
+    ],
+    "measurements": {
+      "choicesRejected": 3
+    },
+    "mismatches": [],
+    "engine": null,
+    "durationMs": 2.24,
+    "heapDeltaBytes": 434520,
+    "inputDigest": "25137072df926d078e0094280cec4075f3598ed79215ead459d5be10c2ba382f",
+    "outputDigest": "51d200575d8e0d64b7f50630c533462c68bf91b709069857666e8f434ce4c757",
+    "inputUnchanged": true,
+    "artifact": "cases/C01.json"
+  }
+}

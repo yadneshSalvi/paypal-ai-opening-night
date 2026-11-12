@@ -1,0 +1,2031 @@
+{
+  "contract": {
+    "id": "T13",
+    "group": "tour",
+    "title": "Maximum duty bounds long show days",
+    "scenario": "tour_duty",
+    "expectation": {
+      "status": "infeasible",
+      "requiredCodes": [
+        "MAXIMUM_DUTY"
+      ]
+    },
+    "tags": [
+      "duty",
+      "policy"
+    ]
+  },
+  "schemaVersion": 1,
+  "job": "case:T13",
+  "licensed": true,
+  "suppressedDiagnostics": 0,
+  "networkAttemptsBlocked": 2,
+  "result": {
+    "input": {
+      "tour": {
+        "name": "Across the plains · sample tour",
+        "productionIds": [
+          "eeeeeeee-0000-4000-8000-000000000010",
+          "eeeeeeee-0000-4000-8000-000000000011",
+          "eeeeeeee-0000-4000-8000-000000000012"
+        ],
+        "resources": [
+          {
+            "id": "sam",
+            "label": "Sam Rivera",
+            "kind": "person",
+            "personId": "sam",
+            "skills": [
+              "stage_management",
+              "show_control"
+            ],
+            "capacity": 1,
+            "availability": [
+              {
+                "start": {
+                  "local": "2026-11-20T00:00",
+                  "zone": "America/Denver",
+                  "disambiguation": "reject"
+                },
+                "end": {
+                  "local": "2026-11-25T23:59",
+                  "zone": "America/Chicago",
+                  "disambiguation": "reject"
+                }
+              }
+            ],
+            "availabilityStatus": "reviewed",
+            "forecastHourlyMinor": 3500,
+            "sourceIds": [
+              "fixture-route"
+            ]
+          },
+          {
+            "id": "priya",
+            "label": "Priya Shah",
+            "kind": "person",
+            "personId": "priya",
+            "skills": [
+              "lx_programming",
+              "lx_focus",
+              "rigging"
+            ],
+            "capacity": 1,
+            "availability": [
+              {
+                "start": {
+                  "local": "2026-11-20T00:00",
+                  "zone": "America/Denver",
+                  "disambiguation": "reject"
+                },
+                "end": {
+                  "local": "2026-11-25T23:59",
+                  "zone": "America/Chicago",
+                  "disambiguation": "reject"
+                }
+              }
+            ],
+            "availabilityStatus": "reviewed",
+            "forecastHourlyMinor": 3500,
+            "sourceIds": [
+              "fixture-route"
+            ]
+          },
+          {
+            "id": "tom",
+            "label": "Tom Chen",
+            "kind": "person",
+            "personId": "tom",
+            "skills": [
+              "lx_focus",
+              "electrical"
+            ],
+            "capacity": 1,
+            "availability": [
+              {
+                "start": {
+                  "local": "2026-11-20T00:00",
+                  "zone": "America/Denver",
+                  "disambiguation": "reject"
+                },
+                "end": {
+                  "local": "2026-11-25T23:59",
+                  "zone": "America/Chicago",
+                  "disambiguation": "reject"
+                }
+              }
+            ],
+            "availabilityStatus": "reviewed",
+            "forecastHourlyMinor": 3500,
+            "sourceIds": [
+              "fixture-route"
+            ]
+          },
+          {
+            "id": "tour-console",
+            "label": "Console A · planned tour unit",
+            "kind": "equipment",
+            "personId": null,
+            "skills": [
+              "console_control"
+            ],
+            "capacity": 1,
+            "availability": [
+              {
+                "start": {
+                  "local": "2026-11-20T00:00",
+                  "zone": "America/Denver",
+                  "disambiguation": "reject"
+                },
+                "end": {
+                  "local": "2026-11-25T23:59",
+                  "zone": "America/Chicago",
+                  "disambiguation": "reject"
+                }
+              }
+            ],
+            "availabilityStatus": "reviewed",
+            "forecastHourlyMinor": null,
+            "sourceIds": [
+              "fixture-route"
+            ]
+          }
+        ],
+        "legs": [
+          {
+            "id": "denver-omaha",
+            "label": "Denver → Omaha · declared road move",
+            "fromProductionId": "eeeeeeee-0000-4000-8000-000000000010",
+            "toProductionId": "eeeeeeee-0000-4000-8000-000000000011",
+            "resourceIds": [
+              "sam",
+              "priya",
+              "tom",
+              "tour-console"
+            ],
+            "departure": {
+              "local": "2026-11-21T09:00",
+              "zone": "America/Denver",
+              "disambiguation": "reject"
+            },
+            "durationMinutes": 480,
+            "loadingMinutes": 30,
+            "unloadingMinutes": 30,
+            "mode": "road",
+            "status": "reviewed",
+            "forecastCostMinor": 26000,
+            "sourceIds": [
+              "fixture-route"
+            ]
+          },
+          {
+            "id": "omaha-chicago",
+            "label": "Omaha → Chicago · overnight move",
+            "fromProductionId": "eeeeeeee-0000-4000-8000-000000000011",
+            "toProductionId": "eeeeeeee-0000-4000-8000-000000000012",
+            "resourceIds": [
+              "sam",
+              "priya",
+              "tom",
+              "tour-console"
+            ],
+            "departure": {
+              "local": "2026-11-22T21:00",
+              "zone": "America/Chicago",
+              "disambiguation": "reject"
+            },
+            "durationMinutes": 360,
+            "loadingMinutes": 30,
+            "unloadingMinutes": 30,
+            "mode": "road",
+            "status": "reviewed",
+            "forecastCostMinor": 18000,
+            "sourceIds": [
+              "fixture-route"
+            ]
+          }
+        ],
+        "sources": [
+          {
+            "id": "fixture-route",
+            "title": "Declared road timings & forecast costs · sample",
+            "kind": "fixture",
+            "status": "reviewed",
+            "version": 1,
+            "contentHash": null,
+            "documentId": null,
+            "locator": "Owned fictional tour brief",
+            "note": "Synthetic planning inputs for deterministic qualification. No physical work, booking, availability or market price is asserted."
+          },
+          {
+            "id": "fixture-direct",
+            "title": "Dedicated transfer alternative · sample",
+            "kind": "fixture",
+            "status": "reviewed",
+            "version": 1,
+            "contentHash": null,
+            "documentId": null,
+            "locator": "Owned fictional tour brief",
+            "note": "Synthetic planning inputs for deterministic qualification. No physical work, booking, availability or market price is asserted."
+          },
+          {
+            "id": "fixture-rail",
+            "title": "Unconfirmed rail option · sample",
+            "kind": "fixture",
+            "status": "unknown",
+            "version": 1,
+            "contentHash": null,
+            "documentId": null,
+            "locator": "Owned fictional tour brief",
+            "note": "No timetable or carrier evidence is supplied. Travel time and cost remain unknown."
+          }
+        ],
+        "minimumRestMinutes": 600,
+        "maxDutyMinutes": 300,
+        "id": "eeeeeeee-0000-4000-8000-000000000002",
+        "kind": "tour",
+        "revision": 1,
+        "digest": "6af3fe8eba76de4350de5ad8137f96b42e584377daa9f4969097dc8cc49bcca6",
+        "archived": false,
+        "createdAt": "2026-11-12T06:00:00.000Z",
+        "updatedAt": "2026-11-12T06:00:00.000Z",
+        "actorId": "evaluation:producer",
+        "reason": "Synthetic planning fixture; no booking or real availability"
+      },
+      "productions": [
+        {
+          "id": "eeeeeeee-0000-4000-8000-000000000010",
+          "kind": "production",
+          "revision": 1,
+          "digest": "6d3e9e2b4dae6ada4d6b54a21fac4cdb88274708e7d269d7725f1906bf980b8a",
+          "archived": false,
+          "createdAt": "2026-11-12T06:00:00.000Z",
+          "updatedAt": "2026-11-12T06:00:00.000Z",
+          "actorId": "evaluation:producer",
+          "reason": "Instantiated the reviewed template with empty operational and commercial evidence",
+          "name": "Computational Night Ferries · Denver",
+          "origin": "template_derived",
+          "showDate": "2026-11-20",
+          "venue": {
+            "name": "Lantern Theatre",
+            "city": "Denver",
+            "zone": "America/Denver",
+            "access": {
+              "local": "2026-11-20T08:00",
+              "zone": "America/Denver",
+              "disambiguation": "reject",
+              "instant": "2026-11-20T15:00:00Z",
+              "offset": "-07:00"
+            },
+            "curfew": {
+              "local": "2026-11-20T23:00",
+              "zone": "America/Denver",
+              "disambiguation": "reject",
+              "instant": "2026-11-21T06:00:00Z",
+              "offset": "-07:00"
+            },
+            "accessUntil": {
+              "local": "2026-11-20T23:30",
+              "zone": "America/Denver",
+              "disambiguation": "reject",
+              "instant": "2026-11-21T06:30:00Z",
+              "offset": "-07:00"
+            },
+            "sourceIds": [
+              "fixture-rider"
+            ]
+          },
+          "template": {
+            "id": "eeeeeeee-0000-4000-8000-000000000001",
+            "revision": 1,
+            "digest": "688b2580eda730c7da5576b9de3134ef0485ecd3c70b6decf75b34ce4dd9dc51"
+          },
+          "compilerBinding": null,
+          "slots": [
+            {
+              "id": "stage-manager",
+              "label": "Stage manager",
+              "kind": "person",
+              "skills": [
+                "stage_management"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "lighting-programmer",
+              "label": "Lighting programmer",
+              "kind": "person",
+              "skills": [
+                "lx_programming"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "lighting-tech",
+              "label": "Lighting technician",
+              "kind": "person",
+              "skills": [
+                "lx_focus"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "console",
+              "label": "Portable lighting console",
+              "kind": "equipment",
+              "skills": [
+                "console_control"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            }
+          ],
+          "calls": [
+            {
+              "id": "load-in",
+              "label": "Load-in & stage access",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-20T10:00",
+                "zone": "America/Denver",
+                "disambiguation": "reject",
+                "instant": "2026-11-20T17:00:00Z",
+                "offset": "-07:00"
+              },
+              "end": {
+                "local": "2026-11-20T11:00",
+                "zone": "America/Denver",
+                "disambiguation": "earlier",
+                "instant": "2026-11-20T18:00:00Z",
+                "offset": "-07:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "focus",
+              "label": "LX focus & programming",
+              "lane": "lighting",
+              "durationMinutes": 60,
+              "slotIds": [
+                "lighting-programmer",
+                "console"
+              ],
+              "requiredSkills": [
+                "lx_programming"
+              ],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-20T12:00",
+                "zone": "America/Denver",
+                "disambiguation": "reject",
+                "instant": "2026-11-20T19:00:00Z",
+                "offset": "-07:00"
+              },
+              "end": {
+                "local": "2026-11-20T13:00",
+                "zone": "America/Denver",
+                "disambiguation": "earlier",
+                "instant": "2026-11-20T20:00:00Z",
+                "offset": "-07:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "line-check",
+              "label": "Lighting line check",
+              "lane": "lighting",
+              "durationMinutes": 30,
+              "slotIds": [
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [
+                "lx_focus"
+              ],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-20T13:00",
+                "zone": "America/Denver",
+                "disambiguation": "reject",
+                "instant": "2026-11-20T20:00:00Z",
+                "offset": "-07:00"
+              },
+              "end": {
+                "local": "2026-11-20T13:30",
+                "zone": "America/Denver",
+                "disambiguation": "earlier",
+                "instant": "2026-11-20T20:30:00Z",
+                "offset": "-07:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "show",
+              "label": "The Night Ferries · performance",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-programmer",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": true,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-20T18:00",
+                "zone": "America/Denver",
+                "disambiguation": "reject",
+                "instant": "2026-11-21T01:00:00Z",
+                "offset": "-07:00"
+              },
+              "end": {
+                "local": "2026-11-20T19:00",
+                "zone": "America/Denver",
+                "disambiguation": "earlier",
+                "instant": "2026-11-21T02:00:00Z",
+                "offset": "-07:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "strike",
+              "label": "Quiet strike & release",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-programmer",
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-20T19:00",
+                "zone": "America/Denver",
+                "disambiguation": "reject",
+                "instant": "2026-11-21T02:00:00Z",
+                "offset": "-07:00"
+              },
+              "end": {
+                "local": "2026-11-20T20:00",
+                "zone": "America/Denver",
+                "disambiguation": "earlier",
+                "instant": "2026-11-21T03:00:00Z",
+                "offset": "-07:00"
+              },
+              "earliest": null,
+              "latest": null
+            }
+          ],
+          "dependencies": [
+            {
+              "id": "load-focus",
+              "from": "load-in",
+              "to": "focus",
+              "lagMinutes": 30,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "focus-check",
+              "from": "focus",
+              "to": "line-check",
+              "lagMinutes": 0,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "check-show",
+              "from": "line-check",
+              "to": "show",
+              "lagMinutes": 30,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "show-strike",
+              "from": "show",
+              "to": "strike",
+              "lagMinutes": 0,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            }
+          ],
+          "allocations": {
+            "stage-manager": "sam",
+            "lighting-programmer": "priya",
+            "lighting-tech": "tom",
+            "console": "tour-console"
+          },
+          "assignmentOverrides": {},
+          "minimumRestMinutes": 600,
+          "maxDutyMinutes": 1440,
+          "sources": [
+            {
+              "id": "fixture-rider",
+              "title": "Night Ferries touring requirements · sample v1",
+              "kind": "fixture",
+              "status": "reviewed",
+              "version": 1,
+              "contentHash": null,
+              "documentId": null,
+              "locator": "Owned fictional tour brief",
+              "note": "Synthetic planning inputs for deterministic qualification. No physical work, booking, availability or market price is asserted."
+            }
+          ],
+          "unknowns": [],
+          "stage": {
+            "width": null,
+            "depth": null,
+            "units": "normalized",
+            "status": "illustrative",
+            "sourceIds": [
+              "fixture-rider"
+            ],
+            "pins": [
+              {
+                "id": "console-pin",
+                "label": "Lighting control",
+                "x": 0.76,
+                "y": 0.78,
+                "slotId": "console",
+                "callId": "focus",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "stage-pin",
+                "label": "Stage management",
+                "x": 0.17,
+                "y": 0.34,
+                "slotId": "stage-manager",
+                "callId": "show",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "programmer-pin",
+                "label": "Programming station",
+                "x": 0.66,
+                "y": 0.63,
+                "slotId": "lighting-programmer",
+                "callId": "focus",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "rig-pin",
+                "label": "Lighting position",
+                "x": 0.47,
+                "y": 0.18,
+                "slotId": "lighting-tech",
+                "callId": "line-check",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              }
+            ]
+          },
+          "operationalEvidence": [],
+          "commercialEvidence": []
+        },
+        {
+          "id": "eeeeeeee-0000-4000-8000-000000000011",
+          "kind": "production",
+          "revision": 1,
+          "digest": "3e455b2dc896ceb4c734827e72105e29b95e48dcd2c522c26e6b7829ded884ca",
+          "archived": false,
+          "createdAt": "2026-11-12T06:00:00.000Z",
+          "updatedAt": "2026-11-12T06:00:00.000Z",
+          "actorId": "evaluation:producer",
+          "reason": "Instantiated the reviewed template with empty operational and commercial evidence",
+          "name": "Computational Night Ferries · Omaha",
+          "origin": "template_derived",
+          "showDate": "2026-11-22",
+          "venue": {
+            "name": "Prairie Rooms",
+            "city": "Omaha",
+            "zone": "America/Chicago",
+            "access": {
+              "local": "2026-11-22T08:00",
+              "zone": "America/Chicago",
+              "disambiguation": "reject",
+              "instant": "2026-11-22T14:00:00Z",
+              "offset": "-06:00"
+            },
+            "curfew": {
+              "local": "2026-11-22T23:00",
+              "zone": "America/Chicago",
+              "disambiguation": "reject",
+              "instant": "2026-11-23T05:00:00Z",
+              "offset": "-06:00"
+            },
+            "accessUntil": {
+              "local": "2026-11-22T23:30",
+              "zone": "America/Chicago",
+              "disambiguation": "reject",
+              "instant": "2026-11-23T05:30:00Z",
+              "offset": "-06:00"
+            },
+            "sourceIds": [
+              "fixture-rider"
+            ]
+          },
+          "template": {
+            "id": "eeeeeeee-0000-4000-8000-000000000001",
+            "revision": 1,
+            "digest": "688b2580eda730c7da5576b9de3134ef0485ecd3c70b6decf75b34ce4dd9dc51"
+          },
+          "compilerBinding": null,
+          "slots": [
+            {
+              "id": "stage-manager",
+              "label": "Stage manager",
+              "kind": "person",
+              "skills": [
+                "stage_management"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "lighting-programmer",
+              "label": "Lighting programmer",
+              "kind": "person",
+              "skills": [
+                "lx_programming"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "lighting-tech",
+              "label": "Lighting technician",
+              "kind": "person",
+              "skills": [
+                "lx_focus"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "console",
+              "label": "Portable lighting console",
+              "kind": "equipment",
+              "skills": [
+                "console_control"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            }
+          ],
+          "calls": [
+            {
+              "id": "load-in",
+              "label": "Load-in & stage access",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-22T10:00",
+                "zone": "America/Chicago",
+                "disambiguation": "reject",
+                "instant": "2026-11-22T16:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-22T11:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-22T17:00:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "focus",
+              "label": "LX focus & programming",
+              "lane": "lighting",
+              "durationMinutes": 60,
+              "slotIds": [
+                "lighting-programmer",
+                "console"
+              ],
+              "requiredSkills": [
+                "lx_programming"
+              ],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-22T12:00",
+                "zone": "America/Chicago",
+                "disambiguation": "reject",
+                "instant": "2026-11-22T18:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-22T13:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-22T19:00:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "line-check",
+              "label": "Lighting line check",
+              "lane": "lighting",
+              "durationMinutes": 30,
+              "slotIds": [
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [
+                "lx_focus"
+              ],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-22T13:00",
+                "zone": "America/Chicago",
+                "disambiguation": "reject",
+                "instant": "2026-11-22T19:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-22T13:30",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-22T19:30:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "show",
+              "label": "The Night Ferries · performance",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-programmer",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": true,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-22T18:00",
+                "zone": "America/Chicago",
+                "disambiguation": "reject",
+                "instant": "2026-11-23T00:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-22T19:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-23T01:00:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "strike",
+              "label": "Quiet strike & release",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-programmer",
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-22T19:00",
+                "zone": "America/Chicago",
+                "disambiguation": "reject",
+                "instant": "2026-11-23T01:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-22T20:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-23T02:00:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            }
+          ],
+          "dependencies": [
+            {
+              "id": "load-focus",
+              "from": "load-in",
+              "to": "focus",
+              "lagMinutes": 30,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "focus-check",
+              "from": "focus",
+              "to": "line-check",
+              "lagMinutes": 0,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "check-show",
+              "from": "line-check",
+              "to": "show",
+              "lagMinutes": 30,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "show-strike",
+              "from": "show",
+              "to": "strike",
+              "lagMinutes": 0,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            }
+          ],
+          "allocations": {
+            "stage-manager": "sam",
+            "lighting-programmer": "priya",
+            "lighting-tech": "tom",
+            "console": "tour-console"
+          },
+          "assignmentOverrides": {},
+          "minimumRestMinutes": 600,
+          "maxDutyMinutes": 1440,
+          "sources": [
+            {
+              "id": "fixture-rider",
+              "title": "Night Ferries touring requirements · sample v1",
+              "kind": "fixture",
+              "status": "reviewed",
+              "version": 1,
+              "contentHash": null,
+              "documentId": null,
+              "locator": "Owned fictional tour brief",
+              "note": "Synthetic planning inputs for deterministic qualification. No physical work, booking, availability or market price is asserted."
+            }
+          ],
+          "unknowns": [],
+          "stage": {
+            "width": null,
+            "depth": null,
+            "units": "normalized",
+            "status": "illustrative",
+            "sourceIds": [
+              "fixture-rider"
+            ],
+            "pins": [
+              {
+                "id": "console-pin",
+                "label": "Lighting control",
+                "x": 0.76,
+                "y": 0.78,
+                "slotId": "console",
+                "callId": "focus",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "stage-pin",
+                "label": "Stage management",
+                "x": 0.17,
+                "y": 0.34,
+                "slotId": "stage-manager",
+                "callId": "show",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "programmer-pin",
+                "label": "Programming station",
+                "x": 0.66,
+                "y": 0.63,
+                "slotId": "lighting-programmer",
+                "callId": "focus",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "rig-pin",
+                "label": "Lighting position",
+                "x": 0.47,
+                "y": 0.18,
+                "slotId": "lighting-tech",
+                "callId": "line-check",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              }
+            ]
+          },
+          "operationalEvidence": [],
+          "commercialEvidence": []
+        },
+        {
+          "id": "eeeeeeee-0000-4000-8000-000000000012",
+          "kind": "production",
+          "revision": 1,
+          "digest": "e5d85f89c9ee5349ae4d045cc91d8c04f50dd28e8ef51c40e090036e1361e645",
+          "archived": false,
+          "createdAt": "2026-11-12T06:00:00.000Z",
+          "updatedAt": "2026-11-12T06:00:00.000Z",
+          "actorId": "evaluation:producer",
+          "reason": "Instantiated the reviewed template with empty operational and commercial evidence",
+          "name": "Computational Night Ferries · Chicago",
+          "origin": "template_derived",
+          "showDate": "2026-11-23",
+          "venue": {
+            "name": "Mercury Hall",
+            "city": "Chicago",
+            "zone": "America/Chicago",
+            "access": {
+              "local": "2026-11-23T08:00",
+              "zone": "America/Chicago",
+              "disambiguation": "reject",
+              "instant": "2026-11-23T14:00:00Z",
+              "offset": "-06:00"
+            },
+            "curfew": {
+              "local": "2026-11-23T23:00",
+              "zone": "America/Chicago",
+              "disambiguation": "reject",
+              "instant": "2026-11-24T05:00:00Z",
+              "offset": "-06:00"
+            },
+            "accessUntil": {
+              "local": "2026-11-23T23:30",
+              "zone": "America/Chicago",
+              "disambiguation": "reject",
+              "instant": "2026-11-24T05:30:00Z",
+              "offset": "-06:00"
+            },
+            "sourceIds": [
+              "fixture-rider"
+            ]
+          },
+          "template": {
+            "id": "eeeeeeee-0000-4000-8000-000000000001",
+            "revision": 1,
+            "digest": "688b2580eda730c7da5576b9de3134ef0485ecd3c70b6decf75b34ce4dd9dc51"
+          },
+          "compilerBinding": null,
+          "slots": [
+            {
+              "id": "stage-manager",
+              "label": "Stage manager",
+              "kind": "person",
+              "skills": [
+                "stage_management"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "lighting-programmer",
+              "label": "Lighting programmer",
+              "kind": "person",
+              "skills": [
+                "lx_programming"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "lighting-tech",
+              "label": "Lighting technician",
+              "kind": "person",
+              "skills": [
+                "lx_focus"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "console",
+              "label": "Portable lighting console",
+              "kind": "equipment",
+              "skills": [
+                "console_control"
+              ],
+              "capacity": 1,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            }
+          ],
+          "calls": [
+            {
+              "id": "load-in",
+              "label": "Load-in & stage access",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-23T14:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-23T20:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-23T15:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-23T21:00:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "focus",
+              "label": "LX focus & programming",
+              "lane": "lighting",
+              "durationMinutes": 60,
+              "slotIds": [
+                "lighting-programmer",
+                "console"
+              ],
+              "requiredSkills": [
+                "lx_programming"
+              ],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-23T16:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-23T22:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-23T17:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-23T23:00:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "line-check",
+              "label": "Lighting line check",
+              "lane": "lighting",
+              "durationMinutes": 30,
+              "slotIds": [
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [
+                "lx_focus"
+              ],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-23T17:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-23T23:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-23T17:30",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-23T23:30:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "show",
+              "label": "The Night Ferries · performance",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-programmer",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": true,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-23T18:00",
+                "zone": "America/Chicago",
+                "disambiguation": "reject",
+                "instant": "2026-11-24T00:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-23T19:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-24T01:00:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            },
+            {
+              "id": "strike",
+              "label": "Quiet strike & release",
+              "lane": "stage",
+              "durationMinutes": 60,
+              "slotIds": [
+                "stage-manager",
+                "lighting-programmer",
+                "lighting-tech",
+                "console"
+              ],
+              "requiredSkills": [],
+              "amplified": false,
+              "sourceIds": [
+                "fixture-rider"
+              ],
+              "start": {
+                "local": "2026-11-23T19:00",
+                "zone": "America/Chicago",
+                "disambiguation": "reject",
+                "instant": "2026-11-24T01:00:00Z",
+                "offset": "-06:00"
+              },
+              "end": {
+                "local": "2026-11-23T20:00",
+                "zone": "America/Chicago",
+                "disambiguation": "earlier",
+                "instant": "2026-11-24T02:00:00Z",
+                "offset": "-06:00"
+              },
+              "earliest": null,
+              "latest": null
+            }
+          ],
+          "dependencies": [
+            {
+              "id": "load-focus",
+              "from": "load-in",
+              "to": "focus",
+              "lagMinutes": 30,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "focus-check",
+              "from": "focus",
+              "to": "line-check",
+              "lagMinutes": 0,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "check-show",
+              "from": "line-check",
+              "to": "show",
+              "lagMinutes": 30,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            },
+            {
+              "id": "show-strike",
+              "from": "show",
+              "to": "strike",
+              "lagMinutes": 0,
+              "sourceIds": [
+                "fixture-rider"
+              ]
+            }
+          ],
+          "allocations": {
+            "stage-manager": "sam",
+            "lighting-programmer": "priya",
+            "lighting-tech": "tom",
+            "console": "tour-console"
+          },
+          "assignmentOverrides": {},
+          "minimumRestMinutes": 600,
+          "maxDutyMinutes": 1440,
+          "sources": [
+            {
+              "id": "fixture-rider",
+              "title": "Night Ferries touring requirements · sample v1",
+              "kind": "fixture",
+              "status": "reviewed",
+              "version": 1,
+              "contentHash": null,
+              "documentId": null,
+              "locator": "Owned fictional tour brief",
+              "note": "Synthetic planning inputs for deterministic qualification. No physical work, booking, availability or market price is asserted."
+            }
+          ],
+          "unknowns": [],
+          "stage": {
+            "width": null,
+            "depth": null,
+            "units": "normalized",
+            "status": "illustrative",
+            "sourceIds": [
+              "fixture-rider"
+            ],
+            "pins": [
+              {
+                "id": "console-pin",
+                "label": "Lighting control",
+                "x": 0.76,
+                "y": 0.78,
+                "slotId": "console",
+                "callId": "focus",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "stage-pin",
+                "label": "Stage management",
+                "x": 0.17,
+                "y": 0.34,
+                "slotId": "stage-manager",
+                "callId": "show",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "programmer-pin",
+                "label": "Programming station",
+                "x": 0.66,
+                "y": 0.63,
+                "slotId": "lighting-programmer",
+                "callId": "focus",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              },
+              {
+                "id": "rig-pin",
+                "label": "Lighting position",
+                "x": 0.47,
+                "y": 0.18,
+                "slotId": "lighting-tech",
+                "callId": "line-check",
+                "sourceIds": [
+                  "fixture-rider"
+                ]
+              }
+            ]
+          },
+          "operationalEvidence": [],
+          "commercialEvidence": []
+        }
+      ]
+    },
+    "output": {
+      "report": {
+        "status": "infeasible",
+        "hard": [
+          {
+            "id": "MAXIMUM_DUTY:7816697bef186e540e2b4546",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Sam Rivera's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000010"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "sam"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:c5ebc9d4a11d876541a95f0f",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Sam Rivera's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000010"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "sam"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:5f34c9bc963c4622b85c276f",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Sam Rivera's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000011"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "sam"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:7b1de6b09947ca40d8844217",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Sam Rivera's duty span is 1050 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000011"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "sam"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:95fe04b043d33c349f0c1dc4",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Sam Rivera's duty span is 360 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000012"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "sam"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:04c2e7e72122ea328162e53b",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Priya Shah's duty span is 480 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000010"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "priya"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:4af15b8526ba6ed019f01e36",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Priya Shah's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000010"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "priya"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:b7b6b50d867e16450f0b120f",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Priya Shah's duty span is 480 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000011"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "priya"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:3457f9212ec842317241eb98",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Priya Shah's duty span is 930 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000011"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "priya"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:49849f51d9830c4a6a5bdde3",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Tom Chen's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000010"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "tom"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:800d0bf45519d188a8c4baa3",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Tom Chen's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000010"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "tom"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:0e96228cfe0b2ee61b07eb54",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Tom Chen's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000011"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "tom"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:e410e75e226d0edd73f8d341",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Tom Chen's duty span is 1050 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000011"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "tom"
+            ],
+            "sourceIds": []
+          },
+          {
+            "id": "MAXIMUM_DUTY:d969286c3c857da4ca1e0129",
+            "code": "MAXIMUM_DUTY",
+            "severity": "hard",
+            "message": "Tom Chen's duty span is 360 minutes without a complete rest break; the maximum is 300.",
+            "productionIds": [
+              "eeeeeeee-0000-4000-8000-000000000012"
+            ],
+            "callIds": [],
+            "resourceIds": [
+              "tom"
+            ],
+            "sourceIds": []
+          }
+        ],
+        "unknown": [],
+        "approvals": [],
+        "rests": [
+          {
+            "resourceId": "sam",
+            "fromProductionId": "eeeeeeee-0000-4000-8000-000000000010",
+            "toProductionId": "eeeeeeee-0000-4000-8000-000000000011",
+            "previousEnd": "2026-11-21T03:00:00Z",
+            "nextStart": "2026-11-22T16:00:00Z",
+            "travelMinutes": 540,
+            "restMinutes": 930,
+            "minimumMinutes": 600,
+            "slackMinutes": 330,
+            "status": "pass"
+          },
+          {
+            "resourceId": "sam",
+            "fromProductionId": "eeeeeeee-0000-4000-8000-000000000011",
+            "toProductionId": "eeeeeeee-0000-4000-8000-000000000012",
+            "previousEnd": "2026-11-23T02:00:00Z",
+            "nextStart": "2026-11-23T20:00:00Z",
+            "travelMinutes": 420,
+            "restMinutes": 630,
+            "minimumMinutes": 600,
+            "slackMinutes": 30,
+            "status": "pass"
+          },
+          {
+            "resourceId": "priya",
+            "fromProductionId": "eeeeeeee-0000-4000-8000-000000000010",
+            "toProductionId": "eeeeeeee-0000-4000-8000-000000000011",
+            "previousEnd": "2026-11-21T03:00:00Z",
+            "nextStart": "2026-11-22T18:00:00Z",
+            "travelMinutes": 540,
+            "restMinutes": 1050,
+            "minimumMinutes": 600,
+            "slackMinutes": 450,
+            "status": "pass"
+          },
+          {
+            "resourceId": "priya",
+            "fromProductionId": "eeeeeeee-0000-4000-8000-000000000011",
+            "toProductionId": "eeeeeeee-0000-4000-8000-000000000012",
+            "previousEnd": "2026-11-23T02:00:00Z",
+            "nextStart": "2026-11-23T22:00:00Z",
+            "travelMinutes": 420,
+            "restMinutes": 750,
+            "minimumMinutes": 600,
+            "slackMinutes": 150,
+            "status": "pass"
+          },
+          {
+            "resourceId": "tom",
+            "fromProductionId": "eeeeeeee-0000-4000-8000-000000000010",
+            "toProductionId": "eeeeeeee-0000-4000-8000-000000000011",
+            "previousEnd": "2026-11-21T03:00:00Z",
+            "nextStart": "2026-11-22T16:00:00Z",
+            "travelMinutes": 540,
+            "restMinutes": 930,
+            "minimumMinutes": 600,
+            "slackMinutes": 330,
+            "status": "pass"
+          },
+          {
+            "resourceId": "tom",
+            "fromProductionId": "eeeeeeee-0000-4000-8000-000000000011",
+            "toProductionId": "eeeeeeee-0000-4000-8000-000000000012",
+            "previousEnd": "2026-11-23T02:00:00Z",
+            "nextStart": "2026-11-23T20:00:00Z",
+            "travelMinutes": 420,
+            "restMinutes": 630,
+            "minimumMinutes": 600,
+            "slackMinutes": 30,
+            "status": "pass"
+          }
+        ],
+        "forecast": {
+          "travelMinor": 44000,
+          "labourMinor": 89250,
+          "totalMinor": 133250,
+          "unknownItems": 0,
+          "currency": "USD"
+        },
+        "travelMinutes": 960,
+        "engine": null
+      },
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 173,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      }
+    },
+    "observation": {
+      "id": "T13",
+      "state": "fail",
+      "observedStatus": "infeasible",
+      "findings": [
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 1050 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Sam Rivera's duty span is 360 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "sam"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 480 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "priya"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "priya"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 480 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "priya"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Priya Shah's duty span is 930 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "priya"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "tom"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000010",
+            "tom"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "tom"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 1050 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000011",
+            "tom"
+          ]
+        },
+        {
+          "code": "MAXIMUM_DUTY",
+          "severity": "hard",
+          "message": "Tom Chen's duty span is 360 minutes without a complete rest break; the maximum is 300.",
+          "subjects": [
+            "eeeeeeee-0000-4000-8000-000000000012",
+            "tom"
+          ]
+        }
+      ],
+      "measurements": {
+        "samRestMinutes": 630,
+        "travelMinutes": 960,
+        "travelForecastMinor": 44000,
+        "productionCount": 3,
+        "taskCount": 15,
+        "resourceCount": 4,
+        "approvalsGranted": 0
+      },
+      "mismatches": [
+        "Evaluation attempted forbidden transport;the isolation guard blocked it."
+      ],
+      "engine": {
+        "status": "passed",
+        "scope": "product_temporal",
+        "version": "8.0.0",
+        "durationMs": 173,
+        "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+        "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+        "taskCount": 15,
+        "resourceCount": 0,
+        "assignmentCount": 0,
+        "reason": null
+      },
+      "durationMs": 209.11,
+      "heapDeltaBytes": 70370920,
+      "inputDigest": "0f7b815ed86d4ac4cb855de5d27cc5e8d462ad5876882452a39a135384eb5ae3",
+      "outputDigest": "5c146ea8d39409d88bf1db61c637980c68a95ff02beddf48629b876cd6603439",
+      "inputUnchanged": true,
+      "artifact": "cases/T13.json"
+    }
+  },
+  "observation": {
+    "id": "T13",
+    "state": "fail",
+    "observedStatus": "infeasible",
+    "findings": [
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Sam Rivera's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000010",
+          "sam"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Sam Rivera's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000010",
+          "sam"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Sam Rivera's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000011",
+          "sam"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Sam Rivera's duty span is 1050 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000011",
+          "sam"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Sam Rivera's duty span is 360 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000012",
+          "sam"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Priya Shah's duty span is 480 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000010",
+          "priya"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Priya Shah's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000010",
+          "priya"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Priya Shah's duty span is 480 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000011",
+          "priya"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Priya Shah's duty span is 930 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000011",
+          "priya"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Tom Chen's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000010",
+          "tom"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Tom Chen's duty span is 540 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000010",
+          "tom"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Tom Chen's duty span is 600 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000011",
+          "tom"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Tom Chen's duty span is 1050 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000011",
+          "tom"
+        ]
+      },
+      {
+        "code": "MAXIMUM_DUTY",
+        "severity": "hard",
+        "message": "Tom Chen's duty span is 360 minutes without a complete rest break; the maximum is 300.",
+        "subjects": [
+          "eeeeeeee-0000-4000-8000-000000000012",
+          "tom"
+        ]
+      }
+    ],
+    "measurements": {
+      "samRestMinutes": 630,
+      "travelMinutes": 960,
+      "travelForecastMinor": 44000,
+      "productionCount": 3,
+      "taskCount": 15,
+      "resourceCount": 4,
+      "approvalsGranted": 0
+    },
+    "mismatches": [
+      "Evaluation attempted forbidden transport;the isolation guard blocked it."
+    ],
+    "engine": {
+      "status": "passed",
+      "scope": "product_temporal",
+      "version": "8.0.0",
+      "durationMs": 173,
+      "inputDigest": "5fa320b9baab7d18d3e8e98dd27a7818faf5f1f8a82adc524c84bdee3b91e997",
+      "resultDigest": "e7cdeade6cf9f47a5622e16e1ea257debb727fecd8fb252e7cb4c2da5862b5e7",
+      "taskCount": 15,
+      "resourceCount": 0,
+      "assignmentCount": 0,
+      "reason": null
+    },
+    "durationMs": 209.11,
+    "heapDeltaBytes": 70370920,
+    "inputDigest": "0f7b815ed86d4ac4cb855de5d27cc5e8d462ad5876882452a39a135384eb5ae3",
+    "outputDigest": "5c146ea8d39409d88bf1db61c637980c68a95ff02beddf48629b876cd6603439",
+    "inputUnchanged": true,
+    "artifact": "cases/T13.json"
+  }
+}
