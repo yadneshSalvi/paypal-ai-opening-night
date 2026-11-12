@@ -1,18 +1,19 @@
 import type { ShowSnapshot, SupplierOffer } from "./contracts";
 import { selectedInterruption } from "./disruptions";
 import type { RentalReturnRef } from "./rental-closeout";
+import type { SupplierTermRef } from "./supplier-recovery";
 
 export const supplierIds = ["brightline", "northside", "sister"] as const;
 export type SupplierId = typeof supplierIds[number];
 export interface SupplierQuoteRef {
   id: string; termsDigest: string; issuedAt: string; validUntil: string;
-  serviceId: string; source: "authenticated_fixture_service";
+  serviceId: string; source: "authenticated_fixture_service"; termsSource?: SupplierTermRef;
 }
 export interface SupplierQuote {
   schemaVersion: 1; id: string; tenantId: string; supplierId: SupplierId; revision: number;
   issuedAt: string; validUntil: string; offer: Omit<SupplierOffer, "serviceQuote">;
   equipment: { model: string; capabilityEvidence: string; driverEvidence: string | null; conditionEvidence: string | null };
-  cancellation: string; source: "controlled_fixture"; termsDigest: string; signature: string;
+  cancellation: string; source: "controlled_fixture"; termsDigest: string; signature: string; termsSource?: SupplierTermRef;
 }
 export type RentalState = "held" | "awaiting_payment" | "authorized" | "confirmed" | "delivered" | "accepted" | "returned" | "returned_unaccepted" | "expired" | "reconfirmation_required" | "compensation_pending" | "cancelled" | "needs_attention";
 export interface RentalExecution {

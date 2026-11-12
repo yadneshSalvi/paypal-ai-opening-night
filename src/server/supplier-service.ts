@@ -8,9 +8,12 @@ import { currentActual } from "@/domain/finance";
 import type { DeliveryReceipt, RentalExecution, SupplierId, SupplierQuote } from "@/domain/supplier-contracts";
 import { atVenue, compareInstants } from "@/domain/time";
 import { hasCurrentSupportOnlyPlan, latestSupplierDisruption, supplierInterruption } from "@/domain/disruptions";
+import type { SupplierDeclineCode, SupplierTermsRecord } from "@/domain/supplier-recovery";
 import { enqueueJob, type JobResult } from "./jobs";
 import { signSupplierQuote, signSupplierResponse, verifySupplierQuote, type SupplierRequest, type SupplierResponse, type SupplierResult } from "./supplier-protocol";
 import { appendSupplierFact, assertProducer, assertRevision, assertSupplier, lockSupplierShow, readRentalExecution, saveRentalExecution, saveSupplierSnapshot, supplierActor, supplierTransaction } from "./supplier-storage";
+import { readRecoveryRfq, readSupplierTerms, requireRecoveryRfq, requireSupplierRecoveryAuthority, supplierTermsBlocker, supplierUnitCommitted } from "./supplier-recovery/store";
+import type { RecoveryRfqRecord } from "./supplier-recovery/contracts";
 
 const HOLD_MS = 10 * 60 * 1000;
 const QUOTE_MS = 15 * 60 * 1000;
@@ -30,19 +33,30 @@ export function currentSupplierPlan(show: ShowSnapshot, execution: RentalExecuti
   if (!allowReturnAfterDisruption && (supplierInterruption(show, offer) || show.cancellationDecision && !hasCurrentSupportOnlyPlan(show))) throw new DomainError("SUPPLIER_DISRUPTION_REVIEW", "The supplier or program changed after these terms. Review the original commitment and obtain fresh terms before another fulfillment step.");
   return offer;
 }
-async function issueQuote(client: PoolClient, show: ShowSnapshot, supplierId: SupplierId): Promise<SupplierQuote> {
+async function issueQuote(client: PoolClient, show: ShowSnapshot, supplierId: SupplierId, reviewed: RecoveryRfqRecord | null): Promise<Extract<SupplierResult, { kind: "quote" | "declined" }>> {
   const base = createFixture(show.tenantId).offers.find(offer => offer.supplierId === supplierId)!;
-  const disruption = latestSupplierDisruption(show, base);
-  if (disruption?.availability === "unavailable") throw new DomainError("SUPPLIER_UNAVAILABLE", "The current attributed report withdraws this unit. Its supplier must record new availability before issuing another quote.");
+  const disruption = latestSupplierDisruption(show, base), reference = show.supplierTermRevisions?.find(item => item.supplierId === supplierId);
+  if (show.cancellationDecision?.mode === "cancel_show") throw new DomainError("PROGRAM_CANCELLED", "Supplier quotes cannot reopen the cancelled program.");
+  const decline = async (code: SupplierDeclineCode, message: string): Promise<Extract<SupplierResult, { kind: "declined" }>> => ({ kind: "declined", decline: { id: randomUUID(), tenantId: show.tenantId, supplierId, offerId: base.id, unitId: base.unitId, code, message, reportId: disruption?.id ?? null, termsId: reference?.id ?? null, recordedAt: (await databaseTime(client)).toISOString(), source: "authenticated_fixture_service" } });
+  if (disruption?.availability === "unavailable") return decline("UNIT_UNAVAILABLE", "The current attributed report withdraws this unit. The supplier must record new availability before quoting it.");
+  if (reference && !reviewed) throw new DomainError("SUPPLIER_RECOVERY_REVIEW_REQUIRED", "Review current supplier terms and retained commitments through the replacement quote desk.");
+  let terms: SupplierTermsRecord | null = null;
+  if (reference) {
+    const stored = await readSupplierTerms(client, show.tenantId, reference.id); const blocker = await supplierTermsBlocker(client, show, stored.record, stored.digest);
+    if (blocker) return decline(blocker.code, blocker.message);
+    terms = stored.record;
+  } else if (Date.parse(base.expiresAt) <= Date.parse(show.clock)) return decline("FRESH_TERMS_REQUIRED", "The initial scenario quote expired. Publish new supplier-owned delivery and expiry terms; a new request cannot extend the old offer.");
+  const deliveryAt = terms?.input.deliveryAt ?? (disruption?.earliestAt && compareInstants(disruption.earliestAt, base.deliveryAt) > 0 ? disruption.earliestAt : base.deliveryAt);
+  if (await supplierUnitCommitted(client, show.tenantId, supplierId, base.unitId, deliveryAt, show.accessUntil)) return decline("UNIT_ALREADY_COMMITTED", "This exact unit remains committed on an original rental. Its return or release must be reviewed separately.");
   const previous = await client.query<{ revision: number }>("SELECT coalesce(max(revision),1)+1 AS revision FROM on_supplier_quotes WHERE tenant_id=$1 AND supplier_id=$2", [show.tenantId, supplierId]);
   const revision = previous.rows[0]!.revision; const issuedAt = (await databaseTime(client)).toISOString();
-  const offer: SupplierOffer = { ...base, revision, ...(disruption?.earliestAt && compareInstants(disruption.earliestAt, base.deliveryAt) > 0 ? { deliveryAt: disruption.earliestAt } : {}) };
-  const equipment = { model: "Touring LX control desk · controlled fixture unit", capabilityEvidence: "Fixture capability sheet: compatible cue-file import, touring data output and safe power configuration. Acceptance still requires the department lead's inspection.", driverEvidence: base.qualifiedDriver ? `${base.supplier} controlled qualified-driver roster` : null, conditionEvidence: base.conditionVerified ? `${base.unitId} controlled pre-dispatch condition checklist` : null };
+  const offer: SupplierOffer = { ...base, revision, deliveryAt, ...(terms ? { feeMinor: terms.input.feeMinor, depositMinor: terms.input.depositMinor, expiresAt: terms.input.expiresAt, compatible: terms.input.compatible, qualifiedDriver: terms.input.qualifiedDriver, conditionVerified: terms.input.conditionVerified, terms: `${terms.input.reference}. ${terms.input.detail} Supplier-owned controlled edition ${terms.revision}; original obligations remain separate.` } : {}) };
+  const equipment = { model: "Touring LX control desk · controlled fixture unit", capabilityEvidence: terms?.input.capabilityEvidence ?? "Fixture capability sheet: compatible cue-file import, touring data output and safe power configuration. Acceptance still requires the department lead's inspection.", driverEvidence: terms ? terms.input.driverEvidence : base.qualifiedDriver ? `${base.supplier} controlled qualified-driver roster` : null, conditionEvidence: terms ? terms.input.conditionEvidence : base.conditionVerified ? `${base.unitId} controlled pre-dispatch condition checklist` : null };
   const cancellation = "A provisional reservation lasts ten real minutes. Authorization alone does not confirm capacity. An expired hold needs reconfirmation. An uncaptured authorization may be voided only after explicit producer approval; accepted rental fees require separate review.";
-  const content = { schemaVersion: 1 as const, id: randomUUID(), tenantId: show.tenantId, supplierId, revision, issuedAt, validUntil: new Date(Date.parse(issuedAt) + QUOTE_MS).toISOString(), offer, equipment, cancellation, source: "controlled_fixture" as const };
+  const content = { schemaVersion: 1 as const, id: randomUUID(), tenantId: show.tenantId, supplierId, revision, issuedAt, validUntil: new Date(Math.min(Date.parse(issuedAt) + QUOTE_MS, terms ? Date.parse(terms.validUntil) : Infinity, reviewed ? Date.parse(reviewed.expiresAt) : Infinity)).toISOString(), offer, equipment, cancellation, source: "controlled_fixture" as const, ...(terms && reference ? { termsSource: reference } : {}) };
   const quote = signSupplierQuote({ ...content, termsDigest: digest(content) });
   await client.query("INSERT INTO on_supplier_quotes(id,tenant_id,supplier_id,revision,valid_until,document) VALUES($1,$2,$3,$4,$5,$6)", [quote.id, show.tenantId, supplierId, revision, quote.validUntil, quote]);
-  return quote;
+  return { kind: "quote", quote };
 }
 async function hold(client: PoolClient, show: ShowSnapshot, actor: Actor, supplierId: SupplierId, action: Extract<SupplierRequest["action"], { type: "hold" }>) {
   assertProducer(actor); assertRevision(show, action.expectedRevision);
@@ -54,6 +68,12 @@ async function hold(client: PoolClient, show: ShowSnapshot, actor: Actor, suppli
   if (!quote || !verifySupplierQuote(quote) || quote.termsDigest !== offer.serviceQuote.termsDigest || quote.revision !== offer.revision) throw new DomainError("QUOTE_NOT_AUTHENTICATED", "The selected supplier terms cannot be authenticated.");
   const { serviceQuote: _reference, ...approvedOffer } = offer;
   if (digest(approvedOffer) !== digest(quote.offer)) throw new DomainError("QUOTE_CHANGED", "The current offer differs from the supplier's signed terms.");
+  if (quote.termsSource) {
+    if (!action.producerAccess) throw new DomainError("SUPPLIER_HOLD_ACCESS_REQUIRED", "Review this replacement commitment under the producer's exact current access.", 403);
+    await requireSupplierRecoveryAuthority(client, { actor, sessionHash: action.producerAccess.sessionHash }, "producer", action.producerAccess.expiresAt);
+    const source = await readSupplierTerms(client, show.tenantId, quote.termsSource.id), blocker = await supplierTermsBlocker(client, show, source.record, source.digest);
+    if (source.digest !== quote.termsSource.digest || blocker) throw new DomainError("SUPPLIER_TERMS_CHANGED", blocker?.message ?? "The quote's original supplier source changed.");
+  } else if (show.supplierTermRevisions?.some(item => item.supplierId === supplierId)) throw new DomainError("SUPPLIER_TERMS_CHANGED", "Collect the current supplier's published terms before holding this unit.");
   if (Date.parse(quote.validUntil) <= now.getTime() || compareInstants(show.clock, offer.expiresAt) >= 0) throw new DomainError("QUOTE_EXPIRED", "These supplier terms expired. Request new quotes and review a fresh plan.");
   if (!offer.compatible || offer.qualifiedDriver !== true || offer.conditionVerified !== true) throw new DomainError("SUPPLIER_EVIDENCE_MISSING", "Compatible equipment, a qualified driver and a condition report are all required before a hold.");
   if ((await client.query("SELECT id FROM on_rental_executions WHERE tenant_id=$1 AND plan_version=$2", [show.tenantId, show.planVersion])).rowCount) throw new DomainError("EXECUTION_ALREADY_EXISTS", "This plan already has a rental execution. Resume or reconcile its original commitment.");
@@ -131,12 +151,22 @@ export async function processSupplierRequest(supplierId: SupplierId, request: Su
       if (prior.rows[0].payload_hash !== payloadHash) throw new DomainError("SUPPLIER_REQUEST_CONFLICT", "This supplier request identity already has different instructions.");
       return prior.rows[0].response;
     }
-    const actor = await supplierActor(client, request.tenantId, request.actorId);
+    const exactAccess = request.action.type === "hold" ? request.action.producerAccess : undefined;
+    const actor = exactAccess ? (await client.query<{ actor: Actor }>("SELECT actor FROM on_sessions WHERE token_hash=$1 AND tenant_id=$2 AND actor->>'id'=$3", [exactAccess.sessionHash, request.tenantId, request.actorId])).rows[0]?.actor : await supplierActor(client, request.tenantId, request.actorId);
+    if (!actor) throw new DomainError("SUPPLIER_RECOVERY_SESSION_ENDED", "The exact producer access for this replacement commitment is unavailable.", 401);
+    if (exactAccess) await requireSupplierRecoveryAuthority(client, { actor, sessionHash: exactAccess.sessionHash }, "producer", exactAccess.expiresAt);
+    const reviewed = request.action.type === "quote" && request.action.recoveryRfqId ? await readRecoveryRfq(client, request.tenantId, request.action.recoveryRfqId) : null;
+    if (request.action.type === "quote" && request.action.recoveryRfqId) {
+      if (!reviewed || reviewed.actor.id !== request.actorId || reviewed.requestIds[supplierId] !== request.requestId) throw new DomainError("SUPPLIER_RFQ_SCOPE", "Use the exact supplier request identity approved by the original producer session.", 403);
+      await requireRecoveryRfq(client, show, reviewed);
+    }
     let result: SupplierResult;
-    if (request.action.type === "quote") { assertProducer(actor); result = { kind: "quote", quote: await issueQuote(client, show, supplierId) }; }
+    if (request.action.type === "quote") { assertProducer(actor); result = await issueQuote(client, show, supplierId, reviewed); }
     else if (request.action.type === "hold") result = { kind: "execution", execution: await hold(client, show, actor, supplierId, request.action) };
     else result = { kind: "execution", execution: await changeReservation(client, show, actor, supplierId, request.action) };
     const response = signSupplierResponse(supplierId, request.requestId, result);
+    if (reviewed) await requireRecoveryRfq(client, show, reviewed);
+    if (exactAccess) await requireSupplierRecoveryAuthority(client, { actor, sessionHash: exactAccess.sessionHash }, "producer", exactAccess.expiresAt);
     await client.query("INSERT INTO on_supplier_requests(tenant_id,supplier_id,request_id,payload_hash,response) VALUES($1,$2,$3,$4,$5)", [show.tenantId, supplierId, request.requestId, payloadHash, response]);
     return response;
   });

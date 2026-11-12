@@ -3,6 +3,7 @@ import { z } from "zod";
 import { DomainError } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
 import { supplierIds, type RentalExecution, type SupplierId, type SupplierQuote } from "@/domain/supplier-contracts";
+import { supplierDeclineCodes, type SupplierDecline } from "@/domain/supplier-recovery";
 import { env } from "./env";
 import { boundedText } from "./bounded-body";
 
@@ -11,15 +12,15 @@ const revision = z.number().int().positive();
 export const supplierRequestSchema = z.object({
   version: z.literal(1), requestId: z.uuid(), tenantId: z.uuid(), actorId: z.string().min(3).max(180),
   action: z.discriminatedUnion("type", [
-    z.object({ type: z.literal("quote") }).strict(),
-    z.object({ type: z.literal("hold"), quoteId: z.uuid(), planDigest: z.string().regex(/^[a-f0-9]{64}$/), expectedRevision: revision, acceptCaptureTerms: z.literal(true) }).strict(),
+    z.object({ type: z.literal("quote"), recoveryRfqId: z.uuid().optional() }).strict(),
+    z.object({ type: z.literal("hold"), quoteId: z.uuid(), planDigest: z.string().regex(/^[a-f0-9]{64}$/), expectedRevision: revision, acceptCaptureTerms: z.literal(true), producerAccess: z.object({ sessionHash: z.string().regex(/^[a-f0-9]{64}$/), expiresAt: z.iso.datetime({ offset: true }) }).strict().optional() }).strict(),
     z.object({ type: z.enum(["confirm", "reconfirm"]), executionId: z.uuid(), expectedRevision: revision.optional() }).strict(),
     z.object({ type: z.literal("release"), executionId: z.uuid(), expectedRevision: revision }).strict(),
     z.object({ type: z.enum(["return", "return_rejected"]), executionId: z.uuid(), expectedRevision: revision, detail: z.string().trim().min(12).max(1200) }).strict(),
   ]),
 }).strict();
 export type SupplierRequest = z.infer<typeof supplierRequestSchema>;
-export type SupplierResult = { kind: "quote"; quote: SupplierQuote } | { kind: "execution"; execution: RentalExecution };
+export type SupplierResult = { kind: "quote"; quote: SupplierQuote } | { kind: "declined"; decline: SupplierDecline } | { kind: "execution"; execution: RentalExecution };
 export interface SupplierResponse { version: 1; supplierId: SupplierId; requestId: string; result: SupplierResult; signature: string }
 const pathFor = (supplier: SupplierId) => `/api/enrolled-suppliers/${supplier}/rpc`;
 function signature(supplier: SupplierId, purpose: string, data: unknown) {
@@ -53,6 +54,8 @@ export function verifySupplierResponse(supplierId: SupplierId, request: Supplier
   const { signature: actual, ...content } = response;
   if (response.version !== 1 || response.supplierId !== supplierId || response.requestId !== request.requestId || !equal(actual, signature(supplierId, "response", content))) throw new DomainError("SUPPLIER_RESPONSE_INVALID", "The supplier response could not be authenticated.", 502);
   if (response.result.kind === "quote" && (response.result.quote.tenantId !== request.tenantId || response.result.quote.supplierId !== supplierId || !verifySupplierQuote(response.result.quote))) throw new DomainError("SUPPLIER_RESPONSE_INVALID", "The quote does not belong to this supplier and rehearsal.", 502);
+  if (response.result.kind === "declined" && (response.result.decline.tenantId !== request.tenantId || response.result.decline.supplierId !== supplierId || !supplierDeclineCodes.includes(response.result.decline.code) || !z.uuid().safeParse(response.result.decline.id).success || !Number.isFinite(Date.parse(response.result.decline.recordedAt)))) throw new DomainError("SUPPLIER_RESPONSE_INVALID", "The supplier's refusal does not match the original scope.", 502);
+  if (request.action.type === "quote" ? !["quote", "declined"].includes(response.result.kind) : response.result.kind !== "execution") throw new DomainError("SUPPLIER_RESPONSE_INVALID", "The signed response does not match the original supplier action.", 502);
   return response.result;
 }
 export function supplierServiceOrigin() {

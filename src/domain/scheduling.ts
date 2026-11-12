@@ -4,7 +4,7 @@ import { digest } from "./hash";
 import { effectiveDelivery, latestSupplierDisruption, supplierInterruption } from "./disruptions";
 
 export function planningDigest(show: ShowSnapshot): string {
-  return digest({ tasks: show.tasks, dependencies: show.dependencies, resources: show.resources, offers: show.offers, policy: show.policy, incidents: show.incidents, doorsAt: show.doorsAt, ...(show.supplierDisruptions?.length ? { supplierDisruptions: show.supplierDisruptions } : {}) });
+  return digest({ tasks: show.tasks, dependencies: show.dependencies, resources: show.resources, offers: show.offers, policy: show.policy, incidents: show.incidents, doorsAt: show.doorsAt, ...(show.supplierDisruptions?.length ? { supplierDisruptions: show.supplierDisruptions } : {}), ...(show.supplierTermRevisions?.length ? { supplierTermRevisions: show.supplierTermRevisions } : {}) });
 }
 export function topologicalOrder(tasks: Task[], dependencies: Dependency[]): { order: string[]; invalid: string[] } {
   const ids = new Set(tasks.map(t => t.id)); const degree = new Map(tasks.map(t => [t.id, 0]));
@@ -76,7 +76,9 @@ export function validatePatch(show: ShowSnapshot, patch: PlanPatch, offer: Suppl
   if (offer.conditionVerified !== true) add("CONDITION_UNKNOWN", "evidence", "unknown", "The loan console’s condition report is still missing.", "console", "rental-delivery", offer.id);
   if (show.commercialProtocol === 2 && !offer.serviceQuote) add("AUTHENTICATED_QUOTE_REQUIRED", "evidence", "unknown", "Request the enrolled supplier's authenticated current terms before approving this plan.", null, null, offer.id);
   if (show.commercialProtocol === 2 && offer.serviceQuote && Date.parse(offer.serviceQuote.validUntil) <= Date.now()) add("REAL_TIME_QUOTE_EXPIRED", "evidence", "hard", "The supplier quote expired in real time. Collect fresh terms and recompute.", null, null, offer.id);
-  if (compareInstants(show.clock, offer.expiresAt) > 0 || offer.status === "expired") add("QUOTE_EXPIRED", "evidence", "hard", "This quote expired. Request current terms before approval.", null, null, offer.id);
+  if (compareInstants(show.clock, offer.expiresAt) >= 0 || offer.status === "expired") add("QUOTE_EXPIRED", "evidence", "hard", "This quote expired or the supplier declined the current request. Obtain current terms before approval.", null, null, offer.id);
+  const terms = show.supplierTermRevisions?.find(item => item.supplierId === offer.supplierId);
+  if (terms && (offer.serviceQuote?.termsSource?.id !== terms.id || offer.serviceQuote.termsSource.digest !== terms.digest)) add("SUPPLIER_TERMS_CHANGED", "evidence", "hard", "This offer predates the supplier's current attributed terms. Collect and validate a fresh signed quote.", offer.unitId, null, terms.id);
   if (patch.offerRevision !== offer.revision) add("QUOTE_CHANGED", "authority", "hard", "The supplier revised this quote; generate a new candidate.", null, null, offer.id);
   if (patch.policyVersion !== show.policy.version) add("POLICY_CHANGED", "authority", "hard", "The operating policy changed after this proposal.");
   const focus = byId.get("lx-focus"); const cues = byId.get("lx-program");
@@ -108,7 +110,8 @@ export function buildCandidate(show: ShowSnapshot, offer: SupplierOffer, family:
   const supportEnd = plusMinutes(supportAt, 25), retainedStrikeStart = show.tasks.find(task => task.id === "strike")?.start ?? supportEnd;
   const performanceEnd = supportOnly ? compareInstants(retainedStrikeStart, supportEnd) > 0 ? retainedStrikeStart : supportEnd : plusMinutes(headlinerAt, headlinerDuration); update("strike", performanceEnd, minutesBetween(performanceEnd, crewFinishAt));
   const newTask = (id: string, name: string, lane: Task["lane"], start: string, duration: number, resources: string[] = []): Task => ({ id, name, lane, start, end: plusMinutes(start, duration), durationMinutes: duration, baselineStart: start, baselineEnd: plusMinutes(start, duration), resources, requiredSkill: null, state: "blocked", critical: true, affected: true, milestone: id, sourceId: offer.id });
-  tasks.push(newTask("rental-authorized", "Rental authorized · PayPal", "commercial", atVenue("16:10"), 0), newTask("rental-delivery", "Console delivered & accepted", "commercial", deliveryAt, 0), newTask("rental-captured", "Rental fee captured · PayPal", "commercial", plusMinutes(deliveryAt, 5), 0));
+  const authorizationAt = compareInstants(show.clock, atVenue("16:10")) > 0 ? show.clock : atVenue("16:10");
+  tasks.push(newTask("rental-authorized", "Rental authorized · PayPal", "commercial", authorizationAt, 0), newTask("rental-delivery", "Console delivered & accepted", "commercial", deliveryAt, 0), newTask("rental-captured", "Rental fee captured · PayPal", "commercial", plusMinutes(deliveryAt, 5), 0));
   if (!supportOnly) tasks.push(newTask("quiet-prep", "Artist quiet preparation · sound lead sign-off required", "audio", atVenue("19:40"), 30, ["backstage"]));
   const ids = new Set(tasks.map(t => t.id));
   const dependencies = [...new Map(show.dependencies.filter(d => ids.has(d.from) && ids.has(d.to) && !(d.from === "console-test" && d.to === "lx-focus")).map(d => [d.id, { ...d }])).values()];

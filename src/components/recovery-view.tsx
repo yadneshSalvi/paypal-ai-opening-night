@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, ChevronRight, Clock3, GitBranch, LockKeyhole, ShieldCheck, Sparkles, TriangleAlert, Users, WalletCards } from "lucide-react";
 import type { Candidate } from "@/domain/contracts";
@@ -8,20 +8,26 @@ import type { ViewProps } from "./production-console";
 import { Badge, Button, EmptyState, Modal, PageHeading, SectionHeading } from "./ui";
 import { ProductionCanvas } from "./production-canvas";
 import { SupplierQuoteBoard } from "./supplier-network";
+import { ProducerSupplierRecovery } from "./supplier-recovery/supplier-recovery-panel";
+import { productionFetch, PRODUCTION_CHANGED_EVENT } from "./production-fetch";
 export function RecoveryView({ data, onData, run, busy, licenseKey }: ViewProps) {
   const { show } = data; const latest = show.runs.at(-1); const candidates = latest?.candidates ?? [];
+  const scope = useRef({ tenantId: show.tenantId, active: true }); scope.current.tenantId = show.tenantId;
+  useEffect(() => { scope.current.active = true; const ended = () => { scope.current.active = false; }; window.addEventListener(PRODUCTION_CHANGED_EVENT, ended); return () => { scope.current.active = false; window.removeEventListener(PRODUCTION_CHANGED_EVENT, ended); }; }, [show.tenantId]);
+  const refreshSupplierProjection = async () => { const tenantId = show.tenantId, response = await productionFetch(tenantId, "/api/show", { cache: "no-store" }); if (!response.ok) return; const next = await response.json(); if (scope.current.active && scope.current.tenantId === tenantId && next?.show?.tenantId === tenantId) onData(next); };
   const featured = [candidates.find(c => c.family === "doors" && c.patch.offerId.includes("brightline")), candidates.find(c => c.family === "budget" && c.patch.offerId.includes("northside")), candidates.find(c => c.family === "artist" && c.patch.offerId.includes("brightline"))].filter((c): c is Candidate => Boolean(c));
   const [selected, setSelected] = useState<string | null>(null); const [approval, setApproval] = useState<Candidate | null>(null); const [checked, setChecked] = useState<string[]>([]); const [all, setAll] = useState(false); const [baseline, setBaseline] = useState(true); const [taskId, setTaskId] = useState<string | null>(null);
   const preview = candidates.find(c => c.id === selected) ?? featured[0]; const visible = all ? candidates : featured;
   const viable = candidates.filter(c => ["feasible", "feasible_with_approval"].includes(c.report.status)); const rejected = candidates.filter(c => c.report.status === "infeasible"); const pending = candidates.filter(c => c.report.status === "unknown_pending_evidence");
   const task = (preview?.patch.tasks ?? show.tasks).find(t => t.id === taskId);
   const reasons = Object.entries(rejected.reduce<Record<string, number>>((acc, c) => { for (const code of new Set(c.report.issues.filter(i => i.severity === "hard").map(i => i.code))) acc[code] = (acc[code] ?? 0) + 1; return acc; }, {}));
-  const staleComparison = candidates.some(candidate => show.offers.find(offer => offer.id === candidate.patch.offerId)?.revision !== candidate.patch.offerRevision);
+  const staleComparison = candidates.some(candidate => { const offer = show.offers.find(item => item.id === candidate.patch.offerId), source = show.supplierTermRevisions?.find(item => item.supplierId === offer?.supplierId); return !offer || offer.revision !== candidate.patch.offerRevision || Boolean(source && offer.serviceQuote?.termsSource?.id !== source.id) || (show.supplierDisruptions ?? []).some(report => Date.parse(report.recordedAt) > Date.parse(candidate.generatedAt)); });
   const openApproval = (candidate: Candidate) => { setChecked([]); setSelected(candidate.id); setApproval(candidate); };
   return <>
     <PageHeading eyebrow="PRODUCTION / RECOVERY STUDIO" title="Keep the show. Change the plan." description="See the cascade. Compare the trade-offs. Approve a decision you can trace." actions={<><Badge tone="blue">MODELLED ALTERNATIVES</Badge><Button variant="primary" busy={busy === "generate" || busy === "load_incidents"} disabled={Boolean(busy)} onClick={() => void run({ type: show.incidents.length ? "generate" : "load_incidents" })}><Sparkles size={16} />{show.incidents.length ? latest ? "Recompute alternatives" : "Compute recovery plans" : "Load incident sources"}</Button></>} />
     <div className="recovery-context"><div><span className="tiny-dot amber" /><strong>{show.incidents.length ? "Two incidents. One connected problem." : "The controlled incident sources are ready."}</strong><span>Flight arrival 19:35 · console unavailable · doors 19:00</span></div><Link href="/evidence">Inspect sources <ArrowUpRight size={14} /></Link></div>
     <SupplierQuoteBoard data={data} onChange={onData} />
+    {show.commercialProtocol === 2 ? <ProducerSupplierRecovery tenantId={show.tenantId} sourceRevision={show.revision} onSaved={refreshSupplierProjection} externalBusy={Boolean(busy)} /> : null}
     {staleComparison && <p className="supplier-board-note" role="status">Supplier terms changed. Recompute the alternatives before reviewing an approval.</p>}
     {!latest ? <div className="recovery-empty"><EmptyState icon={<GitBranch size={30} />} title={show.incidents.length ? "Let’s find a way through." : "Start with the facts."} action={show.incidents.length ? <Button variant="primary" busy={busy === "generate"} disabled={Boolean(busy)} onClick={() => void run({ type: "generate" })}>Compute the alternatives <ArrowRight size={16} /></Button> : null}>The workbench will evaluate three supplier offers across four strategies against dependencies, qualifications, arrival times, curfew, and crew rest. Every proposal gets its own real scheduling-engine run.</EmptyState><div className="recovery-principles"><span><ShieldCheck size={19} /> Hard constraints stay hard</span><span><WalletCards size={19} /> Money follows approved authority</span><span><Users size={19} /> Readback is per person, per version</span></div></div> : <>
       <div className="candidate-section-header"><span className="eyebrow">{all ? "ALL GENERATED ALTERNATIVES" : "THREE WAYS TO RESPOND"}</span><button className="text-link" onClick={() => setAll(!all)}>{all ? "Show the headline comparison" : `Inspect all ${candidates.length} candidates`} <ArrowUpRight size={13} /></button></div>

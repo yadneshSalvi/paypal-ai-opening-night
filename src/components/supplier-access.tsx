@@ -9,6 +9,7 @@ import { Badge, Button } from "./ui";
 import { DeliveryIssuer } from "./delivery-handoff";
 import { SupplierDisruptionPanel } from "./disruptions/supplier-disruption-panel";
 import { SupplierRentalCloseout } from "./rental-closeout/rental-desk";
+import { SupplierTermsPanel } from "./supplier-recovery/supplier-recovery-panel";
 
 interface SupplierProjection {
   revision: number; planVersion: number; planDigest: string; show: string; venue: string; clock: string;
@@ -21,6 +22,7 @@ export function SupplierAccess() {
   const [token, setToken] = useState(""); const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false); const [accepted, setAccepted] = useState(false); const [detail, setDetail] = useState("");
   const [disruptionBlocked, setDisruptionBlocked] = useState(false), [closeoutBlocked, setCloseoutBlocked] = useState(false);
+  const [termsBlocked, setTermsBlocked] = useState(false);
   const [reservationNotice, setReservationNotice] = useState<string | null>(null);
   const load = useCallback(async (capability: string) => {
     const response = await fetch("/api/supplier", { headers: { Authorization: "Bearer " + capability }, cache: "no-store" });
@@ -39,7 +41,7 @@ export function SupplierAccess() {
     void load(capability).catch(error => setError(error.message));
   }, [load]);
   const submit = async (fact: SupplierAction) => {
-    if (!data || !accepted || busy || disruptionBlocked || closeoutBlocked) return; setBusy(true); setError(null);
+    if (!data || !accepted || busy || disruptionBlocked || closeoutBlocked || termsBlocked) return; setBusy(true); setError(null);
     try {
       const response = await fetch("/api/supplier", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), expectedRevision: data.revision, planDigest: data.planDigest, fact, detail }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error);
@@ -67,7 +69,7 @@ export function SupplierAccess() {
       <p className="supplier-boundary">This is a separate controlled client for a fictional supplier. Its actions are attributed rehearsal evidence, not a claim of real crew participation or physical equipment inspection.</p>
       {error && <p className="payment-error" role="alert">{error}</p>}
       {reservationNotice && <p className="supplier-board-note">{reservationNotice}</p>}
-      {!data && token && <SupplierDisruptionPanel bearer={token} onSaved={() => load(token)} onBlockedChange={setDisruptionBlocked} reservationBusy={busy || closeoutBlocked} />}
+      {!data && token && <SupplierDisruptionPanel bearer={token} onSaved={() => load(token)} onBlockedChange={setDisruptionBlocked} reservationBusy={busy || closeoutBlocked || termsBlocked} />}
       {data ? <>
         <section className="supplier-terms">
           <div><Badge tone="amber">PLAN v{data.planVersion}</Badge><span className="mono">REVISION {data.revision}</span></div>
@@ -80,20 +82,21 @@ export function SupplierAccess() {
             <span>{returned ? <CheckCircle2 size={18} /> : <PackageCheck size={18} />}{returnUnaccepted ? "Rejected unit received by supplier" : returned ? "Controlled return recorded" : "Return inspection pending"}</span>
           </div>
         </section>
-        <SupplierDisruptionPanel bearer={token} onSaved={() => load(token)} onBlockedChange={setDisruptionBlocked} reservationBusy={busy || closeoutBlocked} />
+        <SupplierDisruptionPanel bearer={token} onSaved={() => load(token)} onBlockedChange={setDisruptionBlocked} reservationBusy={busy || closeoutBlocked || termsBlocked} />
         {disruptionBlocked && <p className="supplier-board-note"><TriangleAlert size={18} />Reservation and handoff actions are paused while availability facts, original instructions or access are being checked.</p>}
-        {signed && state === "confirmed" && data.execution && <section className="supplier-action" inert={disruptionBlocked || closeoutBlocked}><h2>Prepare the driver handoff.</h2><p>Issue the signed code for this exact unit and reservation. The assigned driver scans it; the lighting lead accepts condition separately.</p><DeliveryIssuer executionId={data.execution.id} bearer={token} onChanged={() => { void load(token); }} /></section>}
+        {signed && state === "confirmed" && data.execution && <section className="supplier-action" inert={disruptionBlocked || closeoutBlocked || termsBlocked}><h2>Prepare the driver handoff.</h2><p>Issue the signed code for this exact unit and reservation. The assigned driver scans it; the lighting lead accepts condition separately.</p><DeliveryIssuer executionId={data.execution.id} bearer={token} onChanged={() => { void load(token); }} /></section>}
         {returnUnaccepted && <p className="supplier-board-note"><TriangleAlert size={18} />The rejected unit is accounted for. Its original authorization remains open until the producer’s explicit cancellation is confirmed by PayPal.</p>}
         {(canConfirm || canReturn) && <section className="supplier-action">
           <h2>{actionTitle}</h2><p>{actionDetail}</p>
           <label className="supplier-detail">{rejected ? "Rejected unit receipt and condition note" : canReturn ? "Controlled return condition note" : "Controlled reservation note"}<textarea value={detail} onChange={event => setDetail(event.target.value)} minLength={12} maxLength={1200} rows={4} placeholder={rejected ? "Describe receipt of the rejected unit and its recorded condition…" : canReturn ? "Describe the controlled inspection and condition…" : "Record the reviewed unit, delivery and reservation terms…"} /></label>
           <label className="payment-consent"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} /><span>I reviewed these current terms. This action records a controlled fixture event; it does not claim physical verification.</span></label>
-          <div className="payment-actions"><Button variant="primary" disabled={!accepted || detail.trim().length < 12 || disruptionBlocked || closeoutBlocked} busy={busy} onClick={() => void submit(action)}>{rejected ? "Record rejected unit received" : canReturn ? "Record controlled undamaged return" : "Confirm controlled reservation"}<ArrowRight size={16} /></Button></div>
+          <div className="payment-actions"><Button variant="primary" disabled={!accepted || detail.trim().length < 12 || disruptionBlocked || closeoutBlocked || termsBlocked} busy={busy} onClick={() => void submit(action)}>{rejected ? "Record rejected unit received" : canReturn ? "Record controlled undamaged return" : "Confirm controlled reservation"}<ArrowRight size={16} /></Button></div>
           <small className="muted">Fixture clock {localTime(data.clock)} CST{rejected ? " · the rejected-return record creates no fee or accepted-condition fact." : data.operatingMode ? " · the program cancellation permits an attributed return inspection; captured fees remain in their original ledger." : " · ordinary return acceptance opens at 23:30."}</small>
         </section>}
         <div className="payment-actions"><Button disabled={busy} onClick={() => void load(token).catch(error => setError(error.message))}><RefreshCw size={15} />Refresh reservation and handoff</Button></div>
       </> : !error && !reservationNotice && <p role="status">Reading your scoped reservation…</p>}
-      {token ? <SupplierRentalCloseout bearer={token} onSaved={() => load(token)} onBlockedChange={setCloseoutBlocked} reservationBusy={busy || disruptionBlocked} /> : null}
+      {token ? <SupplierTermsPanel bearer={token} onSaved={() => load(token)} onBlockedChange={setTermsBlocked} reservationBusy={busy || disruptionBlocked || closeoutBlocked} /> : null}
+      {token ? <SupplierRentalCloseout bearer={token} onSaved={() => load(token)} onBlockedChange={setCloseoutBlocked} reservationBusy={busy || disruptionBlocked || termsBlocked} /> : null}
     </div>
   </main>;
 }

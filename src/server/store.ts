@@ -19,6 +19,7 @@ import { tourMigration } from "./migrations/tour-v12";
 import { disruptionsMigration } from "./migrations/disruptions-v13";
 import { rentalCloseoutMigration } from "./migrations/rental-closeout-v14";
 import { rentalCloseoutReadsMigration } from "./migrations/rental-closeout-reads-v15";
+import { supplierRecoveryMigration } from "./migrations/supplier-recovery-v16";
 import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
@@ -108,6 +109,8 @@ export async function migrate() {
       if (!closeout.rowCount) { await client.query(rentalCloseoutMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(14)"); }
       const closeoutReads = await client.query("SELECT version FROM on_schema_migrations WHERE version=15");
       if (!closeoutReads.rowCount) { await client.query(rentalCloseoutReadsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(15)"); }
+      const supplierRecovery = await client.query("SELECT version FROM on_schema_migrations WHERE version=16");
+      if (!supplierRecovery.rowCount) { await client.query(supplierRecoveryMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(16)"); }
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); delete shared.openingNightMigration; throw error; }
     finally { client.release(); }
@@ -160,6 +163,7 @@ export async function transactCommand(actor: Actor, id: string, expectedRevision
       await client.query("COMMIT"); return { show, replayed: true };
     }
     if (show.revision !== expectedRevision) throw new DomainError("STALE_REVISION", "Another action changed the production. Refresh and review the latest state.");
+    if (payload && typeof payload === "object" && "type" in payload && payload.type === "approve" && "candidateId" in payload && typeof payload.candidateId === "string") await (await import("./supplier-recovery/approval")).requireSupplierTermsForApproval(client, show, payload.candidateId);
     const next = projectExecutionMilestones(transform(projectExecutionMilestones(show)));
     if (next.tenantId !== actor.tenantId || next.revision !== show.revision + 1) throw new Error("Invalid transactional snapshot transition");
     // Transactional effects run only for a new, current command. Replays and

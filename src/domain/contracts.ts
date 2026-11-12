@@ -3,6 +3,7 @@ import type { RentalExecution, SupplierId, SupplierQuoteRef } from "./supplier-c
 import type { CrewAdoption, CrewAttestation, CrewCueExecution, CrewNextCall, CrewProductionOverview } from "./crew/contracts";
 import type { CancellationDecision, DisruptionAssessment, SupplierDisruption } from "./disruptions";
 import type { RentalCloseoutCheck } from "./rental-closeout";
+import type { SupplierTermRef } from "./supplier-recovery";
 export type Provenance = "sample" | "modelled" | "live_sandbox" | "replay";
 export type Role = "producer" | "stage_manager" | "department_lead" | "foh" | "crew" | "supplier" | "driver";
 export type Lane = "lighting" | "audio" | "stage" | "people" | "commercial" | "house";
@@ -123,6 +124,7 @@ export interface ShowSnapshot {
   /** Attributed account entries, invoice instructions and report editions have immutable private history. */
   wrapVersion?: number;
   supplierDisruptions?: SupplierDisruption[];
+  supplierTermRevisions?: SupplierTermRef[];
   disruptionAssessments?: DisruptionAssessment[];
   cancellationDecision?: CancellationDecision;
   goReportId: string | null;
