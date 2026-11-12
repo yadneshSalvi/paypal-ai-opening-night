@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { DomainError, type Actor, type ShowSnapshot } from "@/domain/contracts";
 import { digest } from "@/domain/hash";
+import { currentLightingInspector } from "@/domain/delivery-qualification";
 import { currentActual } from "@/domain/finance";
 import type { DeliveryAccessData, DeliveryReceipt, PublicDeliveryReceipt, RentalExecution } from "@/domain/supplier-contracts";
 import { compareInstants } from "@/domain/time";
@@ -17,7 +18,7 @@ function permissions(show: ShowSnapshot, execution: RentalExecution, actor: Acto
   const canIssue = actor.roles.includes("producer") || actor.roles.includes("supplier") && supplierScope(actor) === execution.supplierId;
   const canScan = actor.roles.includes("driver") && actor.executionId === execution.id && supplierScope(actor) === execution.supplierId;
   const assignment = show.tasks.find(task => task.id === "lx-program"); const person = show.resources.find(item => item.id === actor.personId);
-  const canInspect = actor.roles.includes("department_lead") && actor.executionId === execution.id && Boolean(person?.skills.includes("lx_programming") && assignment?.resources.includes(person.id));
+  const canInspect = actor.roles.includes("department_lead") && actor.executionId === execution.id && Boolean(person && currentLightingInspector(show)?.id === person.id && assignment?.resources.includes(person.id));
   if (!canIssue && !canScan && !canInspect) throw new DomainError("DELIVERY_SCOPE_REQUIRED", "This client does not have the assigned handoff role for this execution.", 403);
   return { canIssue, canScan, canInspect, label: canInspect ? person!.name + " · lighting acceptance" : canScan ? "Controlled " + execution.supplierId + " delivery driver" : actor.roles.includes("producer") ? "Production operator" : "Controlled " + execution.supplierId + " supplier" };
 }

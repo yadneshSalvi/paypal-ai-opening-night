@@ -214,7 +214,7 @@ export async function createDeliveryCapability(actor: Actor, role: "driver" | "i
   if (!actor.roles.includes("producer")) throw new DomainError("PRODUCER_REQUIRED", "The producer opens these controlled role-specific clients.", 403);
   const show = await getShow(actor.tenantId); const execution = currentRentalExecution(show);
   if (!execution || !["confirmed", "delivered", "accepted", "needs_attention", "returned"].includes(execution.state)) throw new DomainError("RESERVATION_CONFIRMATION_REQUIRED", "Confirm the rental reservation before opening its handoff clients.");
-  const inspector = show.resources.find(person => person.id === "priya" && person.skills.includes("lx_programming"));
+  const inspector = (await import("../domain/delivery-qualification")).currentLightingInspector(show);
   if (role === "inspector" && (!inspector || !show.tasks.find(task => task.id === "lx-program")?.resources.includes(inspector.id))) throw new DomainError("QUALIFIED_INSPECTOR_REQUIRED", "The current plan needs its assigned qualified lighting lead.");
   const token = randomBytes(32).toString("base64url");
   const scoped: Actor = { id: role + ":" + randomUUID(), tenantId: actor.tenantId, roles: role === "driver" ? ["driver"] : ["department_lead"], personId: role === "inspector" ? inspector!.id : null, supplierId: execution.supplierId, executionId: execution.id };

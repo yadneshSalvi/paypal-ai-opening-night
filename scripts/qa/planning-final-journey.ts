@@ -14,11 +14,11 @@ import {rentalHarness} from '../../tests/rental-closeout-harness';
 import {createPayoutWireFixture} from './payout-wire-fixture.mjs';
 
 const caseName=process.argv[2];assert.ok(['doors','tour','soundcheck'].includes(caseName??''));
-const resume=process.argv[3]==='--resume-v1',originalDirectory=path.resolve('.private/planning-workbench/journeys',`hero-${caseName}-v1`);
+const resumeV2=process.argv[3]==='--resume-v2',resume=process.argv[3]==='--resume-v1'||resumeV2,originalDirectory=path.resolve('.private/planning-workbench/journeys',`hero-${caseName}-v1`);
 const originalIntent=resume?JSON.parse(fs.readFileSync(path.join(originalDirectory,'intent.json'),'utf8')):null;
 if(resume)assert.equal(JSON.parse(fs.readFileSync(path.join(originalDirectory,'failure.private.json'),'utf8')).code,'PLAN_CONSENT_INTEGRITY');
 const originalSession=resume?JSON.parse(fs.readFileSync(path.join(originalDirectory,'0001-session.private.json'),'utf8')).value:null;
-const origin='http://127.0.0.1:4623',directory=path.resolve('.private/planning-workbench/journeys',`hero-${caseName}-${resume?'v2':'v1'}`);
+const origin='http://127.0.0.1:4623',directory=path.resolve('.private/planning-workbench/journeys',`hero-${caseName}-${resumeV2?'v3':resume?'v2':'v1'}`);
 fs.mkdirSync(directory,{recursive:true,mode:0o700});
 const put=(name:string,value:unknown)=>fs.writeFileSync(path.join(directory,name),JSON.stringify(value,null,2)+'\n',{flag:'wx',mode:0o600});
 const guard=(globalThis as any).openingNightModelControlledGuard;assert.equal(guard.database,'opening_planning_final');assert.equal(guard.role,'opening_planning_final_app');
@@ -77,10 +77,32 @@ async function approveCandidate(session:any,candidate:any){
  const approved=await current(session.actor);journal('approved-strategy',{candidate,plan:approved.approvedPlan,revision:approved.revision});return approved;
 }
 
+async function continueOriginalRental(){
+ const prior=path.resolve('.private/planning-workbench/journeys',`hero-${caseName}-v2`),read=(suffix:string)=>{const name=fs.readdirSync(prior).find(name=>name.endsWith('-'+suffix+'.private.json'));assert.ok(name,suffix);return JSON.parse(fs.readFileSync(path.join(prior,name),'utf8')).value;};
+ const failure=JSON.parse(fs.readFileSync(path.join(prior,'failure.private.json'),'utf8'));assert.equal(failure.code,caseName==='tour'?'QUALIFIED_INSPECTOR_REQUIRED':'CREW_PROTOCOL_CURRENT');
+ const session=read('session'),saved=read('original-order'),wire=JSON.parse(fs.readFileSync(path.join(prior,'failed-wire.private.json'),'utf8'));
+ assert.deepEqual(await h.store.getActor(session.token),session.actor);let show=await current(session.actor);assert.equal(show.rentalExecutions.length,1);assert.equal(show.rentalExecutions[0].id,saved.executionId);assert.equal(show.rentalExecutions[0].paymentRootId,saved.root.id);assert.equal(show.sheets.length,1);assert.equal(show.tickets.length,0);
+ for(const [id,value] of wire.orders)h.wire.orders.set(id,value);h.wire.calls.push(...wire.calls);
+ journal('original-v2-continuation',{failure:{code:failure.code,at:failure.at},revision:show.revision,executionId:saved.executionId,orderId:saved.orderId,wireDigest:digest(wire),singleOriginalRental:true,originalSessionUnchanged:true});
+ let capabilities:any;
+ if(caseName==='tour'){
+  programmer=show.resources.find((row:any)=>row.name==='Controlled Mira').id;const view=await(await import('../../src/server/tour/service')).readTourWorkspace(authority(session));library={production:view.productions[0],tour:view.tours[0],template:view.templates[0]};
+  assert.equal(show.rentalExecutions[0].state,'confirmed');assert.equal(show.rentalExecutions[0].deliveryId,null);
+  const token=await h.store.createSupplierCapability(session.actor),supplierActor=await h.store.getActor(token),driverLink=await h.store.createDeliveryCapability(session.actor,'driver'),inspectorLink=await h.store.createDeliveryCapability(session.actor,'inspector');
+  const driver=await h.store.getActor(driverLink.token),inspector=await h.store.getActor(inspectorLink.token);assert.equal(inspector.personId,programmer);
+  capabilities={supplier:{token,actor:supplierActor},driver:{...driverLink,actor:driver},inspector:{...inspectorLink,actor:inspector}};journal('explicit-new-handoff-capabilities',capabilities);
+  show=await command(session.actor,{type:'advance',time:'17:15'});const delivery=await import('../../src/server/delivery-service'),issued=await delivery.issueDelivery(session.actor,saved.executionId,randomUUID(),show.revision);journal('original-delivery-issued',issued);const scanned=await delivery.scanDelivery(driver,issued.token!,randomUUID());journal('original-delivery-scanned',scanned);show=await current(session.actor);
+  journal('current-assigned-inspection',await delivery.inspectDelivery(inspector,{executionId:saved.executionId,deliveryId:scanned.id,version:scanned.version,commandId:randomUUID(),expectedRevision:show.revision,decision:'accept',condition:{report:'Controlled current assigned programmer inspection. No actual physical inspection or certification is claimed.',powerOn:true,accessories:true,safeCondition:true}}));
+  show=await current(session.actor);const fee=show.rentalExecutions[0].captureIntentId;assert.ok(fee);assert.equal((await h.paymentService.reconcilePaymentIntent(session.actor.tenantId,fee,h.signal(),true)).status,'complete');
+ }else capabilities=read('original-capabilities');
+ const original=await current(session.actor);assert.equal(original.rentalExecutions[0].state,'accepted');const feeIntentId=original.rentalExecutions[0].captureIntentId;assert.ok(feeIntentId);
+ return{...session,actor:session.actor,original,executionId:saved.executionId,root:await h.payments.readIntent(session.actor.tenantId,saved.root.id),orderId:saved.orderId,feeIntentId,supplierToken:capabilities.supplier.token,authority:authority(session),supplierAuthority:{actor:capabilities.supplier.actor,sessionHash:h.sessionTokenHash(capabilities.supplier.token)}};
+}
+
 try{
  h=await rentalHarness({database:{schema,pool,close:async()=>pool.end()},realEngine:true,appOrigin:origin,preparePlan,onStep:async(name,value)=>journal(name,value)});
- const rental=await h.accepted({replacePlan:false,captureFee:true,...(originalSession?{existingSession:originalSession}:{})}),producer=authority(rental),crew=await import('../../src/server/crew/service'),crewPolicy=await import('../../src/domain/crew/policy'),signatures=await import('../../src/server/crew/signatures');
- await command(rental.actor,{type:'adopt_crew'});await command(rental.actor,{type:'publish'});
+ const rental=resumeV2?await continueOriginalRental():await h.accepted({replacePlan:false,captureFee:true,...(originalSession?{existingSession:originalSession}:{})}),producer=authority(rental),crew=await import('../../src/server/crew/service'),crewPolicy=await import('../../src/domain/crew/policy'),signatures=await import('../../src/server/crew/signatures');
+ if((await current(rental.actor)).crewProtocol!==1)await command(rental.actor,{type:'adopt_crew'});await command(rental.actor,{type:'publish'});
  const tickets:any[]=[];
  for(let index=0;index<80;index++){
   let show=await current(rental.actor);const ticketId=randomUUID(),tier=index<38?'vip':'standard';journal('ticket-intent',{ticketId,tier,revision:show.revision});
