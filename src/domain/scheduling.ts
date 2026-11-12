@@ -77,6 +77,7 @@ export function validatePatch(show: ShowSnapshot, patch: PlanPatch, offer: Suppl
   if (offer.qualifiedDriver !== true) add("DRIVER_UNKNOWN", "evidence", "unknown", "A qualified collection driver has not been confirmed.", null, "rental-delivery", offer.id);
   if (offer.conditionVerified !== true) add("CONDITION_UNKNOWN", "evidence", "unknown", "The loan console’s condition report is still missing.", "console", "rental-delivery", offer.id);
   if (show.commercialProtocol === 2 && !offer.serviceQuote) add("AUTHENTICATED_QUOTE_REQUIRED", "evidence", "unknown", "Request the enrolled supplier's authenticated current terms before approving this plan.", null, null, offer.id);
+  if (offer.serviceQuote?.adminSource && offer.serviceQuote.reviewRequired) add("MANAGED_RFQ_SOURCE_CHANGED", "evidence", "hard", "The producer RFQ source changed; review a distinct managed negotiation before approving.", offer.unitId, null, offer.serviceQuote.id);
   if (show.commercialProtocol === 2 && offer.serviceQuote && Date.parse(offer.serviceQuote.validUntil) <= Date.now()) add("REAL_TIME_QUOTE_EXPIRED", "evidence", "hard", "The supplier quote expired in real time. Collect fresh terms and recompute.", null, null, offer.id);
   if (compareInstants(show.clock, offer.expiresAt) >= 0 || offer.status === "expired") add("QUOTE_EXPIRED", "evidence", "hard", "This quote expired or the supplier declined the current request. Obtain current terms before approval.", null, null, offer.id);
   const terms = show.supplierTermRevisions?.find(item => item.supplierId === offer.supplierId);

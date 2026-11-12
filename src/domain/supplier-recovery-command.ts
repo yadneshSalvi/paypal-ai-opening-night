@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { supplierIds } from "./supplier-contracts";
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const text = (min: number, max: number) => z.string().min(min).max(max).refine(value => value === value.trim());
@@ -13,7 +14,7 @@ export const supplierRecoveryCommandSchema = z.discriminatedUnion("type", [
     reference: text(3, 180), detail: text(12, 1600), confirmed: z.literal(true),
   }).strict(),
   z.object({ type: z.literal("request_quotes"), previewDigest: hash, detail: text(12, 1600), confirmed: z.literal(true) }).strict(),
-  z.object({ type: z.literal("open_supplier"), supplierId: z.enum(["brightline", "northside", "sister"]), confirmed: z.literal(true) }).strict(),
+  z.object({ type: z.literal("open_supplier"), supplierId: z.enum(supplierIds), confirmed: z.literal(true) }).strict(),
 ]);
 export const supplierRecoveryEnvelopeSchema = z.object({ commandId: z.uuid(), expectedRevision: z.number().int().positive(), command: supplierRecoveryCommandSchema }).strict();
 export type SupplierRecoveryCommand = z.infer<typeof supplierRecoveryCommandSchema>;

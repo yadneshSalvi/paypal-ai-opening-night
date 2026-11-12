@@ -14,6 +14,7 @@ import { signSupplierQuote, signSupplierResponse, verifySupplierQuote, type Supp
 import { appendSupplierFact, assertProducer, assertRevision, assertSupplier, lockSupplierShow, readRentalExecution, saveRentalExecution, saveSupplierSnapshot, supplierActor, supplierTransaction } from "./supplier-storage";
 import { readRecoveryRfq, readSupplierTerms, requireRecoveryRfq, requireSupplierRecoveryAuthority, supplierTermsBlocker, supplierUnitCommitted } from "./supplier-recovery/store";
 import type { RecoveryRfqRecord } from "./supplier-recovery/contracts";
+import { isManagedSupplierId, requireManagedQuoteCurrent } from "./supplier-admin/adapters";
 
 const HOLD_MS = 10 * 60 * 1000;
 const QUOTE_MS = 15 * 60 * 1000;
@@ -58,7 +59,7 @@ async function issueQuote(client: PoolClient, show: ShowSnapshot, supplierId: Su
   await client.query("INSERT INTO on_supplier_quotes(id,tenant_id,supplier_id,revision,valid_until,document) VALUES($1,$2,$3,$4,$5,$6)", [quote.id, show.tenantId, supplierId, revision, quote.validUntil, quote]);
   return { kind: "quote", quote };
 }
-async function hold(client: PoolClient, show: ShowSnapshot, actor: Actor, supplierId: SupplierId, action: Extract<SupplierRequest["action"], { type: "hold" }>) {
+export async function hold(client: PoolClient, show: ShowSnapshot, actor: Actor, supplierId: SupplierId, action: Extract<SupplierRequest["action"], { type: "hold" }>) {
   assertProducer(actor); assertRevision(show, action.expectedRevision);
   if (show.commercialProtocol !== 2) throw new DomainError("LEGACY_RENTAL_PRESERVED", "This rehearsal retains its original rental workflow. Start a new rehearsal to exercise signed supplier holds.");
   const { plan, offer } = approvedRental(show);
@@ -68,6 +69,8 @@ async function hold(client: PoolClient, show: ShowSnapshot, actor: Actor, suppli
   if (!quote || !verifySupplierQuote(quote) || quote.termsDigest !== offer.serviceQuote.termsDigest || quote.revision !== offer.revision) throw new DomainError("QUOTE_NOT_AUTHENTICATED", "The selected supplier terms cannot be authenticated.");
   const { serviceQuote: _reference, ...approvedOffer } = offer;
   if (digest(approvedOffer) !== digest(quote.offer)) throw new DomainError("QUOTE_CHANGED", "The current offer differs from the supplier's signed terms.");
+  if (isManagedSupplierId(supplierId) && offer.serviceQuote.reviewRequired) throw new DomainError("MANAGED_RFQ_SOURCE_CHANGED", offer.serviceQuote.reviewRequired.detail);
+  if (isManagedSupplierId(supplierId)) await requireManagedQuoteCurrent(client, show, actor, quote, action.producerAccess);
   if (quote.termsSource) {
     if (!action.producerAccess) throw new DomainError("SUPPLIER_HOLD_ACCESS_REQUIRED", "Review this replacement commitment under the producer's exact current access.", 403);
     await requireSupplierRecoveryAuthority(client, { actor, sessionHash: action.producerAccess.sessionHash }, "producer", action.producerAccess.expiresAt);
@@ -79,14 +82,16 @@ async function hold(client: PoolClient, show: ShowSnapshot, actor: Actor, suppli
   if ((await client.query("SELECT id FROM on_rental_executions WHERE tenant_id=$1 AND plan_version=$2", [show.tenantId, show.planVersion])).rowCount) throw new DomainError("EXECUTION_ALREADY_EXISTS", "This plan already has a rental execution. Resume or reconcile its original commitment.");
   const execution: RentalExecution = { schemaVersion: 1, id: randomUUID(), planVersion: show.planVersion, planDigest: plan.digest, quoteId: quote.id, quoteDigest: quote.termsDigest, offerId: offer.id, offerRevision: offer.revision, supplierId, unitId: offer.unitId, feeMinor: offer.feeMinor, depositMinor: offer.depositMinor, deliveryAt: offer.deliveryAt, windowEnd: show.accessUntil, createdAt: now.toISOString(), updatedAt: now.toISOString(), holdExpiresAt: new Date(Math.min(now.getTime() + HOLD_MS, Date.parse(quote.validUntil))).toISOString(), state: "held", producerId: actor.id, captureConsentAt: now.toISOString(), paymentRootId: null, authorizationId: null, captureIntentId: null, compensationIntentId: null, cancellationApprovedAt: null, deliveryId: null, deliveryVersion: 0, acceptedAt: null, lastCode: null, source: "controlled_fixture" };
   await assertInventoryAvailable(client, show, execution);
+  if (isManagedSupplierId(supplierId)) await requireManagedQuoteCurrent(client, show, actor, quote, action.producerAccess);
   await client.query("INSERT INTO on_rental_executions(id,tenant_id,plan_version,plan_digest,quote_id,document) VALUES($1,$2,$3,$4,$5,$6)", [execution.id, show.tenantId, execution.planVersion, execution.planDigest, quote.id, execution]);
   await client.query("INSERT INTO on_resource_holds(id,tenant_id,supplier_id,unit_id,window_start,window_end,status,expires_at) VALUES($1,$2,$3,$4,$5,$6,'provisional',$7)", [execution.id, show.tenantId, supplierId, execution.unitId, execution.deliveryAt, execution.windowEnd, execution.holdExpiresAt]);
   await saveRentalExecution(client, show, execution);
   await enqueueJob(client, { tenantId: show.tenantId, kind: "supplier_expire", semanticKey: execution.id, payload: { executionId: execution.id }, runAfter: new Date(execution.holdExpiresAt) });
   await saveSupplierSnapshot(client, show, actor.id, "supplier.hold_created", `${offer.supplier} authenticated fixture service held ${offer.unitId} for this exact plan. Buyer approval and supplier confirmation remain separate.`);
+  if (isManagedSupplierId(supplierId)) await requireManagedQuoteCurrent(client, show, actor, quote, action.producerAccess);
   return execution;
 }
-async function changeReservation(client: PoolClient, show: ShowSnapshot, actor: Actor, supplierId: SupplierId, action: Exclude<SupplierRequest["action"], { type: "quote" | "hold" }>) {
+export async function changeReservation(client: PoolClient, show: ShowSnapshot, actor: Actor, supplierId: SupplierId, action: Exclude<SupplierRequest["action"], { type: "quote" | "hold" }>) {
   assertRevision(show, action.expectedRevision);
   const execution = await readRentalExecution(client, show.tenantId, action.executionId);
   if (execution.supplierId !== supplierId) throw new DomainError("SUPPLIER_SCOPE_REQUIRED", "This rental belongs to another supplier.", 403);
@@ -112,6 +117,7 @@ async function changeReservation(client: PoolClient, show: ShowSnapshot, actor: 
     // accepted returns need the exact capability and original-unit inspection.
     throw new DomainError("ORIGINAL_RETURN_REVIEW_REQUIRED", "Use the original rental closeout desk to record this unit's return condition under your current exact supplier access.", 403);
   } else {
+    if (isManagedSupplierId(supplierId)) throw new DomainError("SUPPLIER_ADMIN_DESK_REQUIRED", "Managed capacity cannot renew or confirm without a fresh exact producer and supplier mandate review. Its original hold and financial history remain retained.", 403);
     currentSupplierPlan(show, execution);
     const authorization = currentActual(show).find(item => item.kind === "authorization" && item.purpose === "rental" && item.providerResourceId === execution.authorizationId && item.planVersion === execution.planVersion && item.amountMinor === execution.feeMinor + execution.depositMinor);
     if (!execution.authorizationId && action.type === "reconfirm") {

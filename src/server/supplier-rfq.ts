@@ -80,13 +80,14 @@ export async function collectSupplierRfq(tenantId: string, id: string, signal: A
     const now = (await client.query<{ now: Date }>("SELECT clock_timestamp() AS now")).rows[0]!.now;
     const stale = show.revision !== request.expected_revision ? "RFQ_PLAN_CHANGED" : outcomes.length !== supplierIds.length || new Set(outcomes.map(item => item.supplierId)).size !== supplierIds.length || quotes.some(quote => Date.parse(quote.validUntil) <= now.getTime() || Date.parse(quote.offer.expiresAt) <= Date.parse(show.clock)) ? "RFQ_EXPIRED" : null;
     if (stale) { await client.query("UPDATE on_supplier_rfqs SET status='needs_review',quote_ids=$3,last_code=$4,outcomes=$5 WHERE tenant_id=$1 AND id=$2", [tenantId, id, JSON.stringify(quotes.map(quote => quote.id)), stale, JSON.stringify(outcomes)]); return { status: "needs_attention", code: stale }; }
-    show.offers = supplierIds.map(supplier => {
+    const managed = show.offers.filter(offer => offer.serviceQuote?.adminSource);
+    show.offers = [...supplierIds.map(supplier => {
       const quote = quotes.find(item => item.supplierId === supplier);
       // Keep the enrolled identity and prior source visible after a signed decline.
       // Its expired status prevents an old quote from becoming an available option.
       if (!quote) return { ...(show.offers.find(item => item.supplierId === supplier) ?? createFixture(show.tenantId).offers.find(item => item.supplierId === supplier)!), status: "expired" as const };
       return { ...quote.offer, serviceQuote: { id: quote.id, termsDigest: quote.termsDigest, issuedAt: quote.issuedAt, validUntil: quote.validUntil, serviceId: "enrolled-fixture:" + supplier, source: "authenticated_fixture_service" as const, ...(quote.termsSource ? { termsSource: quote.termsSource } : {}) } };
-    });
+    }), ...managed.map(offer => ({ ...offer, serviceQuote: { ...offer.serviceQuote!, reviewRequired: { code: "MANAGED_RFQ_SOURCE_CHANGED" as const, detail: "The original supplier-network RFQ changed the reviewed production source. Review a distinct bounded managed negotiation. This earlier signed quote and its original expiry remain retained." } } }))];
     if (show.approvedPlan) { show.approvedPlan = null; show.planVersion++; show.state = "standby"; show.goReportId = null; }
     for (const quote of quotes) show.sources.push({ id: quote.id, title: `${quote.offer.supplier} authenticated fixture quote · revision ${quote.revision}`, source: "sample", recordedAt: quote.issuedAt, detail: `${quote.equipment.model}. ${quote.equipment.capabilityEvidence} ${quote.cancellation} Terms digest ${quote.termsDigest}. ${quote.termsSource ? `Supplier-owned edition ${quote.termsSource.revision}, source ${quote.termsSource.id}.` : "Initial controlled fixture terms."} Missing driver or condition evidence remains unresolved.` });
     for (const outcome of outcomes) if (outcome.kind === "declined") show.sources.push({ id: outcome.decline.id, title: `${outcome.supplierId} authenticated quote refusal`, source: "sample", recordedAt: outcome.decline.recordedAt, detail: `${outcome.decline.message} Original request ${id}. This refusal is a known response, not a transport failure or a new commitment.` });

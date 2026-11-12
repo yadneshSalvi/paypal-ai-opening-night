@@ -24,8 +24,9 @@ import { audienceMigration } from "./migrations/audience-v17";
 import { intelligenceContinuityMigration } from "./migrations/intelligence-continuity-v18";
 import { planConsentsMigration } from "./migrations/plan-consents-v19";
 import { productionInputsMigration } from "./migrations/production-inputs-v20";
+import { supplierAdminMigration } from "./migrations/supplier-admin-v21";
 import { planningWorkbenchMigration } from "./migrations/planning-workbench-v22";
-import { currentRentalExecution, supplierIds, type SupplierId } from "@/domain/supplier-contracts";
+import { currentRentalExecution, supplierIds, type SupplierId, type OriginalSupplierId } from "@/domain/supplier-contracts";
 
 const shared = globalThis as typeof globalThis & { openingNightPool?: Pool; openingNightMigration?: Promise<void> };
 export const pool = shared.openingNightPool ??= new Pool({ connectionString: env.databaseUrl, max: 6, connectionTimeoutMillis: 6000, idleTimeoutMillis: 30000 });
@@ -124,6 +125,8 @@ export async function migrate() {
       if (!planConsents.rowCount) { await client.query(planConsentsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(19)"); }
       const productionInputs = await client.query("SELECT version FROM on_schema_migrations WHERE version=20");
       if (!productionInputs.rowCount) { await client.query(productionInputsMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(20)"); }
+      const supplierAdmin = await client.query("SELECT version FROM on_schema_migrations WHERE version=21");
+      if (!supplierAdmin.rowCount) { await client.query(supplierAdminMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(21)"); }
       const planningWorkbench = await client.query("SELECT version FROM on_schema_migrations WHERE version=22");
       if (!planningWorkbench.rowCount) { await client.query(planningWorkbenchMigration); await client.query("INSERT INTO on_schema_migrations(version) VALUES(22)"); }
       await client.query("COMMIT");
@@ -200,7 +203,7 @@ export async function createSupplierCapability(actor: Actor) {
   const show = await getShow(actor.tenantId);
   const candidate = show.runs.flatMap(run => run.candidates).find(item => item.id === show.approvedPlan?.candidateId);
   const offer = show.offers.find(item => item.id === candidate?.patch.offerId);
-  if (!show.approvedPlan || !offer || !supplierIds.includes(offer.supplierId as SupplierId) || show.commercialProtocol !== 2 && offer.supplierId !== "brightline") throw new DomainError("SUPPLIER_NOT_SELECTED", "Approve the selected enrolled supplier before opening its controlled portal.");
+  if (!show.approvedPlan || !offer || !supplierIds.includes(offer.supplierId as OriginalSupplierId) || show.commercialProtocol !== 2 && offer.supplierId !== "brightline") throw new DomainError("SUPPLIER_NOT_SELECTED", "Approve the selected enrolled supplier before opening its controlled portal. Managed suppliers use their original admitted owner access.");
   const token = randomBytes(32).toString("base64url");
   const supplier: Actor = { id: "supplier:" + offer.supplierId + ":" + randomUUID(), tenantId: actor.tenantId, roles: ["supplier"], personId: null, supplierId: offer.supplierId as SupplierId };
   await pool.query("INSERT INTO on_sessions(token_hash,tenant_id,actor,expires_at) VALUES($1,$2,$3,now()+interval '1 day')", [tokenHash(token), actor.tenantId, supplier]);

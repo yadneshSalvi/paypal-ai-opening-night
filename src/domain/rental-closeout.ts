@@ -51,7 +51,7 @@ export function rentalExecutionDigest(execution: RentalExecution) {
 export function rentalBelongsToCurrentPlan(show: ShowSnapshot, execution: RentalExecution) {
   return execution.planVersion === show.planVersion && execution.planDigest === show.approvedPlan?.digest;
 }
-export const supplierLabel = (supplier: RentalExecution["supplierId"]) => ({ brightline: "Brightline Rentals", northside: "Northside AV", sister: "Sister venue" })[supplier];
+export const supplierLabel = (supplier: RentalExecution["supplierId"]) => ({ brightline: "Brightline Rentals", northside: "Northside AV", sister: "Sister venue" } as Partial<Record<RentalExecution["supplierId"], string>>)[supplier] ?? `Managed supplier · ${supplier}`;
 export function returnReference(record: RentalReturnRecord): RentalReturnRef {
   return { id: record.id, digest: digest(record), condition: record.condition, actorId: record.actor.id, observedAt: record.observedAt, recordedAt: record.recordedAt, originalPlanVersion: record.originalPlanVersion };
 }

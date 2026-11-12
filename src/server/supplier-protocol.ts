@@ -6,7 +6,11 @@ import { supplierIds, type RentalExecution, type SupplierId, type SupplierQuote 
 import { supplierDeclineCodes, type SupplierDecline } from "@/domain/supplier-recovery";
 import { env } from "./env";
 import { boundedText } from "./bounded-body";
+import { managedSupplierIdSchema } from "@/domain/supplier-admin/commands";
+import { verifyManagedQuoteSignature } from "./supplier-admin/signatures";
 
+// Original routes retain their exact three-service discovery gate. Managed
+// requests use their separate database-authorized route and immutable ledger.
 export const supplierIdSchema = z.enum(supplierIds);
 const revision = z.number().int().positive();
 export const supplierRequestSchema = z.object({
@@ -22,7 +26,7 @@ export const supplierRequestSchema = z.object({
 export type SupplierRequest = z.infer<typeof supplierRequestSchema>;
 export type SupplierResult = { kind: "quote"; quote: SupplierQuote } | { kind: "declined"; decline: SupplierDecline } | { kind: "execution"; execution: RentalExecution };
 export interface SupplierResponse { version: 1; supplierId: SupplierId; requestId: string; result: SupplierResult; signature: string }
-const pathFor = (supplier: SupplierId) => `/api/enrolled-suppliers/${supplier}/rpc`;
+const pathFor = (supplier: SupplierId) => managedSupplierIdSchema.safeParse(supplier).success ? `/api/supplier-admin/rpc/${supplier}` : `/api/enrolled-suppliers/${supplier}/rpc`;
 function signature(supplier: SupplierId, purpose: string, data: unknown) {
   // Independent service scopes and purpose separation; no credential is sent to a browser.
   const key = createHmac("sha256", env.sessionSecret).update(`opening-night:supplier:${supplier}:v1`).digest();
@@ -43,6 +47,8 @@ export function authenticateSupplierRequest(supplier: SupplierId, request: Reque
 }
 export function signSupplierQuote(quote: Omit<SupplierQuote, "signature">): SupplierQuote { return { ...quote, signature: signature(quote.supplierId, "quote", quote) }; }
 export function verifySupplierQuote(quote: SupplierQuote) {
+  if (quote.adminSource) return verifyManagedQuoteSignature(quote);
+  if (!(supplierIds as readonly string[]).includes(quote.supplierId)) return false;
   const { signature: actual, ...content } = quote;
   return equal(actual, signature(quote.supplierId, "quote", content));
 }
