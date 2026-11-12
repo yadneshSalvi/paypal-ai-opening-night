@@ -29,6 +29,11 @@ test("assistant starts once, reads exact account, saves only an unapproved propo
   assert.equal(first.id, replay.id); assert.equal(w.model.calls.length, 1); assert.equal(first.messages[0]?.call?.name, "readAccount");
   const done = await finish(w, first), data = await service.readWrap(w.authority); assert.equal(done.state, "completed"); assert.equal(done.model, "gpt-6.1-sol"); assert.equal(done.reasoning, "max"); assert.equal(done.provenance, "controlled_fixture"); assert.equal(data.proposals.length, 1); assert.equal(data.proposals[0]!.source, "assistant"); assert.equal(data.proposals[0]!.assistantRunId, first.id); assert.equal(data.report.totals.approvedCostMinor, 50000); assert.equal(data.invoices.length, 0); assert.equal(w.wire.calls.length, 0); assert.equal(w.model.calls.filter(call => call.method === "POST").length, 3);
   assert.equal((await assistant.readWrapAssistant(w.authority, done.id)).messages.length, 3); await assert.rejects(database.pool.query("DELETE FROM on_wrap_assistant_events WHERE run_id=$1", [done.id]), /Immutable wrap history/);
+  const modelPosts = w.model.calls.filter(call => call.method === "POST");
+  assert.ok(modelPosts.every(call => call.body.store === false && !call.body.previous_response_id));
+  assert.equal(modelPosts[2]!.body.input.filter((item: { type?: string }) => item.type === "reasoning").length, 2);
+  assert.equal(modelPosts[2]!.body.input.filter((item: { type?: string }) => item.type === "function_call_output").length, 2);
+  assert.equal(JSON.stringify(done).includes("controlled-opaque-reasoning"), false);
   await assert.rejects(assistant.startWrapAssistant(w.authority, { ...body, prompt: "Different original instructions." }), /different instructions/);
 });
 test("official Toolkit steps use only server-listed owned identities and preserve producer amounts", async () => {
