@@ -1,7 +1,5 @@
 import test, { after, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { parse } from "dotenv";
 import { act, StrictMode } from "react";
 import type { Root } from "react-dom/client";
 import { JSDOM } from "jsdom";
@@ -50,7 +48,10 @@ Object.defineProperty(dom.window.Element.prototype, "scrollLeft", {
   },
 });
 Object.defineProperty(document, "fonts", { configurable: true, value: { ready: Promise.resolve(), status: "loaded", check: () => true, addEventListener() {}, removeEventListener() {} } });
-const license = parse(readFileSync(".env")).BRYNTUM_LICENSE_KEY ?? "";
+// The caller supplies this unit's approved license; never discover another
+// environment file to run the installed widgets.
+const license = process.env.BRYNTUM_LICENSE_KEY ?? "";
+assert.ok(license, "Pass the approved Bryntum license in the test environment");
 Object.assign(globalThis, { bryntum: { licenseKey: license } });
 const { createRoot } = await import("react-dom/client");
 const { default: NativeTour } = await import("../src/components/tour/native-tour");

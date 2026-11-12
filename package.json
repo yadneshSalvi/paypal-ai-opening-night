@@ -42,7 +42,13 @@
     "qa:rental-closeout:http": "node --import ./scripts/qa/rental-closeout-disabled-providers.mjs --import tsx scripts/qa/rental-closeout-http-qa.ts",
     "qa:rental-closeout:serve": "node scripts/qa/rental-closeout-review-server.mjs",
     "qa:rental-closeout:full": "node scripts/qa/rental-closeout-regressions.mjs",
-    "test:invoice-response": "node --import ./scripts/qa/invoice-response-runtime.mjs --import tsx --test --test-concurrency=2 tests/invoice-response.test.ts tests/invoice-response-store.test.ts"
+    "test:invoice-response": "node --import ./scripts/qa/invoice-response-runtime.mjs --import tsx --test --test-concurrency=2 tests/invoice-response.test.ts tests/invoice-response-store.test.ts",
+    "test:supplier-recovery": "node --import ./scripts/qa/supplier-recovery-native-test-runtime.mjs --import tsx --test --test-concurrency=2 tests/supplier-recovery-recovery.test.ts tests/supplier-recovery-ui.test.tsx",
+    "test:supplier-recovery:services": "node --import ./scripts/qa/supplier-recovery-controlled-wire-runtime.mjs --import tsx --test --test-concurrency=2 tests/supplier-recovery-store.test.ts tests/supplier-recovery-api.test.ts",
+    "qa:supplier-recovery:prepare": "node --import ./scripts/qa/supplier-recovery-controlled-wire-runtime.mjs --import tsx scripts/qa/supplier-recovery-prepare-native.ts",
+    "qa:supplier-recovery:http": "node --import ./scripts/qa/supplier-recovery-disabled-providers.mjs --import tsx scripts/qa/supplier-recovery-http-qa.ts",
+    "qa:supplier-recovery:serve": "node scripts/qa/supplier-recovery-review-server.mjs",
+    "qa:supplier-recovery:full": "node scripts/qa/supplier-recovery-regressions.mjs"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",

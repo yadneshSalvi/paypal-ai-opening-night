@@ -36,6 +36,7 @@ export class RetainedRentalWire extends DisruptionWire {
 }
 export async function rentalHarness(options: { database?: Awaited<ReturnType<typeof isolatedDatabase>>; realEngine?: boolean; appOrigin?: string; onStep?: (step: string, value: unknown) => Promise<void> } = {}) {
   const database = options.database ?? await isolatedDatabase(), wire = new RetainedRentalWire(database.pool);
+  const appOrigin = options.appOrigin ?? process.env.APP_BASE_URL ?? "http://127.0.0.1:4580";
   (globalThis as typeof globalThis & { openingNightPool?: Pool }).openingNightPool = database.pool;
   (globalThis as typeof globalThis & { openingNightProviders?: unknown }).openingNightProviders = { venue: wire.provider(), brightline: wire.provider() };
   const store = await import("../src/server/store"), payments = await import("../src/server/payment-store"), paymentService = await import("../src/server/payment-service");
@@ -61,11 +62,11 @@ export async function rentalHarness(options: { database?: Awaited<ReturnType<typ
     const held = await protocol.callSupplierService("brightline", { version: 1, requestId: randomUUID(), tenantId: actor.tenantId, actorId: actor.id, action: { type: "hold", quoteId: offer.serviceQuote!.id, planDigest: show.approvedPlan!.digest, expectedRevision: show.revision, acceptCaptureTerms: true } }, signal(), transport);
     if (held.kind !== "execution") throw new Error("Controlled hold missing"); const executionId = held.execution.id;
     await options.onStep?.("original-rental", held.execution);
-    show = await store.getShow(actor.tenantId); const checkout = await paymentService.handlePayment(actor, { type: "rental_checkout", expectedRevision: show.revision }, options.appOrigin ?? "http://127.0.0.1:4580");
+    show = await store.getShow(actor.tenantId); const checkout = await paymentService.handlePayment(actor, { type: "rental_checkout", expectedRevision: show.revision }, appOrigin);
     const root = await payments.readIntent(actor.tenantId, checkout.command.intentId), resources = await payments.ownedResources(actor.tenantId, "brightline", root.id), orderId = resources.find(item => item.kind === "order")!.id;
     await options.onStep?.("original-order", { executionId, root, orderId });
     wire.orders.get(orderId)!.status = "APPROVED";
-    assert.equal((await paymentService.handlePayment(actor, { type: "complete_checkout", intentId: root.id, state: paymentService.callbackState(root) }, options.appOrigin ?? "http://127.0.0.1:4580")).status, "succeeded");
+    assert.equal((await paymentService.handlePayment(actor, { type: "complete_checkout", intentId: root.id, state: paymentService.callbackState(root) }, appOrigin)).status, "succeeded");
     await protocol.callSupplierService("brightline", { version: 1, requestId: randomUUID(), tenantId: actor.tenantId, actorId: actor.id, action: { type: "confirm", executionId } }, signal(), transport);
     const token = await store.createSupplierCapability(actor), supplierActor = (await store.getActor(token))!;
     const driverLink = await store.createDeliveryCapability(actor, "driver"), inspectorLink = await store.createDeliveryCapability(actor, "inspector");

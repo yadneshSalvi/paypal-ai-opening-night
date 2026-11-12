@@ -1,10 +1,7 @@
 import "./disabled-providers.mjs";
-import { readFileSync } from "node:fs";
-import dotenv from "dotenv";
-
-// This unit never uses the original invoice lane's database or credentials.
-const values = dotenv.parse(readFileSync(new URL("../../.env", import.meta.url)));
-const database = new URL(values.DATABASE_URL);
-if (!["localhost", "127.0.0.1"].includes(database.hostname) || database.port !== "55573" || !database.pathname.startsWith("/opening_retained_") || database.searchParams.has("options")) throw new Error("Invoice response tests require the isolated PG55573 database without a runtime search_path");
+// The caller supplies only this successor's restricted local configuration.
+// Never discover or copy another lane's environment or original provider DB.
+const database = new URL(process.env.DATABASE_URL ?? "");
+if (database.hostname !== "127.0.0.1" || database.port !== "55575" || !/^\/opening_terms_[a-f0-9]{12}$/.test(database.pathname)) throw new Error("Invoice response tests require the owned stage16 PG55575 database");
+database.searchParams.delete("options");
 for (const key of ["DATABASE_URL", "DATABASE_URL_UNPOOLED", "POSTGRES_URL_NON_POOLING", "DIRECT_URL"]) process.env[key] = database.href;
-for (const key of ["JUDGE_SESSION_SECRET", "BRYNTUM_LICENSE_KEY", "APP_BASE_URL"]) process.env[key] = values[key] ?? "";

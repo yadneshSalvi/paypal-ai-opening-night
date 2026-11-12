@@ -33,7 +33,7 @@ function rate(): Extract<SettlementCommand, { type: "approve_rate" }> { return {
 test("settlement starts in a disposable schema with empty liabilities and no schedule-derived reports", async () => {
   const value = await fresh(), data = await service.readSettlement(value.personal) as PersonalSettlementData;
   assert.equal((await database.pool.query("SELECT current_schema() AS schema")).rows[0].schema, database.schema);
-  assert.equal((await database.pool.query("SELECT max(version) AS version FROM on_schema_migrations")).rows[0].version, 15);
+  assert.equal((await database.pool.query("SELECT max(version) AS version FROM on_schema_migrations")).rows[0].version, 16);
   assert.equal(data.revision, 0); assert.deepEqual(data.personal.reports, []); assert.deepEqual(data.personal.rates, []); assert.equal(data.personal.approvedBalanceMinor, 0); assert.equal(data.paymentCapability, "separate_payout_review_required");
 });
 test("lost response and concurrent same-ID requests recover one immutable attributed record", async () => {

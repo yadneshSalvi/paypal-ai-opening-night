@@ -1,0 +1,41 @@
+/** Sequential partitions, at most three files using the owned stage16 PostgreSQL cluster. */
+import './supplier-recovery-disabled-providers.mjs';
+import 'dotenv/config';
+import { readdirSync, mkdirSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+
+const wire = ['cohort-work', 'commerce-api', 'durable-work', 'payment-wire', 'remedy-work', 'supplier-work', 'wallet-work', 'disruptions-store', 'rental-closeout-store', 'rental-closeout-api', 'supplier-recovery-store', 'supplier-recovery-api'].map(value => `tests/${value}.test.ts`);
+const database = new URL(process.env.DATABASE_URL);
+if (database.hostname !== '127.0.0.1' || database.port !== '55575' || !/^\/opening_terms_[a-f0-9]{12}$/.test(database.pathname)) throw new Error('Only the owned stage16 PostgreSQL cluster may run this partition');
+const all = readdirSync('tests').filter(value => /\.test\.tsx?$/.test(value)).map(value => `tests/${value}`).sort();
+const requestedPartition = process.argv.slice(2);
+if (requestedPartition.length > 1 || requestedPartition.some(value => !['product', 'controlled-sdk'].includes(value))) throw new Error('Optional partition must be product or controlled-sdk');
+const directory = `.artifacts/supplier-recovery-regression-${randomUUID()}`;
+mkdirSync('.artifacts', { recursive: true, mode: 0o700 });
+mkdirSync(directory, { mode: 0o700 });
+const results = [];
+for (const [partition, preload, files] of [
+  ['product', './scripts/qa/supplier-recovery-native-test-runtime.mjs', all.filter(value => !wire.includes(value))],
+  ['controlled-sdk', './scripts/qa/supplier-recovery-controlled-wire-runtime.mjs', wire],
+]) {
+  if (requestedPartition.length && requestedPartition[0] !== partition) continue;
+  const startedAt = new Date().toISOString();
+  const args = ['--import', preload, '--import', 'tsx', '--test', '--test-concurrency=3', ...files];
+  let output = '';
+  const child = spawn(process.execPath, args, { env: process.env });
+  child.stdout.on('data', value => { output += value; });
+  child.stderr.on('data', value => { output += value; });
+  const code = await new Promise(resolve => {
+    child.once('error', error => { output += error.stack; resolve(1); });
+    child.once('exit', resolve);
+  });
+  const count = label => Number(output.match(new RegExp(`^# ${label} (\\d+)$`, 'm'))?.[1] ?? 0);
+  writeFileSync(`${directory}/${partition}.log`, output, { flag: 'wx', mode: 0o600 });
+  const result = { partition, startedAt, finishedAt: new Date().toISOString(), exitCode: code, files, fileConcurrency: 3, tests: count('tests'), passed: count('pass'), failed: count('fail'), cancelled: count('cancelled'), skipped: count('skipped'), providerTransports: 'disabled', actualProviderCalls: false, log: `${directory}/${partition}.log` };
+  results.push(result);
+  console.log(JSON.stringify(result));
+  writeFileSync(`${directory}/${partition}.json`, JSON.stringify(result, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
+  if (code !== 0 || !result.tests || result.failed || result.cancelled) { process.exitCode = 1; break; }
+}
+writeFileSync(`${directory}/summary.json`, JSON.stringify({ directory, results }, null, 2) + '\n', { flag: 'wx', mode: 0o600 });

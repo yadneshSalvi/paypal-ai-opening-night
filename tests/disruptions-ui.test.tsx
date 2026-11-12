@@ -20,6 +20,7 @@ import { createFixture } from "../src/domain/fixture";
 import { allReadiness } from "../src/domain/readiness";
 import { disruptionPreviewFixture, disruptionResultFixture, disruptionUiFixture } from "./disruptions-ui-fixture";
 import { rentalCardFixture, rentalResultFixture, rentalUiFixture } from "./rental-closeout-ui-fixture";
+import { supplierRecoveryUiFixture } from "./supplier-recovery-ui-fixture";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://127.0.0.1:4564/disruptions", pretendToBeVisual: true });
 for (const name of ["window", "self", "document", "HTMLElement", "HTMLButtonElement", "HTMLInputElement", "HTMLTextAreaElement", "HTMLSelectElement", "HTMLDialogElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "FocusEvent", "StorageEvent", "location", "history", "localStorage", "sessionStorage", "MutationObserver"] as const) Object.defineProperty(globalThis, name, { configurable: true, value: dom.window[name] });
@@ -60,6 +61,11 @@ async function mount(workspace: DisruptionWorkspace, route?: Route, node?: React
     const routed = route?.(call); if (routed) return routed;
     if (path === "/api/disruptions") return Response.json(workspace);
     if (path === "/api/rental-closeout") return Response.json(rentalUiFixture({ tenantId: workspace.tenantId, actorId: workspace.actorId, sessionFingerprint: workspace.sessionFingerprint, access: workspace.access === "supplier" ? "supplier" : "producer", supplierId: workspace.access === "supplier" ? "brightline" : null, rentals: [] }));
+    if (path === "/api/supplier-recovery") {
+      const terms = supplierRecoveryUiFixture({ tenantId: workspace.tenantId, actorId: workspace.actorId, sessionFingerprint: workspace.sessionFingerprint, access: workspace.access === "supplier" ? "supplier" : "producer", supplierId: workspace.access === "supplier" ? "brightline" : null });
+      if (terms.access === "supplier") { terms.cards = terms.cards.filter(card => card.supplierId === terms.supplierId); terms.preview = null; }
+      return Response.json(terms);
+    }
     if (path === "/api/disruptions/preview") return Response.json(disruptionPreviewFixture(workspace, call.body.mode, call.body.admissionRefundMinor));
     if (path === "/api/show") { headerReads++; return Response.json(consoleData(workspace)); }
     throw new Error(`Unexpected controlled request ${call.method} ${path}`);
@@ -222,6 +228,7 @@ test("only an exact 404 enables a manual retry after a lost response and remount
     if (call.path.startsWith("/api/disruptions/commands/")) return Response.json({ code: exact404 ? "DISRUPTION_COMMAND_NOT_FOUND" : "OTHER_NOT_FOUND", error: "Controlled missing result" }, { status: 404 });
     if (call.method === "POST") { assert.ok(original); assert.deepEqual(call.body, original); return disruptionResultFixture(workspace, call.body, { replayed: true }).then(result => Response.json(result)); }
   });
+  await until(() => container.textContent!.includes("Check the original result."));
   assert.equal(postCalls().length, 0); assert.equal(button("Retry the same instruction").disabled, true);
   await click(button("Check original status")); await until(() => container.textContent!.includes("Controlled missing result")); assert.equal(button("Retry the same instruction").disabled, true);
   exact404 = true; await click(button("Check original status")); await until(() => !button("Retry the same instruction").disabled);

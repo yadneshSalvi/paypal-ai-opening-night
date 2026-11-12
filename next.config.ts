@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const config: NextConfig = {
   outputFileTracingRoot: process.cwd(),
-  outputFileTracingExcludes: { "/*": ["./.env", "./.env.*", "./.artifacts/**/*", "./plans/**/*"] },
+  outputFileTracingExcludes: { "/*": ["./.env", "./.env.*", "./.private/**/*", "./.artifacts/**/*", "./plans/**/*"] },
   serverExternalPackages: ["@bryntum/gantt-node-enterprise", "@fracture/paypal-core", "@paypal/agent-toolkit", "axios", "better-sqlite3", "pg", "ws", "pdfjs-dist", "exceljs", "yauzl"],
   outputFileTracingIncludes: { "/api/wrap/reports/**": ["./public/fonts/NotoSans-Regular.ttf", "./public/fonts/NotoSans-Bold.ttf", "./public/fonts/OFL.txt"], "/api/sources/**": ["./src/server/sources/parser-worker.mjs", "./node_modules/pdfjs-dist/legacy/build/**", "./node_modules/@napi-rs/canvas/**", "./node_modules/@napi-rs/canvas-*/**", "./node_modules/exceljs/**", "./node_modules/yauzl/**"] },
   poweredByHeader: false,

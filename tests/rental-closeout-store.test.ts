@@ -7,6 +7,7 @@ import type { Actor } from "../src/domain/contracts";
 import { rentalExecutionDigest } from "../src/domain/rental-closeout";
 import { rentalHarness } from "./rental-closeout-harness";
 const h = await rentalHarness(); after(h.close);
+const origin = process.env.APP_BASE_URL ?? "http://127.0.0.1:4580";
 async function capability(actor: Actor) {
   const token = randomBytes(32).toString("base64url"), authority = { actor, sessionHash: h.sessionTokenHash(token) };
   await h.database.pool.query("INSERT INTO on_sessions(token_hash,tenant_id,actor,expires_at) VALUES($1,$2,$3,now()+interval '1 day')", [authority.sessionHash, actor.tenantId, actor]);
@@ -39,9 +40,9 @@ test("current rentals remain in use until scheduled return; modern reviews canno
   await assert.rejects(() => h.returned(value), /still in use/);
   await h.command(value.actor, { type: "advance", time: "23:30" });
   await h.returned(value); const beforeApproval = await h.store.getShow(value.actor.tenantId);
-  await assert.rejects(() => h.paymentService.handlePayment(value.actor, { type: "release_rental_hold", intentId: value.root.id, expectedRevision: beforeApproval.revision }, "http://127.0.0.1:4580"), { code: "RENTAL_CLOSEOUT_REVIEW_REQUIRED" });
+  await assert.rejects(() => h.paymentService.handlePayment(value.actor, { type: "release_rental_hold", intentId: value.root.id, expectedRevision: beforeApproval.revision }, origin), { code: "RENTAL_CLOSEOUT_REVIEW_REQUIRED" });
   const approved = await h.approve(value), show = await h.store.getShow(value.actor.tenantId);
-  await assert.rejects(() => h.paymentService.handlePayment(value.actor, { type: "release_rental_hold", intentId: value.root.id, expectedRevision: show.revision }, "http://127.0.0.1:4580"), /different exact session|different retained approval/);
+  await assert.rejects(() => h.paymentService.handlePayment(value.actor, { type: "release_rental_hold", intentId: value.root.id, expectedRevision: show.revision }, origin), /different exact session|different retained approval/);
   assert.equal((await h.worker.runRentalCloseoutWork(value.actor.tenantId, approved.intent.id, h.signal(), "dispatch")).status, "complete");
 });
 test("damage retains original observations and requires a corrected undamaged inspection before review", async () => {
@@ -149,7 +150,7 @@ test("a refused void requires explicit retry by its original exact capability an
   await h.worker.runRentalCloseoutWork(value.actor.tenantId, approved.intent.id, h.signal(), "readback"); assert.equal(h.wire.voids().length, writes + 1);
   const replacement = await capability(value.actor), retry = { type: "retry_closeout" as const, grantId: approved.grant.id, intentId: approved.intent.id, confirmed: true as const };
   await assert.rejects(() => h.act(replacement, retry), /original approving capability/);
-  await assert.rejects(() => h.paymentService.handlePayment(value.actor, { type: "retry_refused", intentId: approved.intent.id }, "http://127.0.0.1:4580"), /exact session/);
+  await assert.rejects(() => h.paymentService.handlePayment(value.actor, { type: "retry_refused", intentId: approved.intent.id }, origin), /exact session/);
   const receipt = await h.act(value.authority, retry); assert.equal(receipt.receipt.recordId, approved.intent.id);
   assert.equal((await h.worker.runRentalCloseoutWork(value.actor.tenantId, approved.intent.id, h.signal(), "retry", approved.grant.id)).status, "complete");
   desk = await h.service.readCloseoutWorkspace(value.authority); assert.equal(desk.rentals[0]!.closeout!.state, "complete"); assert.equal(h.wire.voids().length, writes + 2);
