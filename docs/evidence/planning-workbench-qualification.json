@@ -1,0 +1,168 @@
+{
+  "schema": "opening-planning-completion/1",
+  "qualifiedApplicationSource": "47cf2d70450a1559b52d51daf262fb66932ce02c",
+  "qualifiedBuild": "TBwjta-FXk8TE3XhudXoY",
+  "productionInputSha256": "9bf69bbcdece3d9f94716698cc27bca7f6f065578471a4203c3a1079db095f49",
+  "boundaries": "Actual application services and installed SDKs with explicitly controlled transport/declarations. No real human, physical work, provider/model calls or delivery are inferred. Existing actual sandbox/model qualifications remain separately source-bound.",
+  "workbenchChecks": 58,
+  "affectedOriginalChecks": {
+    "domainAndServices": 107,
+    "supplierAdministration": 22,
+    "supplierFirstOriginFailuresRetained": 3
+  },
+  "fullControlledJourneys": [
+    {
+      "state": "passed",
+      "completedAt": "2026-11-12T16:50:51.949Z",
+      "caseName": "doors",
+      "revision": 262,
+      "planVersion": 3,
+      "ticketCaptures": 80,
+      "originalPerkRefunds": 38,
+      "attendeeInboxes": 80,
+      "distinctCrewCues": 4,
+      "retainedCueRecords": 4,
+      "returnCloseout": {
+        "acceptedFeeMinor": 48000,
+        "releasedOriginalHoldMinor": 30000
+      },
+      "payout": {
+        "transport": "local_fixture",
+        "paidMinor": 3500,
+        "feeMinor": 25
+      },
+      "steps": 547,
+      "actualExternalProviderCalls": 0,
+      "actualModelCalls": 0,
+      "humanOrPhysicalEvidence": false,
+      "limitations": "Controlled declarations and in-memory SDK transport. Original separately accepted actual provider/model records are not rerun or inherited.",
+      "receiptSha256": "9f2c0fc391cc47075acf6ffb6bf8ed0e797dbe267c6a979586f446c16b234666"
+    },
+    {
+      "state": "passed",
+      "completedAt": "2026-11-12T16:50:58.776Z",
+      "caseName": "tour",
+      "revision": 267,
+      "planVersion": 4,
+      "ticketCaptures": 80,
+      "originalPerkRefunds": 38,
+      "attendeeInboxes": 80,
+      "distinctCrewCues": 4,
+      "retainedCueRecords": 4,
+      "returnCloseout": {
+        "acceptedFeeMinor": 48000,
+        "releasedOriginalHoldMinor": 30000
+      },
+      "payout": {
+        "transport": "local_fixture",
+        "paidMinor": 3500,
+        "feeMinor": 25
+      },
+      "steps": 568,
+      "actualExternalProviderCalls": 0,
+      "actualModelCalls": 0,
+      "humanOrPhysicalEvidence": false,
+      "limitations": "Controlled declarations and in-memory SDK transport. Original separately accepted actual provider/model records are not rerun or inherited.",
+      "receiptSha256": "7b327cbb28d2e997640fed3281fda8b151cbd720ea7dfce1db53881347fe3b44"
+    },
+    {
+      "state": "passed",
+      "completedAt": "2026-11-12T16:50:51.949Z",
+      "caseName": "soundcheck",
+      "revision": 262,
+      "planVersion": 3,
+      "ticketCaptures": 80,
+      "originalPerkRefunds": 38,
+      "attendeeInboxes": 80,
+      "distinctCrewCues": 4,
+      "retainedCueRecords": 4,
+      "returnCloseout": {
+        "acceptedFeeMinor": 48000,
+        "releasedOriginalHoldMinor": 30000
+      },
+      "payout": {
+        "transport": "local_fixture",
+        "paidMinor": 3500,
+        "feeMinor": 25
+      },
+      "steps": 551,
+      "actualExternalProviderCalls": 0,
+      "actualModelCalls": 0,
+      "humanOrPhysicalEvidence": false,
+      "limitations": "Controlled declarations and in-memory SDK transport. Original separately accepted actual provider/model records are not rerun or inherited.",
+      "receiptSha256": "23dfe876112ff9172788475f9ab3b5fcc6e5d801545f19c3ad050f026cc04afb"
+    }
+  ],
+  "native": {
+    "state": "accepted_with_minor_names_polish",
+    "strategy": {
+      "attempts": 12,
+      "viable": 9,
+      "rejected": 2,
+      "unresolved": 1,
+      "paretoWithinDeclaredSet": 3,
+      "fromRevision": 4,
+      "toRevision": 5
+    },
+    "tour": {
+      "wholeTourEngine": "passed",
+      "operatingEngine": "passed",
+      "assignment": "Priya to Controlled Mira",
+      "tasksChanged": 1,
+      "fromRevision": 6,
+      "toRevision": 7
+    },
+    "learning": {
+      "sourceEditions": 2,
+      "newRequirementsTemplates": 1,
+      "productionRevision": 5,
+      "authorityInherited": false
+    },
+    "other": {
+      "productionRevision": 1,
+      "foreignReviewHistories": 0
+    },
+    "sourceFocusPrintAnd320px": "passed",
+    "timezoneAria": "passed",
+    "dynamicResource": "Native fifteenth row revealed and selected; initial apparent omission retained as a viewport false negative.",
+    "resourceHistogram": "Actual native surface captured from a separately labeled legacy candidate comparison.",
+    "networkLedger": "328 retained events with truncation; not a complete request-count proof.",
+    "database": {
+      "tables": 108,
+      "beforeRows": 117,
+      "afterRows": 133,
+      "newReviewCommands": 6,
+      "originalSessionsAndExpiriesUnchanged": true,
+      "newFinancialOperations": 0,
+      "receiptSha256": "ec020f8de25e8413a028e8e1cc1adb3825f836872466f56e3954bf394c8b721f"
+    },
+    "comparisonLimitation": "First comparator named a nonexistent tour workspace table; corrected offline against the same single retained database snapshot. Original failure retained."
+  },
+  "build": {
+    "cleanOfflineInstall": true,
+    "lockUnchanged": true,
+    "installScripts": false,
+    "publicCacheFill": "Exact lock integrities verified before offline installation; initial cache/config/duplicate receipt failures retained.",
+    "externalOrDatabaseBuildAttempts": 0,
+    "compilerIpcConnections": 3,
+    "auditedProcesses": 19,
+    "privateClosureHits": 0,
+    "traceFiles": 101
+  },
+  "retainedFailures": [
+    "Typed strategy metadata was missing from legacy consent integrity digest; fixed without modifying original attempts.",
+    "Delivery access selected a historical named person; corrected to exactly one current qualified assignment.",
+    "A controlled helper omitted signature verification on clock advance; original cue/refusal retained and helper corrected.",
+    "A shortened-set return before the contractual23:30 return was refused; corrected in the distinct final cohorts.",
+    "Two earlier in-memory payout fixtures stopped after original batch creation. Those original pending records were not replayed or replaced. Final cohorts persist fixture state and read the original batch/items."
+  ],
+  "notClaimed": [
+    "Independent practitioner research or manual performance baseline",
+    "Real human consent, roster qualifications, physical work or safety clearance",
+    "Actual external recipient delivery in the controlled inbox journeys",
+    "Current-source AI accuracy from the older deterministic66-case corpus",
+    "A global optimal schedule or full-tour automatic execution",
+    "Completion of any earlier pending or unknown provider operation"
+  ],
+  "release": "Local source/native qualified; this evidence is not itself a production deployment receipt."
+}
