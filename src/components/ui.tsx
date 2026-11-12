@@ -8,19 +8,52 @@ export function Button({ children, onClick, disabled, busy, variant = "secondary
 export function SectionHeading({ label, title, aside }: { label?: string; title: string; aside?: ReactNode }) { return <div className="section-heading"><div>{label && <span className="eyebrow">{label}</span>}<h2>{title}</h2></div>{aside}</div>; }
 export function PageHeading({ eyebrow, title, description, actions }: { eyebrow: string; title: string; description: string; actions?: ReactNode }) { return <header className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></div><div className="heading-actions">{actions}</div></header>; }
 export function EmptyState({ title, children, icon, action }: { title: string; children: ReactNode; icon?: ReactNode; action?: ReactNode }) { return <div className="empty-state"><div className="empty-icon">{icon ?? <ArrowUpRight size={22} />}</div><h3>{title}</h3><p>{children}</p>{action}</div>; }
+
+const openModals: HTMLDialogElement[] = [];
+function modalTabStops(node: HTMLDialogElement) {
+  return [...node.querySelectorAll<HTMLElement>('a[href], area[href], button, input, select, textarea, summary, iframe, [contenteditable="true"], [tabindex]')]
+    .filter(target => {
+      if (target.tabIndex < 0 || target.matches(':disabled, input[type="hidden"]') || target.closest('[hidden], [inert]') || !target.getClientRects().length) return false;
+      for (let ancestor: HTMLElement | null = target; ancestor && ancestor !== node; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor);
+        if (style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse") return false;
+        if (ancestor.tagName === "DETAILS" && !ancestor.hasAttribute("open") && !ancestor.querySelector(":scope > summary")?.contains(target)) return false;
+      }
+      return true;
+    })
+    .sort((left, right) => (left.tabIndex || Number.MAX_SAFE_INTEGER) - (right.tabIndex || Number.MAX_SAFE_INTEGER));
+}
 export function Modal({ title, children, onClose, dismissible = true, fallbackFocus, returnFocus }: { title: string; children: ReactNode; onClose: () => void; dismissible?: boolean; fallbackFocus?: () => HTMLElement | null; returnFocus?: () => HTMLElement | null }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const focusFallback = useRef(fallbackFocus); focusFallback.current = fallbackFocus;
   const focusReturn = useRef(returnFocus); focusReturn.current = returnFocus;
   const titleId = useId();
   useEffect(() => {
-    const node = dialog.current!; const prior = document.activeElement; node.showModal();
+    const node = dialog.current!; const prior = document.activeElement; node.showModal(); openModals.push(node);
+    const containTab = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || event.altKey || event.ctrlKey || event.metaKey || openModals.findLast(value => value.open && value.isConnected) !== node) return;
+      // Read the current controls at the keypress: submitting can disable the
+      // previous endpoint, and a validation response can reveal another one.
+      const stops = modalTabStops(node), first = stops[0], last = stops.at(-1), active = document.activeElement;
+      if (!first || !last || !stops.includes(active as HTMLElement) || (event.shiftKey ? active === first : active === last)) {
+        event.preventDefault();
+        (event.shiftKey ? last ?? node : first ?? node).focus({ preventScroll: true });
+      }
+    };
+    document.addEventListener("keydown", containTab, true);
     const restore = (target: Element | null | undefined) => {
       if (!(target instanceof HTMLElement) || target === document.body || target === document.documentElement || !target.isConnected || target.matches(":disabled") || target.closest("[inert]") || !target.getClientRects().length || getComputedStyle(target).visibility !== "visible") return false;
       target.focus({ preventScroll: true }); return document.activeElement === target;
     };
-    return () => { node.close(); if (!restore(focusReturn.current?.()) && !restore(prior)) restore(focusFallback.current?.()); };
+    return () => {
+      document.removeEventListener("keydown", containTab, true);
+      const index = openModals.lastIndexOf(node); if (index >= 0) openModals.splice(index, 1);
+      const active = document.activeElement;
+      const ownsFocus = !active || active === document.body || active === document.documentElement || node.contains(active) || !active.isConnected;
+      node.close();
+      if (ownsFocus && !restore(focusReturn.current?.()) && !restore(prior)) restore(focusFallback.current?.());
+    };
   }, []);
-  return <dialog ref={dialog} className="modal" aria-labelledby={titleId} onCancel={event => { event.preventDefault(); if (dismissible) onClose(); }} onClick={e => { if (dismissible && e.target === e.currentTarget) onClose(); }}><div className="modal-inner"><div className="modal-heading"><h2 id={titleId}>{title}</h2>{dismissible && <button className="icon-button" aria-label="Close dialog" onClick={onClose}><X size={20} /></button>}</div>{children}</div></dialog>;
+  return <dialog ref={dialog} className="modal" tabIndex={-1} aria-labelledby={titleId} onCancel={event => { event.preventDefault(); if (dismissible) onClose(); }} onClick={e => { if (dismissible && e.target === e.currentTarget) onClose(); }}><div className="modal-inner"><div className="modal-heading"><h2 id={titleId}>{title}</h2>{dismissible && <button className="icon-button" aria-label="Close dialog" onClick={onClose}><X size={20} /></button>}</div>{children}</div></dialog>;
 }
 export const formatCount = (number: number) => number.toString().padStart(2, "0");

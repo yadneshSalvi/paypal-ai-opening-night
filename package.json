@@ -25,10 +25,11 @@
     "test:payouts": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/payouts.test.ts tests/payouts-store.test.ts",
     "test:wrap": "node --import ./scripts/qa/disabled-providers.mjs --import tsx --test tests/wrap.test.ts tests/wrap-store.test.ts tests/wrap-assistant-store.test.ts tests/provider-egress.test.ts",
     "qa:wrap:export": "node --import ./scripts/qa/disabled-providers.mjs --import tsx scripts/qa/wrap-export-qa.ts",
-    "test:tour": "node --import ./scripts/qa/tour-disabled-providers.mjs --import tsx --test tests/tour-domain.test.ts tests/tour-store.test.ts tests/tour-recovery.test.ts tests/tour-client.test.tsx",
+    "test:tour": "node --import ./scripts/qa/native-test-runtime.mjs --import tsx --test --test-concurrency=3 tests/tour-domain.test.ts tests/tour-store.test.ts tests/tour-recovery.test.ts tests/tour-client.test.tsx tests/tour-modal.test.tsx tests/tour-native.test.tsx tests/tour-native-faults.test.ts",
     "qa:tour:prepare": "node --import ./scripts/qa/tour-disabled-providers.mjs --import tsx scripts/qa/tour-prepare-native.ts",
     "qa:tour:http": "node --import ./scripts/qa/tour-disabled-providers.mjs --import tsx scripts/qa/tour-http-qa.ts",
-    "qa:tour:serve": "node scripts/qa/tour-review-server.mjs"
+    "qa:tour:serve": "node scripts/qa/tour-review-server.mjs",
+    "qa:tour:full": "node scripts/qa/tour-regressions.mjs"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",

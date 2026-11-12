@@ -76,6 +76,9 @@ export function useTourClient<T extends TourData>(personal: boolean, view: strin
     finally { lock.current = false; if (mounted.current) setBusy(null); ticket.complete(); }
   }, [clear, focus, notRecorded, read, request, send]);
   const downloadRecovery = useCallback(() => { const url = URL.createObjectURL(new Blob([rawPending.current ?? JSON.stringify(pendingRef.current)], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = "opening-night-tour-recovery.json"; link.click(); URL.revokeObjectURL(url); }, []);
-  return { data, busy, error, notice, ended, pending, notRecorded, storageError, blocked: Boolean(busy || ended || pending || storageError || !fresh), refresh, act, recover, downloadRecovery, request, setError, setNotice };
+  // A concluded refusal belongs to the review that sent it. Recovery, expired
+  // identity and stale-view errors remain authoritative across dialog changes.
+  const clearReviewError = useCallback(() => { if (!pendingRef.current && !endedRef.current && freshRef.current) setError(null); }, []);
+  return { data, busy, error, notice, ended, pending, notRecorded, storageError, blocked: Boolean(busy || ended || pending || storageError || !fresh), refresh, act, recover, downloadRecovery, request, setError, setNotice, clearReviewError };
 }
 export type TourClient = ReturnType<typeof useTourClient<TourWorkspace>>;
