@@ -1,0 +1,74 @@
+{
+  "qualifiedAt": "2026-11-12T07:14:24.470693+00:00",
+  "environment": "actual PayPal sandbox; owned controlled issuer and recipient",
+  "invoiceParserSource": "d75cfc85c5fb9b8935b7cf8a9e25840df458face",
+  "assistantSource": "38b3c5cd7784d8093d642a94aa5200474761b64a",
+  "assistantBuild": "lMsUVYKYYEXfSgVXY9VXC",
+  "invoice": {
+    "amountMinor": 100,
+    "currency": "USD",
+    "createOperations": 1,
+    "shareLinkOperations": 1,
+    "cancelOperations": 1,
+    "finalProviderStatus": "CANCELLED",
+    "recipientEmailDelivery": false,
+    "issuerEmailDelivery": false,
+    "collectedMinor": 0,
+    "refundedMinor": 0,
+    "currentInvoiceClaimMinor": 0,
+    "approvedRevenueEntryMinor": 100,
+    "ledgerOutstandingRevenueMinor": 100,
+    "limitations": [
+      "The cancelled claim is not collectible proof or cash.",
+      "The producer-approved ledger entry remains outstanding until a separate reconciliation decision.",
+      "This single controlled sandbox case does not establish general merchant capability."
+    ]
+  },
+  "toolkit": {
+    "package": "@paypal/agent-toolkit",
+    "version": "1.11.0",
+    "operation": "get_invoice",
+    "outcome": "verified_read",
+    "originalResourceOnly": true
+  },
+  "assistant": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "max",
+    "background": true,
+    "store": false,
+    "continuation": "stateless original response items and encrypted reasoning",
+    "outcome": "completed",
+    "tools": [
+      "readAccount"
+    ],
+    "responses": 2,
+    "financialMutations": 0,
+    "newPayPalReads": 0,
+    "citations": [
+      "L1"
+    ],
+    "originalFailedRunPreserved": "MODEL_HTTP_400 / unsupported previous_response_id under Zero Data Retention",
+    "hiddenReasoningExposed": false
+  },
+  "verification": {
+    "invoiceParserRegressions": 130,
+    "assistantAffectedChecks": 25,
+    "typecheckAndProductionBuild": "passed",
+    "priorDatabaseTables": 51,
+    "priorRows": 89,
+    "originalRowsChanged": 0,
+    "addedAssistantRuns": 1,
+    "addedAssistantEvents": 10,
+    "originalScopeExpiresAt": "2026-11-12T07:43:46.030Z"
+  },
+  "retainedFailures": [
+    "Create returned a legacy-host href; original resource was reconciled without another create.",
+    "Raw nested zero discounts and an omitted false partial-payment flag required invoice-specific response parsing.",
+    "Initial Toolkit guard denied its legacy sandbox host; corrected exact-resource read succeeded.",
+    "Initial stored-response assistant continuation was rejected by the organization retention policy."
+  ],
+  "sources": [
+    "https://developers.openai.com/api/docs/guides/migrate-to-responses#4-decide-when-to-store-state",
+    "https://developers.openai.com/api/docs/guides/background"
+  ]
+}
