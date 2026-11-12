@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "state": "automated_qualified_native_review_pending",
+  "baseCommit": "ae0980851e3aac49470e052af8c468b9bf4c94f6",
+  "productionInputSha256": "260c3218b5c726ecb13ef7318ed7c35f649028f1911e333810b93f72815b0190",
+  "scope": "Ordinary exact-ticket attendee projection and separately reviewed controlled in-app inbox delivery",
+  "provenance": "All positive captures/refunds use existing real commerce services and installed SDK over controlled in-memory transport. Native scheduling calculations are real. Fixtures and approvals are explicitly automated controlled data. No actual financial provider, external audience message, model, human review or physical entry is claimed.",
+  "regressions": {
+    "uniqueCoveredCases": 853,
+    "audienceCases": 60,
+    "inheritedProductCases": 605,
+    "controlledSdkCases": 188,
+    "focusedSettlementRerun": 9,
+    "additiveFreshProcessRerun": 3,
+    "skipped": 0,
+    "originalFailedRunsRetained": true,
+    "schemaExpectationCorrection": {
+      "before": 16,
+      "after": 17,
+      "explicitIntegrationLeadApproval": true
+    },
+    "inheritedOriginCorrection": "Trusted virtual Request metadata only; no network access to other app ports authorized",
+    "evidenceSha256": "7142b801b57984a800faf507a70848b0bec0b64f908f65d93c6d341bb4b211e8"
+  },
+  "stress": {
+    "declaredTickets": 400,
+    "observedCaptures": 400,
+    "observedCapabilities": 400,
+    "completedPasses": 40,
+    "perPassLimit": 10,
+    "committedInboxReceipts": 400,
+    "independentlyReadPrivateInboxes": 400,
+    "elapsedMs": 408730.555125,
+    "observedPeakHeapBytes": 473856264,
+    "observedPeakRssBytes": 838418432,
+    "processMaxRssKilobytes": 845904,
+    "controlledSdkRequests": 1208,
+    "expectationHash": "0343246bc64c61fb9d23170f40626fc143ed5fed49c7518ac2859102fb5171ef"
+  },
+  "stressEvidenceSha256": "9f2da2fb60dde94ce014fd8ebf5f91ded8e68f9b55b3d240b0efb57bffb13920",
+  "compiledHttp": {
+    "checks": 16,
+    "passed": 16,
+    "requests": 80,
+    "expectationHash": "18babe8380274c579e3531a9b11e75b30bc7a6e68c48d06947cb65c4ae1e4ba2",
+    "evidenceSha256": "6e9ffd239cbadbbde1340ba5e99b6580e6ffef5cb319eec471c070f9676e6263"
+  },
+  "build": {
+    "buildId": "24oewAnz2Pu2s694PhUpL",
+    "networkOrDatabaseAttempts": 0,
+    "verifiedCompilerIpcConnections": 3,
+    "auditedProcesses": 19,
+    "privateTraceHits": 0,
+    "privateByteHits": 0,
+    "privatePathByteHits": 0,
+    "fontFaces": [
+      {
+        "family": "Inter",
+        "sha256": "c940764593d0fe5d596be327ca7558855e018039fb78509aa21921fd3644c3e4",
+        "bytes": 48432
+      },
+      {
+        "family": "Oswald",
+        "sha256": "c36937da4c39049704f1def587f7837a24ad52d3bfd2d27d3b6eb9f4220b2e3a",
+        "bytes": 28456
+      },
+      {
+        "family": "JetBrains Mono",
+        "sha256": "1e06740a02a443fb7f3eeda8fcaa685a0f6c620e3f01e6666e847295469ce3ad",
+        "bytes": 40480
+      }
+    ],
+    "evidenceSha256": "31070d980cde54849068415b7f5db729d3f42178ce9491e1825b582d62e9e015"
+  },
+  "retainedFirstFailures": [
+    "Producer recovery journal accidentally included workspace fields; fixed to exact identity/envelope metadata.",
+    "A contradictory current-source inbox label passed content hashing; now rejected.",
+    "Original inherited schema assertion expected16 before intended additive17.",
+    "Two inherited SDK harness runs lacked their original virtual origin metadata.",
+    "First HTTP setup incorrectly included a Standard ticket in a VIP-only draft; service correctly rejected it. Original setup was inspected read-only and preserved; corrected independent preparation used new schema/actors/resources."
+  ],
+  "nativeReview": {
+    "status": "pending_root_native_review",
+    "privateAttendeeViews": 5,
+    "mainCurrentDraftApproved": false,
+    "appPort": 4594,
+    "databasePort": 55579,
+    "noOriginalExpiryRenewal": true
+  },
+  "remainingSeparateGates": [
+    "Root native desktop/mobile/keyboard review",
+    "Shared navigation and migration18 integration by the integration lead",
+    "Actual human copy review and actual external provider/model/audience delivery are not inferred from this unit"
+  ],
+  "actualExternalProviderCalls": 0,
+  "actualModelCalls": 0,
+  "actualExternalAudienceMessages": 0,
+  "actualHumanReviews": 0,
+  "actualPhysicalEntries": 0
+}

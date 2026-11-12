@@ -48,7 +48,15 @@
     "qa:supplier-recovery:prepare": "node --import ./scripts/qa/supplier-recovery-controlled-wire-runtime.mjs --import tsx scripts/qa/supplier-recovery-prepare-native.ts",
     "qa:supplier-recovery:http": "node --import ./scripts/qa/supplier-recovery-disabled-providers.mjs --import tsx scripts/qa/supplier-recovery-http-qa.ts",
     "qa:supplier-recovery:serve": "node scripts/qa/supplier-recovery-review-server.mjs",
-    "qa:supplier-recovery:full": "node scripts/qa/supplier-recovery-regressions.mjs"
+    "qa:supplier-recovery:full": "node scripts/qa/supplier-recovery-regressions.mjs",
+    "test:audience": "node --import ./scripts/qa/audience-native-test-runtime.mjs --import tsx --test --test-concurrency=1 tests/audience-recovery.test.ts tests/audience-private.test.ts tests/audience-store.test.ts tests/audience-refunds.test.ts tests/audience-api.test.ts tests/audience-durability.test.ts tests/audience-ui.test.tsx",
+    "qa:audience:prepare": "node --import ./scripts/qa/audience-controlled-wire-runtime.mjs --import tsx scripts/qa/audience-prepare-native.ts",
+    "qa:audience:serve": "node --import ./scripts/qa/audience-disabled-runtime.mjs scripts/qa/audience-review-server.mjs",
+    "qa:audience:http": "node --import ./scripts/qa/audience-review-client-runtime.mjs --import tsx scripts/qa/audience-http-qa.ts",
+    "qa:audience:build": "node scripts/qa/audience-build.mjs",
+    "qa:audience:full": "node scripts/qa/audience-regressions.mjs",
+    "qa:audience:freeze": "node scripts/qa/audience-freeze.mjs",
+    "qa:audience:stress": "node --import ./scripts/qa/audience-controlled-wire-runtime.mjs --import tsx scripts/qa/audience-stress.ts"
   },
   "dependencies": {
     "@bryntum/calendar-enterprise": "8.0.0",
