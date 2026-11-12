@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "opening-night.voice-actual-provider-qualification.v1",
+  "checkedAt": "2026-11-12T04:32:08.222Z",
+  "sourceCommit": "adf2d9a56118ffd96ec683b39d6f6672126b3204",
+  "deploymentId": "dpl_2RNCxm1LYFaG5Qo9ww5RzYoYsqK3",
+  "url": "https://paypal-ai-opening-night.vercel.app",
+  "status": "passed-bounded-generated-audio-journey",
+  "speech": {
+    "actualRequests": 1,
+    "model": "gpt-realtime-2.1-mini",
+    "voice": "marin",
+    "wavBytes": 343244,
+    "wavSha256": "d59091de466a4200e23e616a586c6a904ce67051c09c4cde85f481978393c022",
+    "pcmDurationSeconds": 7.15,
+    "originalSavedBytesMatch": true
+  },
+  "transcription": {
+    "actualRequests": 1,
+    "model": "gpt-transcribe",
+    "targetWords": 15,
+    "recognizedWords": 15,
+    "targetTextEditDistance": 0,
+    "measurementScope": "One generated clip; target-text comparison, not human acoustic annotation or a general accuracy study"
+  },
+  "native": {
+    "savedAudioPlayedToEnd": true,
+    "mediaError": null,
+    "browserDurationSeconds": 7.082667,
+    "consoleErrorsAtCheckpoint": 0,
+    "completedLiveMediaRecords": 2,
+    "originalSessionCookieRestored": true,
+    "testTabClosed": true
+  },
+  "database": {
+    "tablesChecked": 59,
+    "allOriginalRowsUnchanged": true,
+    "addedRows": {
+      "on_shows": 1,
+      "on_session_admissions": 1,
+      "on_voice_chunks": 18,
+      "on_sessions": 1,
+      "on_events": 1,
+      "on_voice_runs": 2
+    }
+  },
+  "claims": {
+    "microphoneUsed": false,
+    "humanSpeakerStudy": false,
+    "planningRequestsSent": 0,
+    "financialActions": 0,
+    "fullProductComplete": false
+  },
+  "limitations": [
+    "One original generated clip and its transcription were tested; this does not establish microphone behavior or broad speech accuracy.",
+    "The WAV contains 7.15 seconds of PCM; the native player reported 7.082667 seconds and ended without a media error. Both observations are retained without assuming why they differ.",
+    "Actual invoice/Toolkit/wrap-assistant qualification, broader scenarios and the final full-product demonstration remain separate gates."
+  ]
+}
