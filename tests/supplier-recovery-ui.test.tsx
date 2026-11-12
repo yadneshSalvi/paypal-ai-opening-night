@@ -82,6 +82,11 @@ test("saved collection keeps unresolved responses visible and cannot be continue
   await mount(workspace); assert.match(container.textContent!, /1 signed quotes · 0 signed refusals · 2 responses unresolved/); assert.equal(button("Continue original quote collection").disabled, true); assert.equal(posts().length, 0);
 });
 
+test("an initial signed collection is retained without inventing a zero replacement quote count", async () => {
+  const workspace = supplierRecoveryUiFixture({ requests: [{ id: randomUUID(), status: "applied", lastCode: null, outcomes: [], sessionMatches: false, expiresAt: null, createdAt: new Date().toISOString() }] });
+  await mount(workspace); assert.match(container.textContent!, /Initial collection retained/); assert.match(container.textContent!, /initial supplier workflow and its signed quote history remain recorded/); assert.doesNotMatch(container.textContent!, /0 signed quotes|Current outcomes received/); assert.equal(posts().length, 0);
+});
+
 test("scoped supplier access requires review and exposes only its exact local private link", async () => {
   const workspace = supplierRecoveryUiFixture(); await mount(workspace, call => call.path === "/api/supplier-recovery/commands" ? supplierRecoveryResultFixture(workspace, call.body).then(value => Response.json(value)) : undefined);
   const northside = workspace.cards.find(card => card.supplierId === "northside")!; await click(button("Open " + northside.supplier + " client")); const dialog = dialogs()[0]!;
