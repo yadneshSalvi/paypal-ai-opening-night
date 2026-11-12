@@ -13,7 +13,7 @@ import type { NativeTourProps } from "../src/components/tour/native-tour";
 // Real installed widgets/React wrappers and engine. Only browser layout APIs are
 // supplied here; real keyboard, rendering and third-zone browser QA belong to root.
 process.env.TZ = "Asia/Kolkata";
-const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://127.0.0.1:4558/tour", pretendToBeVisual: true });
+const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://127.0.0.1:4561/tour", pretendToBeVisual: true });
 for (const name of ["window", "self", "document", "navigator", "DOMTokenList", "HTMLDocument", "Document", "Window", "ShadowRoot", "HTMLStyleElement", "CSSStyleSheet", "CSSStyleDeclaration", "Text", "Comment", "CharacterData", "HTMLImageElement", "screen", "pageXOffset", "pageYOffset", "innerWidth", "innerHeight", "devicePixelRatio", "HTMLElement", "HTMLDivElement", "HTMLInputElement", "HTMLButtonElement", "HTMLCanvasElement", "SVGElement", "Element", "Node", "NodeFilter", "DocumentFragment", "Event", "CustomEvent", "MouseEvent", "KeyboardEvent", "FocusEvent", "MutationObserver", "DOMParser", "XMLSerializer", "Range", "DOMRect", "location", "history", "sessionStorage", "localStorage"] as const) Object.defineProperty(globalThis, name, { configurable: true, value: dom.window[name] });
 for (const name of ["addEventListener", "removeEventListener", "dispatchEvent"] as const) Object.defineProperty(globalThis, name, { configurable: true, value: dom.window[name].bind(dom.window) });
 Object.defineProperty(globalThis, "getComputedStyle", { configurable: true, value: dom.window.getComputedStyle.bind(dom.window) });
@@ -37,6 +37,18 @@ for (const [name, dimension] of [["offsetWidth", "width"], ["clientWidth", "widt
 dom.window.Range.prototype.getBoundingClientRect = function () { return new dom.window.DOMRect(0, 0, 80, 20); };
 dom.window.Range.prototype.getClientRects = function () { return [this.getBoundingClientRect()] as unknown as DOMRectList; };
 dom.window.HTMLElement.prototype.scrollIntoView = function () {};
+// Browsers emit scroll events after programmatic scrollLeft changes. JSDOM
+// stores the offset but omits that event; supply it for every real scroller,
+// including SDK partners, without changing any widget state or range values.
+const scrollLeft = Object.getOwnPropertyDescriptor(dom.window.Element.prototype, "scrollLeft")!;
+Object.defineProperty(dom.window.Element.prototype, "scrollLeft", {
+  ...scrollLeft,
+  set(value: number) {
+    const before = scrollLeft.get!.call(this);
+    scrollLeft.set!.call(this, value);
+    if (scrollLeft.get!.call(this) !== before) queueMicrotask(() => { if (this.isConnected) this.dispatchEvent(new Event("scroll")); });
+  },
+});
 Object.defineProperty(document, "fonts", { configurable: true, value: { ready: Promise.resolve(), status: "loaded", check: () => true, addEventListener() {}, removeEventListener() {} } });
 const license = parse(readFileSync(".env")).BRYNTUM_LICENSE_KEY ?? "";
 Object.assign(globalThis, { bryntum: { licenseKey: license } });
@@ -44,7 +56,8 @@ const { createRoot } = await import("react-dom/client");
 const { default: NativeTour } = await import("../src/components/tour/native-tour");
 const { Widget } = await import("@bryntum/core-enterprise");
 const { Gantt, ProjectModel } = await import("@bryntum/gantt-enterprise");
-const { Scheduler } = await import("@bryntum/scheduler-enterprise");
+const { Scheduler, PresetManager, ViewPreset } = await import("@bryntum/scheduler-enterprise");
+const originalPresetEligibility = ["dayAndWeek", "hourAndDay"].map(id => PresetManager.getById(id).get("useForSmoothZoom"));
 
 let root: Root | null = null, container: HTMLDivElement, strict = false;
 const errors: unknown[] = [];
@@ -115,6 +128,76 @@ test("native event and time-axis accessible names use the selected clock in a th
   }
 });
 
+type NativeTimeline = ReturnType<typeof widgets>["scheduler"] | ReturnType<typeof widgets>["gantt"];
+function preset(widget: NativeTimeline) {
+  const value = widget.viewPreset;
+  assert.ok(value instanceof ViewPreset, "The installed widget must have resolved its preset model");
+  return value;
+}
+function viewport(widget: NativeTimeline) {
+  const range = widget.visibleDateRange;
+  assert.ok(range.startDate && range.endDate, "A real visible range is required");
+  const cells = [...widget.timeAxisColumn.element.querySelectorAll<HTMLElement>(".b-sch-header-row:last-child .b-sch-header-time-axis-cell:not(.b-released)")].sort((left, right) => Number.parseFloat(left.style.insetInlineStart) - Number.parseFloat(right.style.insetInlineStart));
+  assert.ok(cells.length > 0, "Installed time-axis tick cells must be rendered");
+  return {
+    preset: preset(widget).id,
+    tickSize: widget.tickSize,
+    scroll: widget.timeAxisSubGrid.scrollable.x,
+    visible: [range.startDate.getTime(), range.endDate.getTime()],
+    ticks: cells.map(cell => ({ text: cell.textContent, width: cell.style.width, start: cell.style.insetInlineStart })),
+    coordinates: [0, 160, 360].map(offset => widget.timeAxisViewModel.getDateFromPosition(widget.timeAxisSubGrid.scrollable.x + offset)?.getTime()),
+  };
+}
+function assertViewportClocks(gantt: NativeTimeline, scheduler: NativeTimeline, zone: string) {
+  assert.deepEqual(["dayAndWeek", "hourAndDay"].map(id => PresetManager.getById(id).get("useForSmoothZoom")), originalPresetEligibility, "Partnering must not alter global preset eligibility for later views");
+  assert.deepEqual(viewport(gantt), viewport(scheduler), "Scale, scroll, visible dates and rendered tick geometry must match");
+  for (const [widget, title] of [[gantt, "Gantt"], [scheduler, "Resource scheduler"]] as const) {
+    const header = widget.timeAxisColumn.element, ids = header.getAttribute("aria-labelledby")?.split(/\s+/) ?? [];
+    const accessible = ids.map(id => document.getElementById(id)?.textContent ?? "").join(" ");
+    const range = widget.visibleDateRange;
+    assert.match(accessible, new RegExp(`^${title} display clock:`));
+    for (const date of [range.startDate!, range.endDate!]) {
+      assert.ok(accessible.includes(widget.dateHelper.format(date, "YYYY-MM-DD HH:mm")), "Effective header name must describe its own actual viewport");
+    }
+    assert.ok(accessible.includes(zone));
+  }
+}
+async function wheel(widget: NativeTimeline, deltaY: number) {
+  const rect = widget.timeAxisSubGridElement.getBoundingClientRect();
+  const event = new dom.window.WheelEvent("wheel", { ctrlKey: true, deltaY, clientX: rect.x + 360, clientY: rect.y + 40, bubbles: true, cancelable: true });
+  await act(async () => { widget.timeAxisSubGridElement.dispatchEvent(event); });
+  assert.ok(event.defaultPrevented, "The installed wheel zoom handler must consume Ctrl+wheel");
+  const immediate = { tickSize: widget.tickSize, zoomLevel: widget.zoomLevel };
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 240)); });
+  return immediate;
+}
+for (const zone of ["America/Denver", "America/Chicago"]) test(`native wheel zoom synchronizes both viewports and effective clocks in ${zone}`, async context => {
+  const input = { ...props(), zone }; await mount(input); await flush();
+  const { gantt, scheduler } = widgets();
+  assertViewportClocks(gantt, scheduler, zone);
+  for (const [name, widget] of [["Gantt", gantt], ["Scheduler", scheduler]] as const) {
+    for (const delta of [-120, 120]) {
+      const before = viewport(widget), beforeZoomLevel = widget.zoomLevel;
+      const immediate = await wheel(widget, delta);
+      context.diagnostic(JSON.stringify({ initiator: name, delta, beforeZoomLevel, immediate, gantt: viewport(gantt), scheduler: viewport(scheduler) }));
+      assert.notEqual(viewport(widget).tickSize, before.tickSize, "Real wheel input must change the scale");
+      assert.notDeepEqual(viewport(widget).visible, before.visible, "Real wheel input must change the visible dates");
+      assertViewportClocks(gantt, scheduler, zone);
+      assert.ok(gantt.isPartneredWith(scheduler) && scheduler.isPartneredWith(gantt));
+      assert.ok(Object.is(gantt.timeAxisViewModel, scheduler.timeAxisViewModel), "The SDK must share the scale model, not just time-axis dates");
+    }
+    await act(async () => { widget.timeAxisSubGrid.scrollable.x += 80; });
+    await flush();
+    assertViewportClocks(gantt, scheduler, zone);
+    const previousPreset = preset(widget).id;
+    await act(async () => { await widget.zoomIn(); }); await flush();
+    assert.notEqual(preset(widget).id, previousPreset, "A zoom step must also cross into a finer preset");
+    assertViewportClocks(gantt, scheduler, zone);
+    await act(async () => { await widget.zoomOut(); }); await flush();
+    assertViewportClocks(gantt, scheduler, zone);
+  }
+});
+
 test("Strict Mode and rapid preview replacements release widgets before their shared project", async () => {
   strict = true;
   const input = props(); await mount(input);
@@ -141,8 +224,7 @@ test("Strict Mode and rapid preview replacements release widgets before their sh
     const beforeZoom = current.gantt.tickSize;
     await act(async () => { current.gantt.zoomIn(); }); await flush();
     assert.notEqual(current.gantt.tickSize, beforeZoom, "Native zoom remains available with distinct scale presets");
-    assert.equal(current.gantt.timeAxis.startDate.getTime(), current.scheduler.timeAxis.startDate.getTime(), "Partner time-axis starts stay synchronized");
-    assert.equal(current.gantt.timeAxis.endDate.getTime(), current.scheduler.timeAxis.endDate.getTime(), "Partner time-axis ends stay synchronized");
+    assertViewportClocks(current.gantt, current.scheduler, "America/Chicago");
     assert.equal(warnings.filter(value => /Preset.*smooth zoom/.test(value)).length, 0);
   } finally { console.warn = warn; }
 });

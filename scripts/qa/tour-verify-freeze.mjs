@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-const freeze = JSON.parse(fs.readFileSync('.artifacts/tour-native-4558-r2/freeze.json', 'utf8'));
+const freeze = JSON.parse(fs.readFileSync('.artifacts/tour-native-4561/freeze.json', 'utf8'));
 const sha = value => crypto.createHash('sha256').update(value).digest('hex'), failures = [], counts = {};
 for (const [file, expected] of Object.entries(freeze.protectedFiles)) if (sha(fs.readFileSync(file)) !== expected) failures.push(file);
 for (const [name, descriptor] of Object.entries(freeze.manifests)) {

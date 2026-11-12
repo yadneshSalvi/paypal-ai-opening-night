@@ -9,9 +9,9 @@ import { readTourWorkspace, readPersonalTour } from "../../src/server/tour/servi
 import { digest } from "../../src/domain/hash";
 import type { Actor } from "../../src/domain/contracts";
 
-const directory = ".artifacts/tour-native-4558-r2", raw = await readFile(`${directory}/fixture.json`), fixture = JSON.parse(raw.toString());
+const directory = ".artifacts/tour-native-4561", raw = await readFile(`${directory}/fixture.json`), fixture = JSON.parse(raw.toString());
 const database = new URL(process.env.DATABASE_URL!);
-if (database.hostname !== "127.0.0.1" || database.port !== "55556") throw new Error("Only the owned stage12 database may be read");
+if (database.hostname !== "127.0.0.1" || database.port !== "55560") throw new Error("Only the owned stage13 database may be read");
 assert.equal(fixture.state, "ready"); assert.equal(fixture.version, 2);
 const producer = { actor: fixture.producer.actor, sessionHash: sessionTokenHash(fixture.producer.token) };
 const tables = ["on_shows", "on_events", "on_commands", "on_tour_records", "on_tour_editions", "on_tour_commands", "on_tour_acknowledgments", "on_tour_source_bindings", "on_source_documents", "on_source_objects", "on_source_compilations"];
@@ -44,10 +44,7 @@ try {
   assert.ok(own.calls.every(value => !value.acknowledged));
   const source = (await pool.query("SELECT id,state,provider_source,provider_response_id,result_digest FROM on_source_compilations WHERE tenant_id=$1 ORDER BY id", [producer.actor.tenantId])).rows;
   assert.equal(source.length, 2);
-  for (const row of source) { assert.equal(row.state, "completed"); assert.equal(row.provider_source, "controlled_fixture"); assert.match(row.provider_response_id, /^resp_synthetic_stage12_static_[AB]$/); }
-  const failedRaw = await readFile(".artifacts/tour-native-4558/fixture.json"), failed = JSON.parse(failedRaw.toString());
-  const retainedFailure = (await pool.query("SELECT id,state,failure_code,provider_source,provider_response_id FROM on_source_compilations WHERE tenant_id=$1", [failed.producer.actor.tenantId])).rows;
-  assert.equal(retainedFailure.length, 1); assert.equal(retainedFailure[0].state, "indeterminate"); assert.equal(retainedFailure[0].failure_code, "DISPATCH_IDENTITY_UNKNOWN"); assert.equal(retainedFailure[0].provider_response_id, null);
+  for (const row of source) { assert.equal(row.state, "completed"); assert.equal(row.provider_source, "controlled_fixture"); assert.match(row.provider_response_id, /^resp_synthetic_stage13_static_[AB]$/); }
   const value = {
     at: new Date().toISOString(), origin: fixture.origin, cookie: fixture.cookie, tenantId: producer.actor.tenantId,
     fixtureSha256: createHash("sha256").update(raw).digest("hex"), originalCreatedAt: fixture.createdAt,
@@ -57,17 +54,16 @@ try {
     templates: workspace.templates.map(value => ({ id: value.id, name: value.spec.name, revision: value.revision, digest: value.digest })),
     comparison: workspace.comparisons[0]!.candidates.map(value => ({ id: value.id, name: value.name, status: value.report.status, hard: value.report.hard.length, unknown: value.report.unknown.length, approvals: value.report.approvals.length, engine: value.report.engine?.status })),
     personalTom: { calls: own.calls.length, currentReadbacks: 0, swaps: 0, historicalReadbacks: own.history.length }, sourceCompilations: source,
-    retainedFailedAttempt: { path: ".artifacts/tour-native-4558/fixture.json", sha256: createHash("sha256").update(failedRaw).digest("hex"), sessions: await sessions(failed), tableSnapshots: await tableSnapshots(failed.producer.actor.tenantId), sourceCompilations: retainedFailure, reset: false, replaced: false },
     originalFixturePreserved: true, actualProviderCalls: false,
   };
   if (process.argv.includes("--verify")) {
     const baseline = JSON.parse(await readFile(`${directory}/native-baseline-at-freeze.json`, "utf8"));
-    for (const key of ["fixtureSha256", "rootDigest", "workspaceDigest", "sessions", "tableSnapshots", "sourceCompilations", "retainedFailedAttempt"] as const) assert.deepEqual(value[key], baseline[key], `The original ${key} changed`);
+    for (const key of ["fixtureSha256", "rootDigest", "workspaceDigest", "sessions", "tableSnapshots", "sourceCompilations"] as const) assert.deepEqual(value[key], baseline[key], `The original ${key} changed`);
     const file = `${directory}/baseline-verification-${Date.now()}.json`;
-    await writeFile(file, JSON.stringify({ at: value.at, fixturePreserved: true, retainedFailedAttemptPreserved: true, tables: tables.length, originalExpiryUnchanged: true, databaseWrites: false }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+    await writeFile(file, JSON.stringify({ at: value.at, fixturePreserved: true, tables: tables.length, originalExpiryUnchanged: true, databaseWrites: false }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
     console.log(JSON.stringify({ verified: true, file }));
   } else {
     await writeFile(`${directory}/native-baseline-at-freeze.json`, JSON.stringify(value, null, 2) + "\n", { flag: "wx", mode: 0o600 });
-    console.log(JSON.stringify({ fixturePreserved: true, retainedFailedAttemptPreserved: true, personalDecisionsSeeded: 0, sourceCompilations: source.length, baseline: `${directory}/native-baseline-at-freeze.json` }));
+    console.log(JSON.stringify({ fixturePreserved: true, personalDecisionsSeeded: 0, sourceCompilations: source.length, baseline: `${directory}/native-baseline-at-freeze.json` }));
   }
 } finally { await pool.end(); }

@@ -12,7 +12,7 @@ import type { PersonalTour, TourCommand, TourWorkspace } from "../src/domain/tou
 import { sampleVenue } from "../src/domain/tour/fixture";
 import { SourceAdmissionDialog } from "../src/components/tour/review-dialogs";
 import type { TourClient } from "../src/components/tour/use-tour-client";
-const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://127.0.0.1:4558/tour", pretendToBeVisual: true });
+const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://127.0.0.1:4561/tour", pretendToBeVisual: true });
 for (const name of ["window", "document", "HTMLElement", "HTMLButtonElement", "HTMLInputElement", "HTMLDialogElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "FocusEvent", "StorageEvent", "location", "history", "sessionStorage"] as const) Object.defineProperty(globalThis, name, { configurable: true, value: dom.window[name] });
 Object.defineProperty(globalThis,"getComputedStyle",{configurable:true,value:dom.window.getComputedStyle.bind(dom.window)});
 Object.defineProperty(globalThis,"IS_REACT_ACT_ENVIRONMENT",{configurable:true,value:true});
@@ -25,7 +25,7 @@ const originalFetch=globalThis.fetch;let root:Root|null=null,container:HTMLDivEl
 const deferred=<T,>()=>{let resolve!:(value:T)=>void,reject!:(reason:Error)=>void;const promise=new Promise<T>((yes,no)=>{resolve=yes;reject=no;});return{promise,resolve,reject};};
 const workspace=():TourWorkspace=>({tenantId:randomUUID(),actorId:`producer:${randomUUID()}`,sessionFingerprint:"a".repeat(64),expiresAt:"2026-12-31T00:00:00.000Z",templates:[],productions:[],tours:[],reports:{},readbacks:[],comparisons:[],swaps:[],acknowledgments:[],roster:[],history:[],controlled:true});
 const action:TourCommand["action"]={type:"production.create",name:"Controlled new show",showDate:"2026-12-01",venue:sampleVenue("New venue","Chicago","2026-12-01","America/Chicago")};
-function Harness({personal=false}:{personal?:boolean}){const[view,setView]=useState("one"),heading=useRef<HTMLHeadingElement>(null),client=useTourClient<TourWorkspace|PersonalTour>(personal,view,()=>heading.current);return <div><h1 ref={heading} tabIndex={-1}>Review fallback</h1><p>{client.data?`Ready ${client.data.actorId}`:"Loading"}</p><ClientStatus client={client}/><button id="action" disabled={client.blocked} onClick={event=>void client.act(action,event.currentTarget)}>Create reviewed production</button><button id="refresh" disabled={Boolean(client.busy||client.ended)} onClick={event=>void client.refresh(event.currentTarget)}>Refresh current</button><button id="view" onClick={()=>setView(view==="one"?"two":"one")}>Change view</button><input id="other" aria-label="Unrelated input"/><span data-blocked={client.blocked} data-view={view}/></div>;}
+function Harness({personal=false}:{personal?:boolean}){const[view,setView]=useState("one"),heading=useRef<HTMLHeadingElement>(null),client=useTourClient<TourWorkspace|PersonalTour>(personal,view,()=>heading.current);return <div><h1 ref={heading} tabIndex={-1}>Review fallback</h1><p>{client.data?`Ready ${client.data.actorId}`:"Loading"}</p><ClientStatus client={client}/><button id="action" disabled={client.blocked} onClick={event=>void client.act(action,event.currentTarget)}>Create reviewed production</button><button id="refresh" disabled={Boolean(client.busy||client.ended)} onClick={event=>void client.refresh(event.currentTarget)}>Refresh current</button><button id="view" onClick={()=>setView(view==="one"?"two":"one")}>Change view</button><button id="review" onClick={()=>client.clearReviewError({newReview:true})}>Open another review</button><button id="close" onClick={()=>client.clearReviewError()}>Close review</button><input id="other" aria-label="Unrelated input"/><span data-blocked={client.blocked} data-view={view}/></div>;}
 const button=(id:string)=>{const value=container.querySelector<HTMLButtonElement>(`#${id}`);assert.ok(value);return value;};
 const textButton=(text:string)=>{const value=[...container.querySelectorAll<HTMLButtonElement>("button")].find(value=>value.textContent?.trim()===text);assert.ok(value,`Missing ${text}`);return value;};
 async function flush(){await act(async()=>{await new Promise(resolve=>setTimeout(resolve,5));});}
@@ -47,6 +47,45 @@ test("a 404 arriving after a session switch cannot authorize an exact retry", as
   assert.equal(requests.filter(value => value.method === "POST").length, 0);
 });
 const receipt=(request:typeof requests[number],data:TourWorkspace)=>Response.json({receipt:{commandId:request.body.commandId,action:request.body.action.type,actorId:data.actorId,at:new Date().toISOString(),records:[]},replayed:false});
+
+for (const completed of ["refused", "saved"] as const) {
+  for (const transition of ["new review", "new attempt"] as const) test(`a ${completed} notice ends at the next ${transition} without erasing unknown recovery`, async () => {
+    const data = workspace(); let attempts = 0;
+    await mount(data, request => {
+      if (request.method !== "POST") return;
+      if (++attempts === 1) return completed === "saved" ? receipt(request, data) : Response.json({ code: "ACTIVE_TOUR_MEMBER", error: "This production belongs to an active tour" }, { status: 409 });
+      return Promise.reject(new TypeError("Failed to fetch"));
+    });
+    await click(button("action")); await until(() => !button("action").disabled);
+    const oldNotice = completed === "saved" ? "Reviewed instruction saved" : "The server rejected this instruction before saving any change";
+    assert.ok(container.textContent!.includes(oldNotice));
+    await click(button("close"));
+    if (completed === "saved") assert.ok(container.textContent!.includes(oldNotice), "Closing a successful review must leave its new confirmation visible");
+    if (transition === "new review") { await click(button("review")); assert.ok(!container.textContent!.includes(oldNotice), "A completed result must not describe a new review"); }
+    await click(button("action")); await until(() => container.textContent!.includes("Failed to fetch"));
+    assert.ok(!container.textContent!.includes(oldNotice), "A prior result must not describe a new unknown instruction");
+    const raw = sessionStorage.getItem(recoveryKey(data)); assert.ok(raw);
+    const saved = JSON.parse(raw!); assert.deepEqual(saved.command, requests.filter(value => value.method === "POST")[1]!.body);
+    await click(button("close")); await click(button("review"));
+    assert.equal(sessionStorage.getItem(recoveryKey(data)), raw);
+    assert.ok(container.textContent!.includes("Failed to fetch"));
+    assert.ok(container.textContent!.includes("Check the original result."));
+    assert.equal(textButton("Retry exact instruction").disabled, true);
+  });
+}
+
+test("a new review preserves an exact 404 retry qualification and its original instruction", async () => {
+  const data = workspace(), saved = await preparePending(data, { commandId: randomUUID(), action }), raw = JSON.stringify(saved);
+  sessionStorage.setItem(recoveryKey(data), raw);
+  await mount(data, request => request.path.startsWith("/api/tour/commands/") ? Response.json({ code: "TOUR_COMMAND_NOT_FOUND" }, { status: 404 }) : undefined);
+  await until(() => container.textContent!.includes("Check the original result."));
+  await click(textButton("Check original receipt")); await until(() => !textButton("Retry exact instruction").disabled);
+  await click(button("review")); await click(button("close"));
+  assert.match(container.textContent!, /No committed receipt is recorded for this exact session/);
+  assert.equal(sessionStorage.getItem(recoveryKey(data)), raw);
+  assert.equal(textButton("Retry exact instruction").disabled, false);
+  assert.equal(requests.filter(value => value.method === "POST").length, 0);
+});
 test("reviewed mutation is retained before dispatch; duplicates are locked and foreground focus returns",async()=>{const data=workspace(),response=deferred<Response>();await mount(data,request=>{if(request.method==="POST"){const saved=JSON.parse(sessionStorage.getItem(recoveryKey(data))!);assert.deepEqual(saved.command,request.body);assert.equal(request.headers.get("X-Opening-Night-Production"),data.tenantId);return response.promise;}});const target=button("action");await click(target);await until(()=>requests.some(value=>value.method==="POST"));target.blur();assert.equal(document.activeElement,document.body);target.click();assert.equal(requests.filter(value=>value.method==="POST").length,1);const request=requests.find(value=>value.method==="POST")!;response.resolve(receipt(request,data));await until(()=>!target.disabled);assert.equal(document.activeElement,target);assert.equal(sessionStorage.getItem(recoveryKey(data)),null);});
 test("lost response survives remount, checks original receipt, and retries identical content only explicitly",async()=>{const data=workspace();let original:any;await mount(data,request=>{if(request.method==="POST"){original=request.body;return Promise.reject(new TypeError("Controlled network loss"));}});await click(button("action"));await until(()=>container.textContent!.includes("Check the original result."));const saved=sessionStorage.getItem(recoveryKey(data));assert.ok(saved);await act(async()=>root!.unmount());root=null;document.body.replaceChildren();let posted=0;await mount(data,request=>{if(request.path.startsWith("/api/tour/commands/")&&request.method==="GET")return Response.json({error:"No committed receipt",code:"TOUR_COMMAND_NOT_FOUND"},{status:404});if(request.method==="POST"){posted++;assert.deepEqual(request.body,original);return receipt(request,data);}});await until(()=>container.textContent!.includes("Check the original result."));assert.equal(posted,0);assert.equal(textButton("Retry exact instruction").disabled,true);await click(textButton("Check original receipt"));await until(()=>!textButton("Retry exact instruction").disabled);await click(textButton("Retry exact instruction"));await until(()=>!container.textContent!.includes("Check the original result."));assert.equal(posted,1);assert.equal(sessionStorage.getItem(recoveryKey(data)),null);});
 test("finding the original committed receipt recovers without another mutation",async()=>{const data=workspace(),saved=await preparePending(data,{commandId:randomUUID(),action});sessionStorage.setItem(recoveryKey(data),JSON.stringify(saved));await mount(data,request=>request.path.startsWith("/api/tour/commands/")?Response.json({receipt:{commandId:saved.command.commandId,actorId:data.actorId,records:[],action:action.type,at:saved.at},replayed:true}):undefined);await until(()=>container.textContent!.includes("Check the original result."));await click(textButton("Check original receipt"));await until(()=>!container.textContent!.includes("Check the original result."));assert.equal(requests.filter(value=>value.method==="POST").length,0);});

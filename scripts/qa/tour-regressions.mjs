@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 const wire = ['cohort-work', 'commerce-api', 'durable-work', 'payment-wire', 'remedy-work', 'supplier-work', 'wallet-work'].map(value => `tests/${value}.test.ts`);
 const database = new URL(process.env.DATABASE_URL);
-if (database.hostname !== '127.0.0.1' || database.port !== '55556') throw new Error('Only the owned stage12 PostgreSQL cluster may run this partition');
+if (database.hostname !== '127.0.0.1' || database.port !== '55560') throw new Error('Only the owned stage13 PostgreSQL cluster may run this partition');
 const all = readdirSync('tests').filter(value => /\.test\.tsx?$/.test(value)).map(value => `tests/${value}`).sort();
 const directory = `.artifacts/regression-${randomUUID()}`; mkdirSync(directory, { mode: 0o700 });
 const results = [];

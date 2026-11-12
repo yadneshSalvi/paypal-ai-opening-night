@@ -33,7 +33,7 @@ export function TourConsole({ licenseKey }: { licenseKey: string }) {
   useEffect(() => { if (!initialQuery.current) return; const url = new URL(location.href); url.searchParams.set("view", view); const entries: [string, string | null | undefined][] = [["tour", tour?.id ?? (tourId === "none" ? "none" : null)], ["production", production?.id], ["call", selection?.callId], ["resource", selection?.resourceId], ["pin", selection?.pinId], ["comparison", comparisonId]]; for (const [key, value] of entries) if (value) url.searchParams.set(key, value); else url.searchParams.delete(key); history.replaceState(null, "", url.pathname + url.search); }, [view, tour?.id, production?.id, selection, comparisonId]);
   useEffect(() => { if (production) setZone(production.venue.zone); }, [production?.id]);
   useEffect(() => { if (client.ended) setDialog(null); }, [client.ended]);
-  const open = (value: Dialog) => { if (!opener.current?.isConnected) opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; client.clearReviewError(); setDialog(value); };
+  const open = (value: Dialog) => { if (!opener.current?.isConnected) opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; client.clearReviewError({ newReview: true }); setDialog(value); };
   const close = () => { if (currentDialog.current === dialog) { client.clearReviewError(); setDialog(null); } };
   const modalFocus = () => opener.current?.isConnected && !opener.current.matches(":disabled") ? opener.current : heading.current;
   const navigate = (next: View) => { client.clearReviewError(); setView(next); setDialog(null); };

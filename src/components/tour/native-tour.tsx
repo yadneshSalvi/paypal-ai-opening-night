@@ -4,7 +4,7 @@ import { ProjectModel } from "@bryntum/gantt-enterprise";
 import { ProjectModel as CalendarProject } from "@bryntum/calendar-enterprise";
 import { BryntumGantt } from "@bryntum/gantt-react-enterprise";
 import { BryntumScheduler } from "@bryntum/scheduler-react-enterprise";
-import type { ProjectModel as SchedulerProject, TimelineBase } from "@bryntum/scheduler-enterprise";
+import type { ProjectModel as SchedulerProject } from "@bryntum/scheduler-enterprise";
 import { BryntumCalendar } from "@bryntum/calendar-react-enterprise";
 import type { PlannedProduction, TourResource } from "@/domain/tour/contracts";
 import { laneColors } from "@/domain/adapters";
@@ -83,19 +83,20 @@ function TimelineProjection({ owned, selection, onSelect }: { owned: OwnedSnapsh
 function TimelineWidgets({ project, owned, selection, onSelect }: { project: ProjectModel; owned: OwnedSnapshot } & LiveSelection) {
   const { zone, start, end, flat } = owned;
   const gantt = useRef<BryntumGantt>(null), scheduler = useRef<BryntumScheduler>(null), synchronizing = useRef(false);
-  const [partner, setPartner] = useState<TimelineBase | null>(null);
+  const [partnered, setPartnered] = useState(false);
   const [ganttRange, setGanttRange] = useState<DateRange>({ startDate: new Date(start), endDate: new Date(end) });
   const [schedulerRange, setSchedulerRange] = useState<DateRange>(ganttRange);
   const ganttLabel = useId(), schedulerLabel = useId();
   const names = useMemo(() => new Map(flat.map(item => [item.id, nativeCallLabel(item, zone)])), [flat, zone]);
   const common = useMemo(() => ({
     timeZone: zone, autoAdjustTimeAxis: false, startDate: start, endDate: end,
-    // Each scale appears once in this view's zoom chain. The inherited preset
-    // collection contains two equivalent six-hour scales that collide in v8.
+    // Own all three scales. Partnering an inherited preset in SDK 8 can mark its
+    // global base as excluded from smooth zoom, affecting the next projection.
+    // Concrete presets avoid that mutation and duplicate six-hour scales.
     presets: [
-      { id: "opening-night-tour-days", base: "dayAndWeek" },
-      { id: "opening-night-tour-six-hours", base: "hourAndDay", headers: [{ unit: "day" as const, dateFormat: "ddd D MMM" }, { unit: "hour" as const, increment: 6, dateFormat: "HH:mm" }] },
-      { id: "opening-night-tour-hours", base: "hourAndDay" },
+      { id: "opening-night-tour-days", name: "Tour days", tickWidth: 100, minTickWidth: 60, displayDateFormat: "ll LT", shiftUnit: "day" as const, shiftIncrement: 1, defaultSpan: 5, timeResolution: { unit: "hour" as const, increment: 1 }, headers: [{ unit: "week" as const, dateFormat: "MMM D" }, { unit: "day" as const, dateFormat: "ddd D" }] },
+      { id: "opening-night-tour-six-hours", name: "Tour six hours", tickWidth: 70, minTickWidth: 43, displayDateFormat: "ll LT", shiftUnit: "day" as const, shiftIncrement: 1, defaultSpan: 24, timeResolution: { unit: "minute" as const, increment: 30 }, headers: [{ unit: "day" as const, dateFormat: "ddd D MMM" }, { unit: "hour" as const, increment: 6, dateFormat: "HH:mm" }] },
+      { id: "opening-night-tour-hours", name: "Tour hours", tickWidth: 70, minTickWidth: 43, displayDateFormat: "ll LT", shiftUnit: "day" as const, shiftIncrement: 1, defaultSpan: 24, timeResolution: { unit: "minute" as const, increment: 30 }, headers: [{ unit: "day" as const, dateFormat: "ddd D MMM" }, { unit: "hour" as const, dateFormat: "HH:mm" }] },
     ],
     viewPreset: "opening-night-tour-six-hours",
     tickSize: 72, readOnly: true, rowHeight: 40, barMargin: 10, columnLines: true,
@@ -105,7 +106,11 @@ function TimelineWidgets({ project, owned, selection, onSelect }: { project: Pro
   useLayoutEffect(() => {
     const first = gantt.current?.instance, second = scheduler.current?.instance;
     if (first && second && !first.isDestroying && !second.isDestroying) {
-      setPartner(first);
+      // The React wrapper only tracks props present at construction. Adding a
+      // partner prop after mount is ignored, so link the live widgets through
+      // the SDK API. Their native destroy lifecycle removes this partnership.
+      second.addPartner(first);
+      setPartnered(first.isPartneredWith(second) && second.isPartneredWith(first));
       const firstRange = first.visibleDateRange, secondRange = second.visibleDateRange;
       if (firstRange.startDate && firstRange.endDate) setGanttRange({ startDate: firstRange.startDate, endDate: firstRange.endDate });
       if (secondRange.startDate && secondRange.endDate) setSchedulerRange({ startDate: secondRange.startDate, endDate: secondRange.endDate });
@@ -120,14 +125,14 @@ function TimelineWidgets({ project, owned, selection, onSelect }: { project: Pro
       first.selectedRecords = ids.map(id => project.eventStore.getById(id)).filter(Boolean);
       second.selectedEvents = ids.map(id => second.eventStore.getById(id)).filter(Boolean) as typeof second.selectedEvents;
     } finally { synchronizing.current = false; }
-  }, [owned, selection, project, partner]);
+  }, [owned, selection, project, partnered]);
   const choose = (id: string, resourceId: string | null = null) => { if (!synchronizing.current) { const selected = selectCanonical(owned.productions, id, resourceId); if (selected) onSelect(selected); } };
-  return <div className="tour-native" data-native-ready={Boolean(partner)} data-shared-project={Boolean(partner && gantt.current?.instance.project === scheduler.current?.instance.project)} data-bryntum="8.0.0" data-projection="read-only" data-selected-canonical={selection?.callId ? canonicalCallId(selection.productionId, selection.callId) : ""} data-display-zone={zone}>
+  return <div className="tour-native" data-native-ready={partnered} data-shared-project={Boolean(partnered && gantt.current?.instance.project === scheduler.current?.instance.project)} data-bryntum="8.0.0" data-projection="read-only" data-selected-canonical={selection?.callId ? canonicalCallId(selection.productionId, selection.callId) : ""} data-display-zone={zone}>
     <p id={ganttLabel} className="tour-native-clock">{nativeRangeLabel("Gantt", ganttRange, zone)}</p>
     <BryntumGantt ref={gantt} {...common} project={project} height={430} columns={ganttColumns} taskEditFeature={false} taskMenuFeature={false} cellEditFeature={false} taskDragFeature={false} taskResizeFeature={false} baselinesFeature dependenciesFeature projectLinesFeature={false} ariaLabel={`Cross-production Gantt in ${zone}`} onVisibleDateRangeChange={event => setGanttRange(event.new)} onTaskClick={({ taskRecord }) => choose(String(taskRecord.id))} onSelectionChange={({ selected }) => { const id = selected[0]?.id; if (id && id !== (selection?.callId ? canonicalCallId(selection.productionId, selection.callId) : "")) choose(String(id)); }} taskRenderer={({ taskRecord, renderData }) => { Object.assign(renderData, { ariaLabel: names.get(String(taskRecord.id)) }); return { tag: "span", text: taskRecord.name }; }} />
     <div className="tour-native-divider"><span>SHARED CREW & EQUIPMENT</span><span>Same project model · synchronized time axis</span></div>
     <p id={schedulerLabel} className="tour-native-clock">{nativeRangeLabel("Resource scheduler", schedulerRange, zone)}</p>
-    <BryntumScheduler ref={scheduler} {...common} project={project as unknown as SchedulerProject} {...(partner ? { partner } : {})} height={250} columns={schedulerColumns} eventEditFeature={false} eventDragFeature={false} eventResizeFeature={false} eventMenuFeature={false} scheduleMenuFeature={false} dependenciesFeature={false} ariaLabel={`Tour resource scheduler in ${zone}`} onVisibleDateRangeChange={event => setSchedulerRange(event.new)} onEventClick={({ eventRecord, resourceRecord }) => choose(String(eventRecord.id), String(resourceRecord.id))} eventRenderer={({ eventRecord, renderData }) => { Object.assign(renderData, { ariaLabel: names.get(String(eventRecord.id)) }); return { tag: "span", text: eventRecord.name }; }} />
+    <BryntumScheduler ref={scheduler} {...common} project={project as unknown as SchedulerProject} height={250} columns={schedulerColumns} eventEditFeature={false} eventDragFeature={false} eventResizeFeature={false} eventMenuFeature={false} scheduleMenuFeature={false} dependenciesFeature={false} ariaLabel={`Tour resource scheduler in ${zone}`} onVisibleDateRangeChange={event => setSchedulerRange(event.new)} onEventClick={({ eventRecord, resourceRecord }) => choose(String(eventRecord.id), String(resourceRecord.id))} eventRenderer={({ eventRecord, renderData }) => { Object.assign(renderData, { ariaLabel: names.get(String(eventRecord.id)) }); return { tag: "span", text: eventRecord.name }; }} />
   </div>;
 }
 

@@ -16,7 +16,7 @@ import { AllocationDialog, ArchiveDialog, EditionDialog, SourceAdmissionDialog, 
 import { ComparisonDialog } from "../src/components/tour/comparison";
 import type { TourClient } from "../src/components/tour/use-tour-client";
 
-const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://127.0.0.1:4558/tour?view=library", pretendToBeVisual: true });
+const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://127.0.0.1:4561/tour?view=library", pretendToBeVisual: true });
 for (const name of ["window", "self", "document", "HTMLElement", "HTMLButtonElement", "HTMLInputElement", "HTMLTextAreaElement", "HTMLSelectElement", "HTMLDialogElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "FocusEvent", "StorageEvent", "location", "history", "sessionStorage", "MutationObserver"] as const) Object.defineProperty(globalThis, name, { configurable: true, value: dom.window[name] });
 Object.defineProperty(globalThis, "getComputedStyle", { configurable: true, value: dom.window.getComputedStyle.bind(dom.window) });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, value: true });
@@ -103,9 +103,11 @@ test("an active-production archive refusal is absent when a different template r
   const production = [...container.querySelectorAll("article")].find(node => node.parentElement?.classList.contains("tour-production-list") && node.textContent?.includes("Denver"))!;
   await click(button(`Archive ${f.productions[0]!.name}`, production)); await edit(container.querySelector<HTMLTextAreaElement>("dialog textarea")!, "Controlled refusal reproduction");
   await click(button("Archive with history retained", container.querySelector("dialog")!)); await until(() => container.querySelector("dialog")!.textContent!.includes("Remove this show"));
+  assert.match(container.textContent!, /The server rejected this instruction before saving any change/);
   await click(button("Close", container.querySelector("dialog")!));
   await click(button("Archive", container.querySelector(".tour-template-card")!));
   assert.doesNotMatch(container.querySelector("dialog")!.textContent!, /Remove this show from its active tour/);
+  assert.doesNotMatch(container.textContent!, /The server rejected this instruction before saving any change/);
   assert.equal(posts, 1, "Opening the unrelated review must not send a new command");
   const newOpener = button("Archive", container.querySelector(".tour-template-card")!);
   await act(async () => container.querySelector("dialog")!.dispatchEvent(new Event("cancel", { bubbles: true, cancelable: true })));
@@ -174,4 +176,6 @@ test("real personal request dialog wraps its enabled submit and preserves late c
   response.resolve(Response.json({ error: "Controlled review refused", code: "TOUR_STALE" }, { status: 409 }));
   await until(() => !submit.disabled); assertFocus(destination);
   await click(button("Close", container.querySelector("dialog")!)); assertFocus(opener);
+  await click(opener);
+  assert.doesNotMatch(container.textContent!, /The server rejected this instruction before saving any change|Controlled review refused/);
 });

@@ -63,7 +63,7 @@ export function useTourClient<T extends TourData>(personal: boolean, view: strin
   }, [clear, read, request]);
   const act = useCallback(async (action: TourCommand["action"], origin?: FocusOrigin) => {
     if (lock.current || endedRef.current || pendingRef.current || storageError || !current.current || !freshRef.current) return null;
-    const epoch = generation.current; lock.current = true; setBusy(action.type); setError(null); const click = actionOrigin.current; actionOrigin.current = null; const ticket = focus(origin ?? (click && Date.now() - click.at < 500 ? click.target : undefined));
+    const epoch = generation.current; lock.current = true; setBusy(action.type); setError(null); setNotice(null); const click = actionOrigin.current; actionOrigin.current = null; const ticket = focus(origin ?? (click && Date.now() - click.at < 500 ? click.target : undefined));
     try { const saved = await preparePending(current.current, { commandId: crypto.randomUUID(), action }); if (!mounted.current || epoch !== generation.current || endedRef.current) return null; const raw = JSON.stringify(saved); sessionStorage.setItem(recoveryKey(current.current), raw); if (sessionStorage.getItem(recoveryKey(current.current)) !== raw) throw new Error("The reviewed instruction could not be retained on this device. It was not sent."); rawPending.current = raw; pendingRef.current = saved; setPending(saved); setNotRecorded(false); return await send(saved); }
     catch (reason) { if (mounted.current && epoch === generation.current) setError(reason instanceof Error ? reason.message : "The outcome is unknown. Check the original instruction."); return null; }
     finally { lock.current = false; if (mounted.current) setBusy(null); ticket.complete(); }
@@ -76,9 +76,10 @@ export function useTourClient<T extends TourData>(personal: boolean, view: strin
     finally { lock.current = false; if (mounted.current) setBusy(null); ticket.complete(); }
   }, [clear, focus, notRecorded, read, request, send]);
   const downloadRecovery = useCallback(() => { const url = URL.createObjectURL(new Blob([rawPending.current ?? JSON.stringify(pendingRef.current)], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = "opening-night-tour-recovery.json"; link.click(); URL.revokeObjectURL(url); }, []);
-  // A concluded refusal belongs to the review that sent it. Recovery, expired
-  // identity and stale-view errors remain authoritative across dialog changes.
-  const clearReviewError = useCallback(() => { if (!pendingRef.current && !endedRef.current && freshRef.current) setError(null); }, []);
+  // A completed result belongs to its instruction. Keep a new confirmation when
+  // its review closes, then retire it at the next review or command. Unknown
+  // recovery, expired identity and stale-view errors survive dialog changes.
+  const clearReviewError = useCallback(({ newReview = false }: { newReview?: boolean } = {}) => { if (!pendingRef.current && !endedRef.current && freshRef.current) { setError(null); if (newReview) setNotice(null); } }, []);
   return { data, busy, error, notice, ended, pending, notRecorded, storageError, blocked: Boolean(busy || ended || pending || storageError || !fresh), refresh, act, recover, downloadRecovery, request, setError, setNotice, clearReviewError };
 }
 export type TourClient = ReturnType<typeof useTourClient<TourWorkspace>>;
