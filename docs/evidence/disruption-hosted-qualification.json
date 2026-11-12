@@ -1,0 +1,55 @@
+{
+  "checkedOn": "2026-11-12",
+  "sourceCommit": "96ff4cd357c6653f5bdfaaf6177f786762fc81a8",
+  "deploymentId": "dpl_7fx183yvuQVYhiGS4qghcV5ZrUD8",
+  "url": "https://paypal-ai-opening-night.vercel.app",
+  "promoted": true,
+  "schema": 13,
+  "migration": {
+    "originalTables": 59,
+    "originalRows": 2753,
+    "originalValuesUnchanged": true,
+    "newEmptyTables": 5
+  },
+  "hosted": {
+    "passedGroups": 9,
+    "requests": 23,
+    "newSyntheticProductions": 2,
+    "supplierReports": 3,
+    "deterministicCandidates": 12,
+    "infeasibleCandidates": 12,
+    "cancellationDecisions": 1,
+    "actualCaptures": 0,
+    "newRefundJobs": 0,
+    "providerCalls": 0,
+    "modelCalls": 0,
+    "checks": ["origin and production scope", "command receipt replay", "changed-payload rejection", "cross-session isolation", "retained cancellation after reload"]
+  },
+  "native": {
+    "browser": "in-app browser",
+    "desktop": true,
+    "mobileWidths": [390, 360],
+    "documentOverflow": false,
+    "consoleWarningsOrErrors": 0,
+    "cancellationBlocksPerformance": true,
+    "retainedObligationsVisible": true,
+    "productMutations": 0
+  },
+  "continuity": {
+    "stagedOriginalRoutes": 6,
+    "promotedOriginalRoutes": 6,
+    "originalShowFieldsAndActorUnchanged": true,
+    "originalTourReceiptAndEditionUnchanged": true,
+    "originalSessionExpiryUnchanged": true
+  },
+  "retainedQualificationCorrections": [
+    "The first continuity request used a domain-bound cookie jar for the prior deployment and received401. A second read used that exact original session in the request header; no session was created or renewed.",
+    "Five expired rehearsal-admission counters were pruned by the ordinary new-session path; each was independently matched to the pre-release backup and was older than24hours. All other original rows were unchanged."
+  ],
+  "limitations": [
+    "This is a synthetic operating cancellation, not an audience notification or physical event.",
+    "The bounded search does not prove universal production infeasibility.",
+    "Show control's fixed Eight gates heading is queued for a dynamic count correction; the actual readiness list has nine.",
+    "Actual invoice and retained-rental qualification remain separate."
+  ]
+}
