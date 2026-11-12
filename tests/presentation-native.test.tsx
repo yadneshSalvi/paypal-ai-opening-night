@@ -5,6 +5,7 @@ import { act, StrictMode } from "react";
 import type { Root } from "react-dom/client";
 import { dom, pause, viewport } from "./presentation-dom";
 import { presentationFixture } from "./presentation-fixture";
+import { localTime } from "../src/domain/time";
 import type { PresentationCanvasProps } from "../src/components/presentation/native-canvas";
 const { createRoot } = await import("react-dom/client"), { default: NativeCanvas } = await import("../src/components/presentation/native-canvas");
 const { Widget } = await import("@bryntum/core-enterprise"), { Gantt, ProjectModel } = await import("@bryntum/gantt-enterprise"), { Scheduler, PresetManager } = await import("@bryntum/scheduler-enterprise");
@@ -18,6 +19,20 @@ async function mount(input: PresentationCanvasProps) { container = document.crea
 function widgets(split = true) { const first = container.querySelector<HTMLElement>(".b-gantt"), second = container.querySelector<HTMLElement>(".b-scheduler:not(.b-gantt)"); assert.ok(second); const scheduler = Widget.fromElement(second) as InstanceType<typeof Scheduler>; assert.ok(scheduler instanceof Scheduler); const gantt = first ? Widget.fromElement(first) as InstanceType<typeof Gantt> : null; if (split) assert.ok(gantt instanceof Gantt); return { gantt, scheduler }; }
 afterEach(async () => { if (root) await act(async () => root!.unmount()); root = null; document.body.replaceChildren(); failures = []; strict = false; assert.equal((globalThis as any).openingNightEvaluationGuard.state.networkAttemptsBlocked, 0); });
 after(() => { console.log(JSON.stringify({ qualification: "actual_installed_presentation_widgets", nativeVersion: "8.0.0", browserGeometry: "pending_root", ...((globalThis as any).openingNightEvaluationGuard.state) })); dom.window.close(); });
+
+test("both actual native time-axis headers name the venue range after construction and scrolling", async () => {
+  await mount(props());
+  const verify = () => {
+    for (const widget of Object.values(widgets())) {
+      assert.ok(widget); const header = widget.timeAxisColumn.element, labelId = header.getAttribute("aria-labelledby"); assert.ok(labelId);
+      const label = document.getElementById(labelId)!; assert.ok(label);
+      const range = widget.visibleDateRange; assert.ok(range.startDate && range.endDate);
+      const expected = localTime(range.startDate.toISOString()) + "–" + localTime(range.endDate.toISOString()) + " CST";
+      assert.ok(label.textContent!.includes(expected), "Accessible native range must use the same venue instants as the visible range: " + label.textContent);
+    }
+  };
+  verify(); await act(async () => { await widgets().gantt!.scrollToDate(new Date("2026-11-15T00:00:00Z"), { block: "center", animate: false }); }); await flush(); verify();
+});
 
 test("Gantt and Scheduler share the real committed model and partnered time axis", async () => {
   const input = props(), original = JSON.stringify(input.show); await mount(input); const { gantt, scheduler } = widgets(); assert.ok(gantt!.project instanceof ProjectModel); assert.equal(gantt!.project, scheduler.project); assert.equal(gantt!.isPartneredWith(scheduler), true); assert.equal(scheduler.isPartneredWith(gantt!), true); assert.equal(gantt!.rowHeight, 56); assert.equal(scheduler.rowHeight, 56); assert.equal(gantt!.subGrids.locked.width, 310); assert.equal(gantt!.readOnly, true); assert.equal(scheduler.readOnly, true); assert.equal(JSON.stringify(input.show), original); assert.ok(!gantt!.features.taskEdit || gantt!.features.taskEdit.disabled); assert.ok(!scheduler.features.eventDrag || scheduler.features.eventDrag.disabled);

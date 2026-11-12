@@ -10,7 +10,7 @@ import type { ConsoleData } from "../src/domain/contracts";
 import { ProductionSelectionProvider, selectionStorageKey, useLinkedSelection } from "../src/components/presentation/selection";
 import { SelectionInspector } from "../src/components/presentation/selection-inspector";
 import { StageMap } from "../src/components/stage-map";
-import { ResourcePanel } from "../src/components/presentation/panels";
+import { ResourcePanel, SourcePanel } from "../src/components/presentation/panels";
 import { useProductionRead } from "../src/components/presentation/use-production-read";
 import { QuietGoView, useCueWatch } from "../src/components/presentation/cue-watch";
 import { ClockReview } from "../src/components/presentation/clock-review";
@@ -31,6 +31,15 @@ function WatchHarness({ data, fresh = true, active = true }: { data: ConsoleData
 function FullHarness({ initial, active = true }: { initial: ConsoleData; active?: boolean }) { const [data, setData] = useState(initial); updateData = setData; return <ProductionSelectionProvider data={data} active={active}><PresentationView data={data} onData={setData} run={async () => { throw new Error("No command is allowed in this read-only mounted fixture"); }} busy={null} licenseKey={process.env.BRYNTUM_LICENSE_KEY!} active={active} /></ProductionSelectionProvider>; }
 afterEach(async () => { if (root) await act(async () => root!.unmount()); root = null; document.body.replaceChildren(); sessionStorage.clear(); accepted = []; globalThis.fetch = originalFetch; Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); assert.equal((globalThis as any).openingNightEvaluationGuard.state.networkAttemptsBlocked, 0); });
 after(() => { console.log(JSON.stringify({ qualification: "mounted_controlled_presentation", network: (globalThis as any).openingNightEvaluationGuard.state, operationalCue: false, browserGeometry: "pending_root" })); dom.window.close(); });
+
+test("explicit source drill focuses the current inspector heading and Escape returns its exact trigger", async () => {
+  const data = presentationFixture(); await render(<ProductionSelectionProvider data={data}><SourcePanel data={data} /><SelectionInspector data={data} /></ProductionSelectionProvider>);
+  const trigger = button(data.show.sources[0].title); await click(trigger);
+  const heading = container.querySelector<HTMLElement>(".presentation-inspector h2")!;
+  assert.equal(document.activeElement, heading); assert.equal(heading.textContent, data.show.sources[0].title);
+  await act(async () => heading.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  assert.equal(document.activeElement, trigger); assert.equal(container.querySelector(".presentation-inspector[data-selection-id]"), null);
+});
 
 test("stage selection follows canonical IDs into resources, dependencies and exact source evidence", async () => {
   const data = presentationFixture(); await render(<SelectionHarness data={data} />); const trigger = container.querySelector<HTMLButtonElement>(".presentation-stage-selectors button")!; await click(trigger); const inspector = container.querySelector<HTMLElement>(".presentation-inspector")!; assert.ok(inspector.dataset.selectionId); assert.match(inspector.textContent!, /Canonical calls/); assert.match(inspector.textContent!, /Recorded dependency edges/); assert.match(inspector.textContent!, /Source evidence/); assert.equal(trigger.getAttribute("aria-pressed"), "true"); assert.deepEqual(Object.keys(JSON.parse(sessionStorage.getItem(selectionStorageKey(data))!)).sort(), ["id", "kind"]); await click(button("Close linked inspection")); assert.ok(document.activeElement === trigger, "Focus must return to the original external trigger");

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useId, useRef } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 import type { ConsoleData } from "@/domain/contracts";
 import { localTime, formatMoney } from "@/domain/time";
 import { taskExecutionPresentation } from "@/domain/task-presentation";
@@ -10,6 +10,11 @@ import { CompiledSourceLinks } from "./source-links";
 export function SelectionInspector({ data, compact = false }: { data: ConsoleData; compact?: boolean }) {
   const linked = useLinkedSelection(), heading = useRef<HTMLHeadingElement>(null), id = useId();
   const detail = linked?.detail;
+  useLayoutEffect(() => {
+    if (!linked?.focusRequest || !detail) return;
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: "nearest", behavior: "instant" });
+  }, [linked?.focusRequest, detail?.selection.kind, detail?.selection.id]);
   if (!linked?.active) return null;
   if (!detail) return compact ? null : <aside className="presentation-inspector empty" aria-label="Linked production inspector"><span className="presentation-kicker">ONE PRODUCTION · CONNECTED VIEWS</span><h2>Select a call. Follow its consequences.</h2><p>Select a stage node, timeline row, crew member, supplier offer or source. This inspector follows the same current production.</p><p>A schedule describes a plan. Source records and signed execution remain distinct.</p></aside>;
   const compiledId = detail.tasks.find(row => row.sourceConstraints?.compilationId)?.sourceConstraints?.compilationId ?? (detail.selection.kind === "source" && detail.selection.id.startsWith("source-compilation:") ? detail.selection.id.slice(19) : null);
@@ -21,7 +26,7 @@ export function SelectionInspector({ data, compact = false }: { data: ConsoleDat
     {detail.resources.length > 0 && <section><h3>Assigned people & equipment</h3><ul>{detail.resources.map(resource => <li key={resource.id}><button type="button" aria-pressed={detail.selection.kind === "resource" && detail.selection.id === resource.id} onClick={event => linked.select({ kind: "resource", id: resource.id }, event.currentTarget)}>{resource.name}<span>{resource.role}{resource.reserve ? " · reserve, outside critical acknowledgment count" : ""}</span></button></li>)}</ul></section>}
     {detail.dependencies.length > 0 && <section><h3>Recorded dependency edges</h3><ul>{detail.dependencies.map(edge => { const from = data.show.tasks.find(row => row.id === edge.from), to = data.show.tasks.find(row => row.id === edge.to); return <li key={edge.id}><div className="presentation-edge"><button type="button" disabled={!from} onClick={event => linked.select({ kind: "task", id: edge.from }, event.currentTarget)}>{from?.name ?? edge.from}</button><span aria-label="precedes">→</span><button type="button" disabled={!to} onClick={event => linked.select({ kind: "task", id: edge.to }, event.currentTarget)}>{to?.name ?? edge.to}</button></div><small>{edge.financial ? "Commercial dependency; confirmed receipts are separate" : "Canonical dependency"} · {edge.lagMinutes} minute lag</small></li>; })}</ul></section>}
     {detail.suppliers.length > 0 && <section><h3>Exact supplier source</h3><ul>{detail.suppliers.map(offer => <li key={offer.id}><button type="button" onClick={event => linked.select({ kind: "supplier", id: offer.id }, event.currentTarget)}>{offer.supplier}<span>Offer revision {offer.revision} · {offer.status} · {offer.source}</span></button><small>{formatMoney(offer.feeMinor)} rental · {formatMoney(offer.depositMinor)} separate hold</small><small>Proposed delivery {localTime(offer.deliveryAt)} CST · quoting a time does not establish arrival.</small></li>)}</ul></section>}
-    {detail.sources.length > 0 && <section><h3>Source evidence</h3>{detail.sources.map(source => <article className="presentation-source-ref" key={source.id}><button type="button" onClick={event => linked.select({ kind: "source", id: source.id }, event.currentTarget)}>{source.title}</button><small>{source.source} · recorded {new Date(source.recordedAt).toISOString()}</small><p>{source.detail}</p><code>{source.id}</code></article>)}</section>}
+    {detail.sources.length > 0 && <section><h3>Source evidence</h3>{detail.sources.map(source => <article className="presentation-source-ref" key={source.id}><button type="button" onClick={event => linked.select({ kind: "source", id: source.id }, event.currentTarget, true)}>{source.title}</button><small>{source.source} · recorded {new Date(source.recordedAt).toISOString()}</small><p>{source.detail}</p><code>{source.id}</code></article>)}</section>}
     {detail.missingSourceIds.length > 0 && <p className="presentation-warning">Source detail is unavailable in this read model: {detail.missingSourceIds.join(", ")}. No source or physical completion is inferred.</p>}
     {compiledId && <CompiledSourceLinks key={compiledId} tenantId={data.show.tenantId} compilationId={compiledId} />}
     {detail.selection.kind === "gate" && <p>{data.readiness.find(row => row.scope === "DOORS")?.gates.find(row => row.id === detail.selection.id)?.reason}</p>}

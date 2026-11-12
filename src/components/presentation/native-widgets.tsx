@@ -56,6 +56,14 @@ export function NativePresentationWidgets({ project, owned, selection, selectedT
   const timeRanges = useMemo(() => ({ showHeaderElements: true, showCurrentTimeLine: false, showMouseIndicatorLine: false, enableResizing: false, headerRenderer: ({ timeRange }: { timeRange: { name: string } }) => StringHelper.encodeHtml(timeRange.name), bodyRenderer: () => "" }), []);
   const choose = (kind: "task" | "resource", id: string) => { if (!synchronizing.current && (selection?.kind !== kind || selection.id !== id)) onSelect({ kind, id }); };
   const selectedTask = selectedTaskIds.find(id => project.eventStore.getById(id));
+  useLayoutEffect(() => {
+    // The installed native default formats its aria-label in the host zone.
+    // Link the real column header to the venue-time range already shown here.
+    // No global locale, vendor override or canonical instant is changed.
+    const bindings = [[gantt.current?.instance, ganttLabel], [scheduler.current?.instance, schedulerLabel]] as const;
+    for (const [widget, label] of bindings) widget?.timeAxisColumn?.element?.setAttribute("aria-labelledby", label);
+    return () => { for (const [widget, label] of bindings) { const header = widget && !widget.isDestroyed ? widget.timeAxisColumn?.element : null; if (header?.getAttribute("aria-labelledby") === label) header.removeAttribute("aria-labelledby"); } };
+  }, [range, partnered, ganttLabel, schedulerLabel]);
   async function reveal() {
     if (!selectedTask && !selectedOffer) return;
     const first = gantt.current?.instance, second = scheduler.current?.instance;
@@ -68,7 +76,7 @@ export function NativePresentationWidgets({ project, owned, selection, selectedT
     <div className="presentation-native-toolbar"><p id={ganttLabel}>Native production schedule · {rangeLabel}</p><button type="button" disabled={!selectedTask && !selectedOffer} onClick={() => void reveal()}>{selectedOffer ? "Reveal proposed delivery" : "Reveal selected call"}</button></div>
     {selectedOffer && <p className="presentation-native-divider">Ghost source line: {selectedOffer.supplier} r{selectedOffer.revision} proposes {localTime(selectedOffer.deliveryAt)} CST. No task, hold, delivery or approval is created.</p>}
     {mode === "split" && <BryntumGantt ref={gantt} {...common} project={project} height={430} columns={nameColumns} taskEditFeature={false} taskMenuFeature={false} cellEditFeature={false} taskDragFeature={false} taskResizeFeature={false} baselinesFeature dependenciesFeature timeRangesFeature={timeRanges} projectLinesFeature={false} ariaLabel="Presentation production Gantt in America Chicago, read only" onVisibleDateRangeChange={event => setRange(event.new)} onTaskClick={({ taskRecord }) => choose("task", String(taskRecord.id))} onSelectionChange={({ selected }) => { const id = selected[0]?.id; if (id) choose("task", String(id)); }} taskRenderer={({ taskRecord, renderData }) => { const task = show.tasks.find(row => row.id === String(taskRecord.id)); if (task) Object.assign(renderData, { ariaLabel: taskAriaLabel(task) }); return { tag: "span", text: taskRecord.name }; }} />}
-    <p id={schedulerLabel} className="presentation-native-divider">Crew & equipment · {mode === "split" ? "same committed model and partnered time axis" : "current canonical assignments"}</p>
+    <p id={schedulerLabel} className="presentation-native-divider">Crew & equipment · {rangeLabel} · {mode === "split" ? "same committed model and partnered time axis" : "current canonical assignments"}</p>
     <BryntumScheduler ref={scheduler} {...common} project={project as unknown as SchedulerProject} height={mode === "split" ? 260 : 540} columns={resourceColumns} eventEditFeature={false} eventDragFeature={false} eventResizeFeature={false} eventMenuFeature={false} scheduleMenuFeature={false} cellEditFeature={false} dependenciesFeature={false} timeRangesFeature={timeRanges} ariaLabel="Presentation crew and equipment scheduler, read only" onVisibleDateRangeChange={event => { if (mode === "scheduler") setRange(event.new); }} onEventClick={({ eventRecord }) => choose("task", String(eventRecord.id))} onEventSelectionChange={({ selected }) => { const id = selected[0]?.id; if (id) choose("task", String(id)); }} onSelectionChange={({ selected }) => { const id = selected[0]?.id; if (id) choose("resource", String(id)); }} eventRenderer={({ eventRecord, renderData }) => { const task = show.tasks.find(row => row.id === String(eventRecord.id)); if (task) Object.assign(renderData, { ariaLabel: taskAriaLabel(task) }); return { tag: "span", text: eventRecord.name }; }} />
   </div>;
 }

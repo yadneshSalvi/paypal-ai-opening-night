@@ -12,6 +12,7 @@ const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http:
 for (const key of ["window", "self", "document", "HTMLElement", "HTMLInputElement", "HTMLTextAreaElement", "HTMLSelectElement", "HTMLButtonElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "StorageEvent", "location", "history", "localStorage", "sessionStorage", "MutationObserver"] as const) Object.defineProperty(globalThis, key, { configurable: true, value: dom.window[key] });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, value: true });
 const { createRoot } = await import("react-dom/client"), originalFetch = globalThis.fetch, originalSet = dom.window.Storage.prototype.setItem;
+dom.window.HTMLElement.prototype.scrollIntoView = function () {};
 let root: Root | null = null, container: HTMLDivElement, calls: { path: string; method: string; body: InputEnvelope | null }[] = [];
 const button = (label: string) => { const value = [...container.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent?.trim() === label); assert.ok(value, "Missing button: " + label); return value; };
 const field = (label: string) => { const value = [...container.querySelectorAll<HTMLLabelElement>("label")].find(item => item.textContent?.trim().startsWith(label))?.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input,textarea,select"); assert.ok(value, "Missing field: " + label); return value; };
@@ -24,6 +25,22 @@ async function mount(node: ReactNode, workspace: InputWorkspace, route?: Route) 
 function Harness() { const client = useInputs(); return <main><span data-busy={client.busy} /><p>{client.error}</p>{client.receipt && <p>Original receipt confirmed</p>}<button disabled={client.locked || !client.view} onClick={() => void client.send(uiSourceCommand())}>Save controlled source</button><button disabled={client.busy || client.ended} onClick={() => void client.refresh()}>Check original result</button>{client.missing && <button disabled={client.busy || client.ended} onClick={() => void client.retry()}>Retry exact instruction</button>}</main>; }
 afterEach(async () => { dom.window.Storage.prototype.setItem = originalSet; if (root) await act(async () => { root!.unmount(); }); root = null; document.body.replaceChildren(); sessionStorage.clear(); localStorage.clear(); globalThis.fetch = originalFetch; });
 after(() => dom.window.close());
+test("source inspection focuses the exact retained heading, including a repeated inspection", async () => {
+  const view = inputUiFixture(true), original = JSON.stringify(view); await mount(<InputDesk />, view);
+  await settle(() => Boolean(container.querySelector(".inputs-differences")));
+  const trigger = button("Inspect original source"), heading = container.querySelector<HTMLElement>("#input-source-title")!;
+  await click(trigger); assert.equal(document.activeElement, heading); assert.equal(heading.textContent, view.sources[0].title);
+  await click(trigger); assert.equal(document.activeElement, heading); assert.equal(posts().length, 0); assert.equal(JSON.stringify(view), original);
+});
+test("printing exposes retained quotation details and restores each exact open state without commands", async () => {
+  const view = inputUiFixture(true); await mount(<InputDesk />, view); await settle(() => Boolean(container.querySelector(".inputs-differences blockquote")));
+  const details = [...container.querySelectorAll<HTMLDetailsElement>("details")], before = details.map(row => row.open); assert(before.some(open => !open));
+  const quotedBytes = [...container.querySelectorAll("blockquote")].map(row => row.textContent);
+  await act(async () => window.dispatchEvent(new Event("beforeprint"))); assert(details.every(row => row.open));
+  await act(async () => window.dispatchEvent(new Event("beforeprint")));
+  await act(async () => window.dispatchEvent(new Event("afterprint"))); assert.deepEqual(details.map(row => row.open), before);
+  assert.deepEqual([...container.querySelectorAll("blockquote")].map(row => row.textContent), quotedBytes); assert.equal(posts().length, 0);
+});
 test("the real inputs desk exposes quoted source data and requires three separate producer confirmations", async () => {
   const view = inputUiFixture(true); await mount(<InputDesk />, view, call => call.method === "POST" ? Response.json(uiInputReceipt(call.body!)) : undefined);
   await settle(() => Boolean(container.querySelector(".inputs-separate-approval")));
