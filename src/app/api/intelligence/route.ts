@@ -2,14 +2,14 @@ import { z } from "zod";
 import { DomainError } from "@/domain/contracts";
 import { startIntelligenceSchema } from "@/domain/intelligence";
 import { assertSameOrigin } from "@/server/http";
-import { planningAuthority, planningBody, planningJson, planningError } from "@/server/intelligence/http";
+import { planningAuthority, planningDispatchAuthority, planningBody, planningJson, planningError } from "@/server/intelligence/http";
 import { readIntelligenceRun, startIntelligence } from "@/server/intelligence/provider";
 import { intelligenceWorkspace } from "@/server/intelligence/tools";
 import { readIntelligenceConversation, requirePlanningAuthority, withPlanningTransaction } from "@/server/intelligence/ledger";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(request: Request) {
-  try { assertSameOrigin(request); const authority = await planningAuthority(request); return planningJson(await startIntelligence(authority, await planningBody(request, startIntelligenceSchema))); }
+  try { assertSameOrigin(request); const authority = await planningDispatchAuthority(request); return planningJson(await startIntelligence(authority, await planningBody(request, startIntelligenceSchema))); }
   catch (error) { return planningError(error); }
 }
 export async function GET(request: Request) {

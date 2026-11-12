@@ -5,7 +5,7 @@ import { z } from "zod";
 import { digest } from "../src/domain/hash";
 import { legacyCompiledGraphSchema, type SourceUpload } from "../src/domain/sources";
 import { sourceBaselineRetention } from "../src/server/sources/retention";
-import { sealIntelligence } from "../src/server/intelligence/private-payload";
+import { sealIntelligence, openIntelligence } from "../src/server/intelligence/private-payload";
 import type { IntelligenceAuthority } from "../src/server/intelligence/ledger";
 import type { SourceProvider } from "../src/server/sources/compiler";
 import { base } from "./helpers";
@@ -24,13 +24,14 @@ async function workspace() {
   const authority = { actor, sessionHash } satisfies IntelligenceAuthority;
   return { show, authority };
 }
-function wire(options: { lost?: boolean; pending?: boolean; foreignId?: boolean; tool?: boolean; noResult?: boolean; wrongContract?: boolean; wrongVersion?: boolean; retentionChange?: boolean; wait?: Promise<void>; after?: () => Promise<void>; assumption?: boolean } = {}) {
+function wire(options: { lost?: boolean; pending?: boolean; foreignId?: boolean; tool?: boolean; noResult?: boolean; wrongContract?: boolean; wrongVersion?: boolean; retentionChange?: boolean; wait?: Promise<void>; after?: () => Promise<void>; assumption?: boolean; httpError?: number; providerStore?: boolean } = {}) {
   const calls: { method: string; url: string; body?: Record<string, unknown> }[] = []; let saved: Record<string, unknown>;
   const provider: SourceProvider = { configured: true, mode: "controlled_fixture", fetch: async (url, init) => {
     const method = init?.method ?? "GET";
     calls.push({ method, url: String(url), ...(method === "POST" ? { body: JSON.parse(String(init?.body)) } : {}) });
     if (method === "POST") { saved = JSON.parse(String(init?.body)); await options.wait; await options.after?.(); }
     if (options.lost) throw new Error("Controlled lost response");
+    if (options.httpError) return Response.json({ error: { code: "controlled_rejection", message: "Retain this original rejected request." } }, { status: options.httpError, headers: { "x-request-id": "req_source_rejected" } });
     if (method === "GET" && options.noResult) return new Response("", { status: 404 });
     const input = saved.input as { content: { text: string }[] }[], data = JSON.parse(input[0]!.content[0]!.text), sourceId = data.sources[0].id;
     const { graph } = sourceFixture(data.selectedProduction, sourceId);
@@ -38,13 +39,43 @@ function wire(options: { lost?: boolean; pending?: boolean; foreignId?: boolean;
     if (options.retentionChange) graph.baselineRetention.policy.maxShiftMinutes += 60;
     if (options.assumption) graph.tasks[0]!.amplified = { value: false, citations: [], assumption: "The paperwork call uses no amplified audio." };
     const { baselineRetention: _retained, ...shared } = graph, outputGraph = options.wrongVersion ? { ...shared, schemaVersion: 1 } : graph;
-    return Response.json({ id: method === "GET" && options.foreignId ? "resp_wrong" : "resp_source_fixture", model: "gpt-6.1-sol", store: false, status: options.pending && method === "POST" ? "queued" : "completed", metadata: options.wrongContract ? { ...(saved.metadata as Record<string, string>), compiler_contract: "unmatched_contract" } : saved.metadata, output: options.pending && method === "POST" ? [] : options.tool ? [{ type: "function_call", name: "approve", arguments: "{}" }] : [{ type: "message", role: "assistant", content: [{ type: "output_text", text: JSON.stringify(outputGraph) }] }], usage: { input_tokens: 100, output_tokens: 100 } }, { headers: { "x-request-id": "req_source_fixture" } });
+    return Response.json({ id: method === "GET" && options.foreignId ? "resp_wrong" : "resp_source_fixture", model: "gpt-6.1-sol", store: options.providerStore ?? false, status: options.pending && method === "POST" ? "queued" : "completed", metadata: options.wrongContract ? { ...(saved.metadata as Record<string, string>), compiler_contract: "unmatched_contract" } : saved.metadata, output: options.pending && method === "POST" ? [] : options.tool ? [{ type: "function_call", name: "approve", arguments: "{}" }] : [{ type: "message", role: "assistant", content: [{ type: "output_text", text: JSON.stringify(outputGraph) }] }], usage: { input_tokens: 100, output_tokens: 100 } }, { headers: { "x-request-id": "req_source_fixture" } });
   } };
   return { provider, calls };
 }
 async function prepare() { const current = await workspace(), source = await sources.uploadSource(current.authority, upload(), "lighting.txt", Buffer.from(sourceExample)); return { ...current, source, command: { requestId: randomUUID(), expectedRevision: current.show.revision, sourceIds: [source.id] } }; }
 async function compilation(options: Parameters<typeof wire>[0] = {}) { const prepared = await prepare(), fake = wire(options), run = await compiler.startSourceCompilation(prepared.authority, prepared.command, fake.provider); return { ...prepared, fake, run }; }
 function reviewCommand(run: Awaited<ReturnType<typeof compiler.startSourceCompilation>>) { return { commandId: randomUUID(), compilationId: run.id, compilationDigest: run.digest!, expectedRevision: run.baseRevision, reviewedSourceIds: run.sourceBindings.map(item => item.id), acceptedAssumptionIds: run.review!.assumptions.map(item => item.id), reviewed: true as const }; }
+
+test("retained compiler POST survives a process interruption before identity binding without creating a replacement", async () => {
+  const { authority, command } = await prepare(), fake = wire();
+  await fixture.pool.query("CREATE FUNCTION controlled_compilation_bind_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF OLD.state='dispatching' AND NEW.provider_response_id IS NOT NULL THEN RAISE EXCEPTION 'Controlled compiler interruption after response retention'; END IF; RETURN NEW; END $$");
+  await fixture.pool.query("CREATE TRIGGER controlled_compilation_bind_failure BEFORE UPDATE ON on_source_compilations FOR EACH ROW EXECUTE FUNCTION controlled_compilation_bind_failure()");
+  try { await assert.rejects(compiler.startSourceCompilation(authority, command, fake.provider), /Controlled compiler interruption after response retention/); }
+  finally { await fixture.pool.query("DROP TRIGGER controlled_compilation_bind_failure ON on_source_compilations"); await fixture.pool.query("DROP FUNCTION controlled_compilation_bind_failure()"); }
+  const row = (await fixture.pool.query("SELECT * FROM on_source_compilations WHERE request_id=$1", [command.requestId])).rows[0];
+  assert.equal(row.state, "dispatching"); assert.equal(row.provider_response_id, null);
+  const observations = (await fixture.pool.query("SELECT id,payload_digest FROM on_source_compilation_observations WHERE compilation_id=$1", [row.id])).rows;
+  assert.equal(observations.length, 1);
+  const recovered = await compiler.readSourceCompilation(authority, row.id, fake.provider);
+  assert.equal(recovered.id, row.id); assert.equal(recovered.state, "completed"); assert.equal(recovered.review?.canApply, true);
+  assert.equal((await compiler.startSourceCompilation(authority, command, fake.provider)).id, row.id);
+  assert.deepEqual(fake.calls.map(value => value.method), ["POST"]);
+  assert.deepEqual((await fixture.pool.query("SELECT id,payload_digest FROM on_source_compilation_observations WHERE compilation_id=$1", [row.id])).rows, observations);
+});
+
+test("a completed compiler response retained before validation survives the polling window without another GET", async () => {
+  const { authority, command } = await prepare(), fake = wire();
+  await fixture.pool.query("CREATE FUNCTION controlled_compilation_projection_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF OLD.state='running' AND NEW.state='validating' THEN RAISE EXCEPTION 'Controlled compiler interruption before validation'; END IF; RETURN NEW; END $$");
+  await fixture.pool.query("CREATE TRIGGER controlled_compilation_projection_failure BEFORE UPDATE ON on_source_compilations FOR EACH ROW EXECUTE FUNCTION controlled_compilation_projection_failure()");
+  try { await assert.rejects(compiler.startSourceCompilation(authority, command, fake.provider), /Controlled compiler interruption before validation/); }
+  finally { await fixture.pool.query("DROP TRIGGER controlled_compilation_projection_failure ON on_source_compilations"); await fixture.pool.query("DROP FUNCTION controlled_compilation_projection_failure()"); }
+  const row = (await fixture.pool.query("SELECT * FROM on_source_compilations WHERE request_id=$1", [command.requestId])).rows[0];
+  assert.equal(row.state, "running"); assert.equal(row.provider_response_id, "resp_source_fixture"); assert.equal(row.provider_output_cipher, null);
+  const recovered = await compiler.readSourceCompilation(authority, row.id, fake.provider);
+  assert.equal(recovered.state, "completed"); assert.equal(recovered.review?.canApply, true);
+  assert.deepEqual(fake.calls.map(value => value.method), ["POST"]);
+});
 test("private original and extracted source save atomically with immutable hash, rights and idempotent upload identity", async () => {
   const { show, authority } = await workspace(), command = upload(), bytes = Buffer.from(sourceExample);
   const [a, b] = await Promise.all([sources.uploadSource(authority, command, "lighting.txt", bytes), sources.uploadSource(authority, command, "lighting.txt", bytes)]);
@@ -122,13 +153,38 @@ test("source supersession and changed production revisions invalidate exact appl
   }
 });
 test("deletion purges private original and unapplied model derivatives while retaining immutable tombstones", async () => {
-  const { authority, source, run, fake } = await compilation(); await sources.deleteSource(authority, source.id, source.contentHash);
+  const { authority, source, run, fake } = await compilation();
+  const observed = (await fixture.pool.query("SELECT * FROM on_source_compilation_observations WHERE compilation_id=$1", [run.id])).rows[0];
+  assert.ok(observed.payload_cipher); const originalObservationHash = observed.payload_digest;
+  await sources.deleteSource(authority, source.id, source.contentHash);
   const deleted = await sources.readSource(authority, source.id); assert.equal(deleted.state, "deleted"); assert.equal(deleted.rights, null); assert.equal(deleted.extraction, null); assert.equal(deleted.title, "Deleted source");
   await assert.rejects(sources.readSourceFile(authority, source.id), code("SOURCE_DELETED"));
   const view = await compiler.readSourceCompilation(authority, run.id, fake.provider); assert.equal(view.state, "deleted"); assert.equal(view.review, null);
   const row = (await fixture.pool.query("SELECT request_cipher,provider_output_cipher,result_cipher,purged_at FROM on_source_compilations WHERE id=$1", [run.id])).rows[0]; assert.equal(row.request_cipher, null); assert.equal(row.provider_output_cipher, null); assert.equal(row.result_cipher, null); assert.ok(row.purged_at);
   assert.equal((await fixture.pool.query("SELECT count(*) FROM on_source_objects WHERE source_id=$1", [source.id])).rows[0].count, "0");
+  const tombstone = (await fixture.pool.query("SELECT * FROM on_source_compilation_observations WHERE id=$1", [observed.id])).rows[0];
+  assert.equal(tombstone.payload_cipher, null); assert.ok(tombstone.purged_at); assert.equal(tombstone.payload_digest, originalObservationHash);
+  await assert.rejects(fixture.pool.query("UPDATE on_source_compilation_observations SET payload_cipher=$2,purged_at=NULL WHERE id=$1", [observed.id, observed.payload_cipher]), /Immutable planning continuity/);
   assert.equal((await sources.deleteSource(authority, source.id, source.contentHash)).state, "deleted"); assert.equal(fake.calls.length, 1);
+});
+test("source provider rejections preserve original encrypted HTTP receipts and do not retry", async () => {
+  const { authority, command, run, fake } = await compilation({ httpError: 400 }); assert.equal(run.state, "failed");
+  await compiler.startSourceCompilation(authority, command, fake.provider);
+  const rows = (await fixture.pool.query("SELECT * FROM on_source_compilation_observations WHERE compilation_id=$1", [run.id])).rows;
+  assert.equal(rows.length, 1); assert.equal(rows[0].status, 400); assert.equal(rows[0].provider_request_id, "req_source_rejected"); assert.equal(rows[0].client_request_id, run.id);
+  const retained = openIntelligence<{ body: { error: { code: string } } }>(authority.actor.tenantId, `compilation-observation:${rows[0].id}`, rows[0].payload_cipher);
+  assert.equal(retained.body.error.code, "controlled_rejection"); assert.equal(digest(retained), rows[0].payload_digest); assert.equal(fake.calls.length, 1);
+  await assert.rejects(fixture.pool.query("UPDATE on_source_compilation_observations SET status=200 WHERE id=$1", [rows[0].id]), /Immutable planning continuity/);
+});
+test("new source compilations pin exact expiry and reject unexpected provider storage", async () => {
+  const mismatch = await compilation({ providerStore: true }); assert.equal(mismatch.run.state, "indeterminate"); assert.equal(mismatch.run.review, null); assert.equal(mismatch.fake.calls.length, 1);
+  const { authority, run, fake } = await compilation({ pending: true });
+  const original = (await fixture.pool.query("SELECT expires_at::text AS value FROM on_source_compilation_scopes WHERE compilation_id=$1", [run.id])).rows[0].value;
+  assert.equal(original, (await fixture.pool.query("SELECT expires_at::text AS value FROM on_sessions WHERE token_hash=$1", [authority.sessionHash])).rows[0].value);
+  await assert.rejects(fixture.pool.query("UPDATE on_source_compilation_scopes SET expires_at=expires_at+interval '1 hour' WHERE compilation_id=$1", [run.id]), /Immutable planning continuity/);
+  await fixture.pool.query("UPDATE on_sessions SET expires_at=expires_at+interval '1 microsecond' WHERE token_hash=$1", [authority.sessionHash]);
+  await assert.rejects(compiler.readSourceCompilation(authority, run.id, fake.provider), code("PLANNING_SESSION_ENDED")); assert.equal(fake.calls.length, 1);
+  assert.equal((await fixture.pool.query("SELECT expires_at::text AS value FROM on_source_compilation_scopes WHERE compilation_id=$1", [run.id])).rows[0].value, original);
 });
 test("foreign, scoped and ended sessions cannot read original private files or compile against them", async () => {
   const { authority, source, command } = await prepare(), other = await workspace(), fake = wire();

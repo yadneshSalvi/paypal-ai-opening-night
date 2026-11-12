@@ -7,7 +7,7 @@ import { planningDigest, qualificationIssues, validatePatch } from "@/domain/sch
 import { recordRescueRun } from "@/domain/commands";
 import { commitEngine } from "../engine";
 import { transactCommand } from "../store";
-import { canonicalConversation, intelligenceSourceDigest, ownedRun, planningFail, planningShow, proposalView, receiptResult, requirePlanningAuthority, runCompletion, withPlanningTransaction, type IntelligenceAuthority, type ProposalRow, type ToolReceipt } from "./ledger";
+import { canonicalConversation, intelligenceSourceDigest, planningAccessId, ownedRun, planningFail, planningShow, proposalView, receiptResult, requirePlanningAuthority, requireConversationScope, runCompletion, withPlanningTransaction, type IntelligenceAuthority, type ProposalRow, type ToolReceipt } from "./ledger";
 import { sealIntelligence } from "./private-payload";
 import { planningProvider } from "./provider";
 
@@ -17,6 +17,7 @@ export async function executeIntelligenceTool(authority: IntelligenceAuthority, 
     await requirePlanningAuthority(db, authority);
     await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [`intelligence-tool:${command.runId}:${command.callId}`]);
     const actor = authority.actor, run = await ownedRun(db, actor, command.runId);
+    await requireConversationScope(db, authority, run.conversation_id);
     const call = runCompletion(run)?.choices[0].message.tool_calls?.find(item => item.id === command.callId);
     if (run.state !== "completed" || !call || call.function.name !== command.name || digest(JSON.parse(call.function.arguments)) !== digest(args)) planningFail("PLANNING_TOOL_BINDING", "Only an exact saved assistant call may invoke this tool.", 403);
     const previous = (await db.query<ToolReceipt>("SELECT * FROM on_intelligence_tool_receipts WHERE run_id=$1 AND call_id=$2 AND tenant_id=$3", [run.id, command.callId, actor.tenantId])).rows[0];
@@ -25,6 +26,7 @@ export async function executeIntelligenceTool(authority: IntelligenceAuthority, 
       const result = receiptResult(previous); if (result) return result;
       planningFail("PLANNING_TOOL_PENDING", "This exact call is still being resolved.");
     }
+    await requireConversationScope(db, authority, run.conversation_id, true);
     const show = await planningShow(db, actor, true), id = randomUUID();
     const response = (ok: boolean, data: unknown, message: string): IntelligenceToolResult => ({ ok, evidenceId: id, name: command.name, data, message });
     let result: IntelligenceToolResult;
@@ -67,7 +69,7 @@ export async function executeIntelligenceTool(authority: IntelligenceAuthority, 
               candidate.report.issues.push({ code: "ENGINE_" + candidate.report.engine.status.toUpperCase(), stage: "temporal", severity: candidate.report.engine.status === "rejected" ? "hard" : "unknown", message: candidate.report.engine.reason ?? "Native engine verification is unavailable.", resourceId: null, taskId: null, sourceId: candidate.report.engine.inputDigest });
               candidate.report.status = candidate.report.engine.status === "rejected" ? "infeasible" : "unknown_pending_evidence";
             }
-            await requirePlanningAuthority(db, authority);
+            await requireConversationScope(db, authority, run.conversation_id, true);
             const row = (await db.query<ProposalRow>("INSERT INTO on_intelligence_proposals(id,tenant_id,actor_id,run_id,call_id,base_revision,source_digest,payload_digest,candidate_cipher) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *", [proposalId, actor.tenantId, actor.id, run.id, command.callId, show.revision, run.source_digest, digest(candidate), sealIntelligence(actor.tenantId, `proposal:${proposalId}`, candidate)])).rows[0]!;
             data = { proposal: proposalView(row), activePlanChanged: false, producerReviewRequired: true, commercialApprovalGranted: false }; break;
           }
@@ -98,6 +100,7 @@ export async function executeIntelligenceTool(authority: IntelligenceAuthority, 
         result = response(false, { code: error.code }, error.message);
       }
     }
+    await requireConversationScope(db, authority, run.conversation_id, true);
     await db.query("INSERT INTO on_intelligence_tool_receipts(id,tenant_id,run_id,call_id,name,args_hash,state,result_cipher,completed_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,now())", [id, actor.tenantId, run.id, command.callId, command.name, digest(args), result.ok ? "completed" : "failed", sealIntelligence(actor.tenantId, `tool:${id}`, result)]);
     return result;
   });
@@ -105,11 +108,11 @@ export async function executeIntelligenceTool(authority: IntelligenceAuthority, 
 
 export async function intelligenceWorkspace(authority: IntelligenceAuthority): Promise<IntelligenceWorkspace> {
   return withPlanningTransaction(async db => {
-    await requirePlanningAuthority(db, authority); const actor = authority.actor;
-    const conversations = (await db.query<{ id: string; created_at: Date }>("SELECT id,created_at FROM on_intelligence_conversations WHERE tenant_id=$1 AND actor_id=$2 ORDER BY created_at DESC LIMIT 100", [actor.tenantId, actor.id])).rows;
-    const proposals = (await db.query<ProposalRow>("SELECT * FROM on_intelligence_proposals WHERE tenant_id=$1 AND actor_id=$2 ORDER BY created_at DESC LIMIT 100", [actor.tenantId, actor.id])).rows;
+    const expiresAt = await requirePlanningAuthority(db, authority), actor = authority.actor;
+    const conversations = (await db.query<{ id: string; created_at: Date }>("SELECT c.id,c.created_at FROM on_intelligence_conversations c LEFT JOIN on_intelligence_scopes s ON s.conversation_id=c.id WHERE c.tenant_id=$1 AND c.actor_id=$2 AND (s.conversation_id IS NULL OR (s.session_hash=$3 AND s.expires_at=$4::timestamptz)) ORDER BY c.created_at DESC LIMIT 100", [actor.tenantId, actor.id, authority.sessionHash, expiresAt])).rows;
+    const proposals = (await db.query<ProposalRow>("SELECT p.* FROM on_intelligence_proposals p JOIN on_intelligence_runs r ON r.id=p.run_id LEFT JOIN on_intelligence_scopes s ON s.conversation_id=r.conversation_id WHERE p.tenant_id=$1 AND p.actor_id=$2 AND (s.conversation_id IS NULL OR (s.session_hash=$3 AND s.expires_at=$4::timestamptz)) ORDER BY p.created_at DESC LIMIT 100", [actor.tenantId, actor.id, authority.sessionHash, expiresAt])).rows;
     const provider = planningProvider();
-    return { conversations: conversations.map(row => ({ id: row.id, createdAt: row.created_at.toISOString() })), proposals: proposals.map(proposalView), providerAvailable: provider.configured, providerMode: provider.configured ? provider.mode : "unavailable" };
+    return { conversations: conversations.map(row => ({ id: row.id, createdAt: row.created_at.toISOString() })), proposals: proposals.map(proposalView), providerAvailable: provider.configured, providerMode: provider.configured ? provider.mode : "unavailable", sessionExpiresAt: expiresAt, sessionAccessId: planningAccessId(authority, expiresAt) };
   });
 }
 export const reviewIntelligenceSchema = z.strictObject({ proposalId: z.string().uuid(), proposalDigest: z.string().regex(/^[a-f0-9]{64}$/), expectedRevision: z.number().int().positive(), commandId: z.string().uuid(), reviewed: z.literal(true) });
@@ -123,11 +126,14 @@ export async function reviewIntelligenceProposal(authority: IntelligenceAuthorit
     if (!authority.actor.roles.includes("producer")) planningFail("PROPOSAL_PRODUCER_REQUIRED", "A producer reviews an alternative before it enters the recovery workbench.", 403);
     const row = (await db.query<ProposalRow>("SELECT * FROM on_intelligence_proposals WHERE id=$1 AND tenant_id=$2 AND actor_id=$3 FOR UPDATE", [command.proposalId, authority.actor.tenantId, authority.actor.id])).rows[0];
     if (!row) planningFail("PROPOSAL_NOT_FOUND", "This proposal is not in your current workspace.", 404);
+    const run = await ownedRun(db, authority.actor, row.run_id);
+    await requireConversationScope(db, authority, run.conversation_id);
     const proposal = proposalView(row);
     if (proposal.digest !== command.proposalDigest) planningFail("PROPOSAL_CHANGED", "Review the exact saved alternative.");
     // A replay of the same durable command returns current state in transactCommand.
     const already = await db.query("SELECT command_id FROM on_commands WHERE tenant_id=$1 AND command_id=$2", [authority.actor.tenantId, command.commandId]);
     if (already.rowCount) return;
+    await requireConversationScope(db, authority, run.conversation_id, true);
     const show = await planningShow(db, authority.actor);
     if (row.state !== "proposed" || show.revision !== proposal.baseRevision || intelligenceSourceDigest(show) !== proposal.sourceDigest) planningFail("PROPOSAL_SOURCE_CHANGED", "The production changed. Prepare and review a current alternative.");
     const offer = show.offers.find(item => item.id === proposal.candidate.patch.offerId);

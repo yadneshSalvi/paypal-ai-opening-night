@@ -5,12 +5,14 @@ import { planningDigest } from "@/domain/scheduling";
 import type { IntelligenceCompletion, IntelligenceConversation, IntelligenceProposal, IntelligenceRunState, IntelligenceRunView, IntelligenceToolResult } from "@/domain/intelligence";
 import { migrate, pool } from "../store";
 import { openIntelligence } from "./private-payload";
+import { planningContinuation, type PlanningRequest, type PlanningResponse } from "./continuation";
 
-export interface IntelligenceAuthority { actor: Actor; sessionHash: string }
+export interface IntelligenceAuthority { actor: Actor; sessionHash: string; expectedExpiry?: string; expectedAccessId?: string }
+export const planningAccessId = (authority: IntelligenceAuthority, expiresAt: string) => digest({ purpose: "planning-dispatch-v1", actor: authority.actor, sessionHash: authority.sessionHash, expiresAt });
 export interface PlanningRun {
   id: string; tenant_id: string; conversation_id: string; actor_id: string; request_id: string; request_hash: string;
   sequence: number; revision: number; source_digest: string; request_cipher: string; prompt_cipher: string | null;
-  result_cipher: string | null; state: IntelligenceRunState; provider_response_id: string | null; provider_source: "live_model" | "controlled_fixture";
+  result_cipher: string | null; provider_output_cipher: string | null; state: IntelligenceRunState; provider_response_id: string | null; provider_source: "live_model" | "controlled_fixture";
   created_at: Date; poll_after: Date | null;
 }
 export interface ToolReceipt { id: string; tenant_id: string; run_id: string; call_id: string; name: IntelligenceToolResult["name"]; args_hash: string; state: string; result_cipher: string | null; created_at: Date }
@@ -22,11 +24,25 @@ export async function withPlanningTransaction<T>(fn: (db: PoolClient) => Promise
   try { await db.query("BEGIN"); const result = await fn(db); await db.query("COMMIT"); return result; }
   catch (error) { await db.query("ROLLBACK"); throw error; } finally { db.release(); }
 }
-export async function requirePlanningAuthority(db: PoolClient, authority: IntelligenceAuthority) {
+export async function requirePlanningAuthority(db: PoolClient, authority: IntelligenceAuthority, fixedExpiry?: string) {
   const actor = authority.actor;
+  if (authority.expectedExpiry && fixedExpiry && authority.expectedExpiry !== fixedExpiry) planningFail("PLANNING_SESSION_ENDED", "The reviewed planning access changed. Read the current workspace before creating a separate instruction.", 401);
+  const expiry = fixedExpiry ?? authority.expectedExpiry;
   if (actor.personId || actor.executionId || actor.supplierId || !actor.roles.some(role => ["producer", "stage_manager"].includes(role))) planningFail("PLANNING_ROLE_REQUIRED", "The production operator opens this planning desk.", 403);
-  const valid = await db.query("SELECT token_hash FROM on_sessions WHERE token_hash=$1 AND tenant_id=$2 AND actor=$3::jsonb AND expires_at>clock_timestamp() FOR SHARE", [authority.sessionHash, actor.tenantId, JSON.stringify(actor)]);
-  if (!valid.rowCount) planningFail("PLANNING_SESSION_ENDED", "This planning session has ended. Open your current production session.", 401);
+  const valid = (await db.query<{ expires_at: string }>(`SELECT to_char(expires_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS expires_at FROM on_sessions WHERE token_hash=$1 AND tenant_id=$2 AND actor=$3::jsonb AND expires_at>clock_timestamp() ${expiry ? "AND expires_at=$4::timestamptz" : ""} FOR SHARE`, [authority.sessionHash, actor.tenantId, JSON.stringify(actor), ...(expiry ? [expiry] : [])])).rows[0];
+  if (!valid) planningFail("PLANNING_SESSION_ENDED", "This exact planning access ended or changed. Original responses and their authority remain retained.", 401);
+  if (authority.expectedAccessId && authority.expectedAccessId !== planningAccessId(authority, valid.expires_at)) planningFail("PLANNING_SESSION_ENDED", "This instruction belongs to different original planning access. Its identity cannot move to a replacement session.", 401);
+  return valid.expires_at;
+}
+export async function requireConversationScope(db: PoolClient, authority: IntelligenceAuthority, conversationId: string, forNewAction = false) {
+  const scope = (await db.query<{ actor_id: string; session_hash: string; expires_at: string }>(`SELECT actor_id,session_hash,to_char(expires_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS expires_at FROM on_intelligence_scopes WHERE tenant_id=$1 AND conversation_id=$2`, [authority.actor.tenantId, conversationId])).rows[0];
+  if (!scope) {
+    if (forNewAction) planningFail("PLANNING_LEGACY_READ_ONLY", "This historical conversation predates complete local continuation evidence. Its original responses remain readable; explicitly start a separate conversation for a new planning request.");
+    return false;
+  }
+  if (scope.actor_id !== authority.actor.id || scope.session_hash !== authority.sessionHash) planningFail("PLANNING_NOT_FOUND", "This conversation belongs to different original planning access.", 404);
+  await requirePlanningAuthority(db, authority, scope.expires_at);
+  return true;
 }
 export async function planningShow(db: PoolClient, actor: Actor, lock = false) {
   const row = (await db.query<{ snapshot: ShowSnapshot }>(`SELECT snapshot FROM on_shows WHERE tenant_id=$1${lock ? " FOR SHARE" : ""}`, [actor.tenantId])).rows[0];
@@ -79,15 +95,30 @@ export async function canonicalConversation(db: PoolClient, actor: Actor, conver
   }
   return { runs, receipts, prompts, inputs, unresolvedCalls };
 }
+export function retainedPlanningContinuation(saved: Awaited<ReturnType<typeof canonicalConversation>>) {
+  try {
+    return planningContinuation(saved.runs.map(run => ({
+      id: run.id, sequence: run.sequence, state: run.state, responseId: run.provider_response_id,
+      request: openIntelligence<PlanningRequest>(run.tenant_id, `run:${run.id}:request`, run.request_cipher),
+      response: run.provider_output_cipher ? openIntelligence<PlanningResponse>(run.tenant_id, `run:${run.id}:provider`, run.provider_output_cipher) : null,
+      result: runCompletion(run), receipts: saved.receipts.filter(receipt => receipt.run_id === run.id).map(receipt => ({ callId: receipt.call_id, name: receipt.name, argsHash: receipt.args_hash, result: receiptResult(receipt) })),
+    })));
+  } catch (error) {
+    const code = error instanceof Error && /^PLANNING_[A-Z_]+$/.test(error.message) ? error.message : "PLANNING_CONTINUATION_UNAVAILABLE";
+    planningFail(code, "The original ordered planning history cannot safely continue. Its saved responses and tool receipts are retained; no replacement response was sent. Open a separate conversation for new work.");
+  }
+}
 export async function readIntelligenceConversation(authority: IntelligenceAuthority, conversationId: string): Promise<IntelligenceConversation> {
   return withPlanningTransaction(async db => {
     await requirePlanningAuthority(db, authority);
     const saved = await canonicalConversation(db, authority.actor, conversationId);
+    const scoped = await requireConversationScope(db, authority, conversationId);
     let plan: IntelligenceConversation["plan"] = null;
     for (const row of saved.receipts) {
       const result = receiptResult(row); if (!result?.ok) continue;
       if (row.name === "createPlan" || row.name === "completePlanSteps") plan = (result.data as { plan: NonNullable<IntelligenceConversation["plan"]> }).plan;
     }
-    return { id: conversationId, runs: saved.runs.map(runView), prompts: saved.prompts, receipts: saved.receipts.flatMap(row => { const result = receiptResult(row); return result ? [{ runId: row.run_id, callId: row.call_id, result }] : []; }), plan, pending: saved.unresolvedCalls || saved.runs.some(run => ["dispatching", "running", "indeterminate"].includes(run.state)) };
+    const terminalBlock = saved.runs.some(run => ["failed", "unavailable", "indeterminate"].includes(run.state));
+    return { id: conversationId, runs: saved.runs.map(runView), prompts: saved.prompts, receipts: saved.receipts.flatMap(row => { const result = receiptResult(row); return result ? [{ runId: row.run_id, callId: row.call_id, result }] : []; }), plan, pending: scoped && (saved.unresolvedCalls || saved.runs.some(run => ["dispatching", "running", "indeterminate"].includes(run.state))), canContinue: scoped && !terminalBlock, continuationMessage: !scoped ? "Historical conversation. Its original responses remain readable; a new conversation uses the complete local continuity contract." : terminalBlock ? "This original attempt cannot continue. Its response and receipts remain retained. A new conversation is separate work; it never retries an unknown request." : null };
   });
 }

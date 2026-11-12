@@ -75,7 +75,7 @@ export interface CompilationView {
   createdAt: string; model: string; resolvedModel: string | null; provenance: "live_model" | "controlled_fixture";
   review: CompilerReview | null; digest: string | null; current: boolean; appliedAt: string | null; appliedRevision: number | null;
 }
-export interface SourceWorkspace { documents: SourceDocument[]; compilations: CompilationView[]; providerAvailable: boolean; providerMode: "live_model" | "controlled_fixture" }
+export interface SourceWorkspace { documents: SourceDocument[]; compilations: CompilationView[]; providerAvailable: boolean; providerMode: "live_model" | "controlled_fixture"; sessionExpiresAt?: string; sessionAccessId?: string }
 export const compileSourceSchema = z.object({ requestId: z.uuid(), expectedRevision: z.number().int().positive(), sourceIds: z.array(z.uuid()).min(1).max(sourceLimits.documentsPerCompilation) }).strict();
 export const applySourceSchema = z.object({ commandId: z.uuid(), compilationId: z.uuid(), compilationDigest: z.string().regex(/^[a-f0-9]{64}$/), expectedRevision: z.number().int().positive(), reviewedSourceIds: z.array(z.uuid()).min(1).max(sourceLimits.documentsPerCompilation), acceptedAssumptionIds: z.array(z.string().max(240)).max(2000), reviewed: z.literal(true) }).strict();
 export const deleteSourceSchema = z.object({ sourceId: z.uuid(), contentHash: z.string().regex(/^[a-f0-9]{64}$/), confirmed: z.literal(true) }).strict();

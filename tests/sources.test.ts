@@ -90,7 +90,7 @@ test("assumptions have stable exact identities; new roster admissions and actual
 });
 test("source provider contract has no tools and rejects a document-induced tool call or malformed output", () => {
   const { show, actor } = base(), { source } = sourceFixture(show), request = sourceCompilerRequest(randomUUID(), show, [source], actor.id);
-  assert.deepEqual(request.tools, []); assert.equal(request.tool_choice, "none"); assert.equal(request.background, true); assert.equal(request.store, true); assert.deepEqual(request.reasoning, { effort: "max" });
+  assert.deepEqual(request.tools, []); assert.equal(request.tool_choice, "none"); assert.equal(request.background, true); assert.equal(request.store, false); assert.deepEqual(request.reasoning, { effort: "max" });
   assert.throws(() => graphFromResponse({ status: "completed", output: [{ type: "function_call" }] }), /AUTHORITY/);
   assert.throws(() => graphFromResponse({ status: "completed", output: [{ type: "message", role: "assistant", content: [{ type: "refusal" }] }] }), /SHAPE/);
   assert.equal(sourceProvider().configured, false); assert.throws(() => sourceProvider().fetch("https://api.openai.com/v1/responses"), /disabled/);

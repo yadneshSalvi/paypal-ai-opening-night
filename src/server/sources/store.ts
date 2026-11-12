@@ -124,6 +124,9 @@ export async function deleteSource(authority: IntelligenceAuthority, id: string,
     if (related.some(run => run.applied_at)) planningFail("SOURCE_IN_APPROVED_GRAPH", "This source supports an applied production graph. Its evidence is retained with that reviewed graph; upload a replacement version to supersede it.");
     if (related.some(run => ["dispatching", "running", "validating"].includes(run.state))) planningFail("SOURCE_COMPILATION_ACTIVE", "An original compilation is still processing this source. Read its saved outcome before deleting the private input.");
     await db.query("DELETE FROM on_source_objects WHERE tenant_id=$1 AND source_id=$2", [row.tenant_id, id]);
+    // Source deletion also purges private transport bodies, preserving their
+    // immutable identity, response status and digest as evidence tombstones.
+    await db.query("UPDATE on_source_compilation_observations SET payload_cipher=NULL,purged_at=now() WHERE tenant_id=$1 AND compilation_id=ANY($2::uuid[]) AND payload_cipher IS NOT NULL", [row.tenant_id, related.map(run => run.id)]);
     await db.query("UPDATE on_source_compilations SET state='deleted',request_cipher=NULL,provider_output_cipher=NULL,result_cipher=NULL,purged_at=now(),updated_at=now() WHERE tenant_id=$1 AND source_bindings @> $2::jsonb AND state<>'deleted'", [row.tenant_id, JSON.stringify([{ id }])]);
     const deleted = (await db.query<SourceRow>("UPDATE on_source_documents SET state='deleted',current=false,metadata_cipher=NULL,extraction_cipher=NULL,parser_lease=NULL,parser_lease_until=NULL,deleted_at=now() WHERE tenant_id=$1 AND id=$2 RETURNING *", [row.tenant_id, id])).rows[0]!;
     return sourceView(deleted);

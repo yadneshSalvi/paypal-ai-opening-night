@@ -2,12 +2,12 @@ import { z } from "zod";
 import { DomainError } from "@/domain/contracts";
 import { compileSourceSchema } from "@/domain/sources";
 import { assertSameOrigin } from "@/server/http";
-import { planningAuthority, planningBody, planningError, planningJson } from "@/server/intelligence/http";
+import { planningAuthority, planningDispatchAuthority, planningBody, planningError, planningJson } from "@/server/intelligence/http";
 import { findCompilationRequest, readSourceCompilation, startSourceCompilation } from "@/server/sources/compiler";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(request: Request) {
-  try { assertSameOrigin(request); return planningJson(await startSourceCompilation(await planningAuthority(request), await planningBody(request, compileSourceSchema))); }
+  try { assertSameOrigin(request); return planningJson(await startSourceCompilation(await planningDispatchAuthority(request), await planningBody(request, compileSourceSchema))); }
   catch (error) { return planningError(error); }
 }
 export async function GET(request: Request) {

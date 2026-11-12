@@ -64,8 +64,10 @@ export interface IntelligenceConversation {
   receipts: { runId: string; callId: string; result: IntelligenceToolResult }[];
   plan: { goal: string; steps: { id: number; description: string; completed: boolean }[] } | null;
   pending: boolean;
+  canContinue?: boolean;
+  continuationMessage?: string | null;
 }
-export interface IntelligenceWorkspace { conversations: { id: string; createdAt: string }[]; proposals: IntelligenceProposal[]; providerAvailable: boolean; providerMode: "live_model" | "controlled_fixture" | "unavailable" }
+export interface IntelligenceWorkspace { conversations: { id: string; createdAt: string }[]; proposals: IntelligenceProposal[]; providerAvailable: boolean; providerMode: "live_model" | "controlled_fixture" | "unavailable"; sessionExpiresAt?: string; sessionAccessId?: string }
 
 export function intelligenceReviewDelta(show: ShowSnapshot, candidate: Candidate) {
   const rows: { kind: "changed" | "added" | "removed"; before: Task | null; after: Task | null }[] = [];

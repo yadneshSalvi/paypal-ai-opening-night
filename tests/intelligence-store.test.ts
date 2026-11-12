@@ -26,18 +26,19 @@ async function workspace() {
   const { show, actor } = withRun(), token = randomBytes(32).toString("base64url"), sessionHash = sessionTokenHash(token);
   await fixture.pool.query("INSERT INTO on_shows(tenant_id,snapshot,revision) VALUES($1,$2,$3)", [show.tenantId, show, show.revision]);
   await fixture.pool.query("INSERT INTO on_sessions(token_hash,tenant_id,actor,expires_at) VALUES($1,$2,$3,now()+interval '1 hour')", [sessionHash, show.tenantId, actor]);
-  return { authority: { actor, sessionHash } satisfies IntelligenceAuthority, show };
+  return { authority: { actor, sessionHash } satisfies IntelligenceAuthority, show, token };
 }
-function wire(name?: IntelligenceTool, args: unknown = {}, options: { pending?: boolean; error?: boolean; status?: number } = {}) {
+function wire(name?: IntelligenceTool, args: unknown = {}, options: { pending?: boolean; error?: boolean; status?: number; mismatch?: "metadata" | "model" | "store" | "reasoning" } = {}) {
   const requests: { method: string; url: string; body: Record<string, unknown> | null }[] = [];
   const callId = "call_" + randomUUID(), responseId = "resp_" + randomUUID().replaceAll("-", "");
-  const output = name ? [{ type: "function_call", call_id: callId, name, arguments: JSON.stringify(args) }] : [{ type: "message", content: [{ type: "output_text", text: "The saved production still needs its assigned reviewer." }] }];
+  const output = [{ type: "reasoning", id: "rs_" + responseId, summary: [], ...(options.mismatch === "reasoning" ? {} : { encrypted_content: "controlled-opaque-reasoning-" + responseId }) }, ...(name ? [{ type: "function_call", id: "fc_" + callId, call_id: callId, name, arguments: JSON.stringify(args), status: "completed" }] : [{ type: "message", id: "msg_" + responseId, role: "assistant", status: "completed", content: [{ type: "output_text", text: "The saved production still needs its assigned reviewer.", annotations: [] }] }])];
   const provider: PlanningProvider = { mode: "controlled_fixture", configured: true, fetch: async (input, init) => {
     requests.push({ method: init?.method ?? "GET", url: String(input), body: init?.body ? JSON.parse(String(init.body)) : null });
     if (options.error) throw new TypeError("Controlled transport disconnect");
-    if (options.status) return new Response("", { status: options.status });
+    if (options.status) return Response.json({ error: { code: "controlled_rejection", message: "Original controlled failure remains retained." } }, { status: options.status, headers: { "x-request-id": "req_controlled_failure" } });
     const pending = options.pending && init?.method === "POST";
-    return Response.json({ id: responseId, status: pending ? "queued" : "completed", output: pending ? [] : output });
+    const request = requests.find(item => item.method === "POST")!.body!;
+    return Response.json({ id: responseId, status: pending ? "queued" : "completed", model: options.mismatch === "model" ? "different-model" : request.model, store: options.mismatch === "store", metadata: options.mismatch === "metadata" ? {} : request.metadata, output: pending ? [] : output }, { headers: { "x-request-id": "req_controlled_" + responseId } });
   } };
   return { provider, requests, callId, responseId };
 }
@@ -166,4 +167,132 @@ test("schema rejects provider-invented financial tools and malformed/parallel ca
   assert.throws(() => providers.completionFromProvider({ status: "completed", output: [...response("readProduction").output, ...response("readProduction").output] }), /PROVIDER_OUTPUT_SHAPE/);
   assert.throws(() => providers.completionFromProvider({ status: "completed", output: [] }), /PROVIDER_OUTPUT_SHAPE/);
   assert.equal(providers.planningProvider().configured, false);
+});
+test("same-actor replacement access cannot adopt a scoped run, receipt, conversation or request identity", async () => {
+  const { authority, show } = await workspace(), fake = wire("readProduction"), request = command();
+  const run = await providers.startIntelligence(authority, request, fake.provider);
+  const replacement = { ...authority, sessionHash: sessionTokenHash(randomBytes(32).toString("base64url")) };
+  await fixture.pool.query("INSERT INTO on_sessions(token_hash,tenant_id,actor,expires_at) VALUES($1,$2,$3,now()+interval '2 hours')", [replacement.sessionHash, show.tenantId, authority.actor]);
+  for (const action of [
+    () => providers.readIntelligenceRun(replacement, run.id, fake.provider),
+    () => providers.startIntelligence(replacement, request, fake.provider),
+    () => ledger.readIntelligenceConversation(replacement, run.conversationId),
+    () => tools.executeIntelligenceTool(replacement, { runId: run.id, callId: fake.callId, name: "readProduction", args: {} }),
+  ]) await assert.rejects(action(), code("PLANNING_NOT_FOUND"));
+  const desk = await tools.intelligenceWorkspace(replacement); assert.deepEqual(desk.conversations, []); assert.deepEqual(desk.proposals, []);
+  assert.equal(fake.requests.length, 1); assert.equal((await tools.executeIntelligenceTool(authority, { runId: run.id, callId: fake.callId, name: "readProduction", args: {} })).ok, true);
+});
+test("the original expiry is pinned to microseconds and cannot be extended or replaced", async () => {
+  const { authority } = await workspace(), fake = wire("readProduction"), run = await providers.startIntelligence(authority, command(), fake.provider);
+  const original = (await fixture.pool.query("SELECT expires_at::text AS value FROM on_intelligence_scopes WHERE conversation_id=$1", [run.conversationId])).rows[0].value;
+  const session = (await fixture.pool.query("SELECT expires_at::text AS value FROM on_sessions WHERE token_hash=$1", [authority.sessionHash])).rows[0].value;
+  assert.equal(original, session);
+  await assert.rejects(fixture.pool.query("UPDATE on_intelligence_scopes SET expires_at=expires_at+interval '1 day' WHERE conversation_id=$1", [run.conversationId]), /Immutable planning continuity/);
+  // This adversarial synthetic session edit is rejected, never used as renewed authority.
+  await fixture.pool.query("UPDATE on_sessions SET expires_at=expires_at+interval '1 microsecond' WHERE token_hash=$1", [authority.sessionHash]);
+  await assert.rejects(providers.readIntelligenceRun(authority, run.id, fake.provider), code("PLANNING_SESSION_ENDED"));
+  await assert.rejects(tools.executeIntelligenceTool(authority, { runId: run.id, callId: fake.callId, name: "readProduction", args: {} }), code("PLANNING_SESSION_ENDED"));
+  assert.equal((await fixture.pool.query("SELECT expires_at::text AS value FROM on_intelligence_scopes WHERE conversation_id=$1", [run.conversationId])).rows[0].value, original);
+  assert.equal(fake.requests.length, 1);
+});
+test("original HTTP errors and unknown transport outcomes retain encrypted append-only observations without redispatch", async () => {
+  for (const options of [{ status: 400 }, { error: true }]) {
+    const { authority } = await workspace(), fake = wire(undefined, {}, options), request = command();
+    const run = await providers.startIntelligence(authority, request, fake.provider);
+    await providers.startIntelligence(authority, request, fake.provider);
+    const rows = (await fixture.pool.query("SELECT * FROM on_intelligence_observations WHERE run_id=$1 ORDER BY sequence", [run.id])).rows;
+    assert.equal(rows.length, 1); assert.equal(rows[0].client_request_id, run.id); assert.equal(rows[0].method, "POST");
+    const payload = privatePayload.openIntelligence<{ body: { error?: { code: string } } | null; outcome: string }>(authority.actor.tenantId, `planning-observation:${rows[0].id}`, rows[0].payload_cipher);
+    assert.equal(digest(payload), rows[0].payload_digest); assert.ok(!JSON.stringify(rows[0]).includes("controlled_rejection"));
+    assert.equal(payload.outcome, options.error ? "transport_unknown" : "response");
+    if (options.status) { assert.equal(payload.body?.error?.code, "controlled_rejection"); assert.equal(rows[0].provider_request_id, "req_controlled_failure"); }
+    await assert.rejects(fixture.pool.query("UPDATE on_intelligence_observations SET payload_digest='forged' WHERE id=$1", [rows[0].id]), /Immutable planning continuity/);
+    assert.equal(fake.requests.length, 1);
+  }
+});
+test("each provider response must match the exact model, storage policy, metadata and encrypted reasoning contract", async () => {
+  for (const mismatch of ["model", "metadata", "store", "reasoning"] as const) {
+    const { authority } = await workspace(), fake = wire("readProduction", {}, { mismatch }), run = await providers.startIntelligence(authority, command(), fake.provider);
+    assert.equal(run.state, mismatch === "reasoning" ? "failed" : "unavailable"); assert.equal(run.result, null);
+    await assert.rejects(tools.executeIntelligenceTool(authority, { runId: run.id, callId: fake.callId, name: "readProduction", args: {} }), code("PLANNING_TOOL_BINDING"));
+    assert.equal((await fixture.pool.query("SELECT count(*) FROM on_intelligence_observations WHERE run_id=$1", [run.id])).rows[0].count, "1");
+    assert.equal(fake.requests.length, 1);
+  }
+});
+test("source drift appends a new snapshot after the full original reasoning and exact failed tool receipt", async () => {
+  const { authority, show } = await workspace(), first = wire("readProduction"), run = await providers.startIntelligence(authority, command(), first.provider);
+  const original = (await fixture.pool.query("SELECT * FROM on_intelligence_runs WHERE id=$1", [run.id])).rows[0];
+  const response = privatePayload.openIntelligence<{ output: Record<string, unknown>[] }>(authority.actor.tenantId, `run:${run.id}:provider`, original.provider_output_cipher);
+  show.revision++; show.sources[0]!.detail = "Distinct reviewed source drift";
+  await fixture.pool.query("UPDATE on_shows SET snapshot=$2,revision=$3 WHERE tenant_id=$1", [show.tenantId, show, show.revision]);
+  const receipt = await tools.executeIntelligenceTool(authority, { runId: run.id, callId: first.callId, name: "readProduction", args: {} }); assert.equal(receipt.ok, false);
+  const second = wire(), nextRun = await providers.startIntelligence(authority, { requestId: randomUUID(), conversationId: run.conversationId, afterRunId: run.id, prompt: "Read this updated source." }, second.provider);
+  assert.equal(nextRun.state, "completed");
+  const request = second.requests[0]!.body!, oldInput = first.requests[0]!.body!.input as Record<string, unknown>[];
+  const prefix = [...oldInput, ...response.output, { type: "function_call_output", call_id: first.callId, output: JSON.stringify(receipt) }], input = request.input as Record<string, unknown>[];
+  assert.deepEqual(input.slice(0, prefix.length), prefix); assert.equal(input[prefix.length]!.role, "developer"); assert.match(String(input[prefix.length]!.content), /Distinct reviewed source drift/); assert.equal(input.at(-1)!.content, "Read this updated source.");
+  assert.equal(request.store, false); assert.deepEqual(request.include, ["reasoning.encrypted_content"]); assert.equal(Object.hasOwn(request, "previous_response_id"), false);
+});
+test("legacy conversations remain readable while refusing new provider or tool work without complete continuation evidence", async () => {
+  const { authority } = await workspace(), conversationId = randomUUID();
+  // A deliberately incomplete historical record tests migration behavior only.
+  await fixture.pool.query("INSERT INTO on_intelligence_conversations(id,tenant_id,actor_id) VALUES($1,$2,$3)", [conversationId, authority.actor.tenantId, authority.actor.id]);
+  assert.equal((await ledger.readIntelligenceConversation(authority, conversationId)).runs.length, 0);
+  const fake = wire();
+  await assert.rejects(providers.startIntelligence(authority, { ...command(), conversationId }, fake.provider), code("PLANNING_LEGACY_READ_ONLY"));
+  assert.equal(fake.requests.length, 0);
+});
+test("HTTP dispatch binds the workspace expiry before an original request exists", async () => {
+  const { authority, token, show } = await workspace(), request = command(), fake = wire();
+  const { POST } = await import("../src/app/api/intelligence/route"), { POST: compile } = await import("../src/app/api/sources/compile/route");
+  const globals = globalThis as typeof globalThis & { openingNightPlanningQa?: PlanningProvider }; globals.openingNightPlanningQa = fake.provider;
+  const workspaceScope = await tools.intelligenceWorkspace(authority), expiry = workspaceScope.sessionExpiresAt!, access = workspaceScope.sessionAccessId!;
+  const baseUrl = process.env.APP_URL ?? "http://localhost:4105";
+  const http = (expected: string | null, body = request, path = "/api/intelligence", accessId = access) => new Request(baseUrl + path, { method: "POST", headers: { Authorization: `Bearer ${token}`, Origin: baseUrl, "Content-Type": "application/json", "x-opening-night-production": show.tenantId, "x-opening-night-planning-access": accessId, ...(expected ? { "x-opening-night-planning-expiry": expected } : {}) }, body: JSON.stringify(body) });
+  try {
+    for (const value of [null, "2026-02-30T00:00:00.000000Z", expiry.slice(0, 23) + "Z"]) {
+      const response = await POST(http(value)); assert.equal(response.status, 409); assert.equal((await response.json()).code, "PLANNING_REVIEW_REQUIRED");
+    }
+    const source = await compile(http(null, request, "/api/sources/compile")); assert.equal(source.status, 409); assert.equal((await source.json()).code, "PLANNING_REVIEW_REQUIRED");
+    const replacementToken = randomBytes(32).toString("base64url");
+    await fixture.pool.query("INSERT INTO on_sessions(token_hash,tenant_id,actor,expires_at) VALUES($1,$2,$3,$4)", [sessionTokenHash(replacementToken), show.tenantId, authority.actor, expiry]);
+    const rebound = http(expiry); rebound.headers.set("authorization", `Bearer ${replacementToken}`);
+    const wrongAccess = await POST(rebound); assert.equal(wrongAccess.status, 401); assert.equal((await wrongAccess.json()).code, "PLANNING_SESSION_ENDED");
+    await fixture.pool.query("UPDATE on_sessions SET expires_at=expires_at+interval '1 microsecond' WHERE token_hash=$1", [authority.sessionHash]);
+    const denied = await POST(http(expiry)); assert.equal(denied.status, 401); assert.equal((await denied.json()).code, "PLANNING_SESSION_ENDED");
+    assert.equal((await fixture.pool.query("SELECT count(*) FROM on_intelligence_runs WHERE tenant_id=$1", [show.tenantId])).rows[0].count, "0"); assert.equal(fake.requests.length, 0);
+    // A separate explicit instruction reads the new current scope; the old one is never rewritten.
+    const current = await tools.intelligenceWorkspace(authority), distinct = command();
+    const created = await POST(http(current.sessionExpiresAt!, distinct, "/api/intelligence", current.sessionAccessId)); assert.equal(created.status, 200); assert.equal((await created.json()).state, "completed"); assert.equal(fake.requests.length, 1);
+  } finally { delete globals.openingNightPlanningQa; }
+});
+
+test("a process interruption after retaining the original POST recovers its exact response without another provider request", async () => {
+  const { authority } = await workspace(), request = command(), fake = wire("readProduction");
+  await fixture.pool.query("CREATE FUNCTION controlled_planning_bind_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF OLD.state='dispatching' AND NEW.provider_response_id IS NOT NULL THEN RAISE EXCEPTION 'Controlled interruption after response retention'; END IF; RETURN NEW; END $$");
+  await fixture.pool.query("CREATE TRIGGER controlled_planning_bind_failure BEFORE UPDATE ON on_intelligence_runs FOR EACH ROW EXECUTE FUNCTION controlled_planning_bind_failure()");
+  try { await assert.rejects(providers.startIntelligence(authority, request, fake.provider), /Controlled interruption after response retention/); }
+  finally { await fixture.pool.query("DROP TRIGGER controlled_planning_bind_failure ON on_intelligence_runs"); await fixture.pool.query("DROP FUNCTION controlled_planning_bind_failure()"); }
+  const row = (await fixture.pool.query("SELECT * FROM on_intelligence_runs WHERE request_id=$1", [request.requestId])).rows[0];
+  assert.equal(row.state, "dispatching"); assert.equal(row.provider_response_id, null);
+  const observations = (await fixture.pool.query("SELECT id,payload_digest FROM on_intelligence_observations WHERE run_id=$1", [row.id])).rows;
+  assert.equal(observations.length, 1);
+  const recovered = await providers.readIntelligenceRun(authority, row.id, fake.provider);
+  assert.equal(recovered.id, row.id); assert.equal(recovered.state, "completed"); assert.equal(recovered.result?.choices[0].message.tool_calls?.[0]?.id, fake.callId);
+  assert.equal((await providers.startIntelligence(authority, request, fake.provider)).id, row.id);
+  assert.deepEqual(fake.requests.map(value => value.method), ["POST"]);
+  assert.deepEqual((await fixture.pool.query("SELECT id,payload_digest FROM on_intelligence_observations WHERE run_id=$1", [row.id])).rows, observations);
+});
+
+test("a locally retained completed response survives interruption after binding and needs no provider polling", async () => {
+  const { authority } = await workspace(), request = command(), fake = wire();
+  await fixture.pool.query("CREATE FUNCTION controlled_planning_completion_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF OLD.state='running' AND NEW.state='completed' THEN RAISE EXCEPTION 'Controlled interruption before completed projection'; END IF; RETURN NEW; END $$");
+  await fixture.pool.query("CREATE TRIGGER controlled_planning_completion_failure BEFORE UPDATE ON on_intelligence_runs FOR EACH ROW EXECUTE FUNCTION controlled_planning_completion_failure()");
+  try { await assert.rejects(providers.startIntelligence(authority, request, fake.provider), /Controlled interruption before completed projection/); }
+  finally { await fixture.pool.query("DROP TRIGGER controlled_planning_completion_failure ON on_intelligence_runs"); await fixture.pool.query("DROP FUNCTION controlled_planning_completion_failure()"); }
+  const row = (await fixture.pool.query("SELECT * FROM on_intelligence_runs WHERE request_id=$1", [request.requestId])).rows[0];
+  assert.equal(row.state, "running"); assert.equal(row.provider_response_id, fake.responseId); assert.equal(row.provider_output_cipher, null);
+  assert.equal((await providers.readIntelligenceRun(authority, row.id, fake.provider)).state, "completed");
+  assert.deepEqual(fake.requests.map(value => value.method), ["POST"]);
+  assert.equal((await fixture.pool.query("SELECT count(*) FROM on_intelligence_observations WHERE run_id=$1", [row.id])).rows[0].count, "1");
 });

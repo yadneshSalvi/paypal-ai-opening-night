@@ -68,10 +68,11 @@ export function SourceDesk({ data, onData, licenseKey }: ViewProps) {
   }
   async function compile() {
     await action("compile", async () => {
+      if (!workspace?.sessionExpiresAt || !workspace?.sessionAccessId) throw new Error("Restore the source workspace before creating this model instruction.");
       const requestId = crypto.randomUUID(); retain(compileKey, requestId); setPendingCompile(requestId);
       let result: CompilationView;
-      try { result = await responseJson<CompilationView>(await productionFetch(tenantId, "/api/sources/compile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId, expectedRevision: data.show.revision, sourceIds: selection }) })); }
-      catch (error) { if (error instanceof SourceRequestError && ["SOURCE_PROVIDER_UNAVAILABLE", "COMPILATION_ALREADY_RUNNING", "STALE_REVISION", "SOURCE_NOT_CURRENT", "SOURCE_NOT_FOUND", "SOURCE_DUPLICATE", "COMPILATION_TOO_LARGE", "INVALID_PLANNING_COMMAND"].includes(error.code)) { retain(compileKey, null); setPendingCompile(null); await load(); const current = await productionFetch(tenantId, "/api/show", { cache: "no-store" }); if (current.ok) onData(await current.json()); } throw error; }
+      try { result = await responseJson<CompilationView>(await productionFetch(tenantId, "/api/sources/compile", { method: "POST", headers: { "Content-Type": "application/json", "x-opening-night-planning-expiry": workspace.sessionExpiresAt, "x-opening-night-planning-access": workspace.sessionAccessId }, body: JSON.stringify({ requestId, expectedRevision: data.show.revision, sourceIds: selection }) })); }
+      catch (error) { if (error instanceof SourceRequestError && ["SOURCE_PROVIDER_UNAVAILABLE", "COMPILATION_ALREADY_RUNNING", "STALE_REVISION", "SOURCE_NOT_CURRENT", "SOURCE_NOT_FOUND", "SOURCE_DUPLICATE", "COMPILATION_TOO_LARGE", "INVALID_PLANNING_COMMAND", "PLANNING_REVIEW_REQUIRED", "PLANNING_SESSION_ENDED"].includes(error.code)) { retain(compileKey, null); setPendingCompile(null); await load(); const current = await productionFetch(tenantId, "/api/show", { cache: "no-store" }); if (current.ok) onData(await current.json()); } throw error; }
       setRun(result); retain(compileKey, null); setPendingCompile(null); await load();
     });
   }

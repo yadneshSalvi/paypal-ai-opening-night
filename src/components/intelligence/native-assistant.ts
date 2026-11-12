@@ -6,11 +6,13 @@ import GanttToolHost from "@bryntum/gantt-enterprise/lib/Gantt/feature/ai/toolho
 import { intelligenceToolDefinitions, intelligenceTools, type IntelligenceConversation, type IntelligenceRunView, type IntelligenceTool, type IntelligenceToolResult } from "@/domain/intelligence";
 import { productionFetch } from "../production-fetch";
 import { nativeAudioTrigger, ReviewedNativeChatPopup } from "./native-voice";
+import { clearExactPlanningRequest, dispatchPlanningInstruction } from "./planning-dispatch";
 
 export interface NativePlanningOptions {
-  tenantId: string; initial: IntelligenceConversation | null;
+  tenantId: string; initial: IntelligenceConversation | null; sessionExpiresAt: string; sessionAccessId: string;
   onRun: (run: IntelligenceRunView) => void; onTool: (result: IntelligenceToolResult) => void;
   onVoiceSaved?: () => void;
+  onInstructionHeld?: (requestId: string) => void;
 }
 const base = "/api/intelligence";
 function pause(ms: number, signal: AbortSignal) {
@@ -95,19 +97,10 @@ export function nativeProductionAssistant(options: NativePlanningOptions) {
         if (options.initial?.pending || sessionStorage.getItem(storageKey)) throw new Error("A saved step needs recovery in the decision record below. No replacement request was sent.");
         const messages = body.messages as { role: string; content?: unknown }[];
         const last = messages.at(-1), prompt = last?.role === "user" && typeof last.content === "string" ? last.content : null;
-        const requestId = crypto.randomUUID(); sessionStorage.setItem(storageKey, requestId);
+        const requestId = crypto.randomUUID();
         let run: IntelligenceRunView;
-        try {
-          const response = await productionFetch(options.tenantId, base, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId, conversationId, afterRunId: lastRunId, prompt }), signal: controller.signal });
-          const value = await response.json();
-          if (!response.ok) { sessionStorage.removeItem(storageKey); throw new Error(value.error ?? "The planning request could not be saved."); }
-          run = value;
-        } catch (error) {
-          if (controller.signal.aborted || !sessionStorage.getItem(storageKey)) throw error;
-          const recovered = await productionFetch(options.tenantId, `${base}?requestId=${requestId}`, { cache: "no-store", signal: controller.signal });
-          if (!recovered.ok) throw new Error("The original request outcome is uncertain. Its identity is retained for recovery.");
-          run = await recovered.json();
-        }
+        try { run = await dispatchPlanningInstruction(options, { requestId, conversationId, afterRunId: lastRunId, prompt }, controller.signal); }
+        catch (error) { if (sessionStorage.getItem(storageKey) === requestId) options.onInstructionHeld?.(requestId); throw error; }
         options.onRun(run); lastRunId = run.id;
         const until = Date.now() + 12 * 60_000;
         while (["dispatching", "running"].includes(run.state) && Date.now() < until) {
@@ -117,7 +110,7 @@ export function nativeProductionAssistant(options: NativePlanningOptions) {
             if (response.ok) { run = await response.json(); options.onRun(run); }
           } catch (error) { if (controller.signal.aborted) throw error; }
         }
-        if (!["dispatching", "running", "indeterminate"].includes(run.state)) sessionStorage.removeItem(storageKey);
+        if (!["dispatching", "running", "indeterminate"].includes(run.state)) clearExactPlanningRequest(storageKey, requestId);
         if (run.state !== "completed" || !run.result) throw new Error(run.message);
         return { ok: true, parsedJson: run.result };
       })();

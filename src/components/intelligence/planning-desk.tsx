@@ -9,6 +9,7 @@ import { ProductionCanvas, type CanvasProps } from "../production-canvas";
 import { productionFetch } from "../production-fetch";
 import { Badge, Button, Modal } from "../ui";
 import { VoiceRecord } from "./voice-record";
+import { clearExactPlanningRequest, planningRequestKey, readPlanningInstruction, retryPlanningInstruction, type RetainedPlanningInstruction } from "./planning-dispatch";
 
 export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onData: (data: ConsoleData) => void; canvas: CanvasProps }) {
   const tenantId = data.show.tenantId;
@@ -16,10 +17,14 @@ export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onDa
   const [runs, setRuns] = useState<IntelligenceRunView[]>([]), [receipts, setReceipts] = useState<IntelligenceToolResult[]>([]);
   const [loading, setLoading] = useState(true), [error, setError] = useState<string | null>(null), [generation, setGeneration] = useState(0), [busy, setBusy] = useState<string | null>(null);
   const [reviewCommandId, setReviewCommandId] = useState<string | null>(null);
+  const [heldRequestId, setHeldRequestId] = useState<string | null>(null);
+  const [missingInstruction, setMissingInstruction] = useState<RetainedPlanningInstruction | null>(null);
   const [voiceRefresh, setVoiceRefresh] = useState(0);
   const onVoiceSaved = useCallback(() => setVoiceRefresh(value => value + 1), []);
+  const onInstructionHeld = useCallback((requestId: string) => { setHeldRequestId(requestId); setMissingInstruction(null); }, []);
   const [review, setReview] = useState<IntelligenceProposal | null>(null), [consent, setConsent] = useState(false);
   const load = useCallback(async (conversationId?: string) => {
+    setMissingInstruction(null);
     const response = await productionFetch(tenantId, "/api/intelligence", { cache: "no-store" }), payload = await response.json();
     if (!response.ok) throw new Error(payload.error ?? "The saved decision record could not open.");
     const desk = payload as IntelligenceWorkspace; setWorkspace(desk);
@@ -28,8 +33,11 @@ export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onDa
       const saved = await productionFetch(tenantId, `/api/intelligence?conversationId=${selected}`, { cache: "no-store" }), conversation = await saved.json();
       if (!saved.ok) throw new Error(conversation.error ?? "The saved conversation could not open.");
       setInitial(conversation); setRuns(conversation.runs); setReceipts(conversation.receipts.map((row: IntelligenceConversation["receipts"][number]) => row.result));
-      if (!conversation.pending) sessionStorage.removeItem(`opening-night-planning:${tenantId}:${selected}`);
-    } else { setInitial(null); setRuns([]); setReceipts([]); }
+      const key = `opening-night-planning:${tenantId}:${selected}`, held = sessionStorage.getItem(key);
+      const exactTerminal = held && (conversation as IntelligenceConversation).runs.some(run => run.requestId === held && !["dispatching", "running", "indeterminate"].includes(run.state));
+      if (exactTerminal) clearExactPlanningRequest(key, held!);
+      setHeldRequestId(exactTerminal ? null : held);
+    } else { setInitial(null); setRuns([]); setReceipts([]); const draft = sessionStorage.getItem(`opening-night-draft-conversation:${tenantId}`); setHeldRequestId(draft ? sessionStorage.getItem(`opening-night-planning:${tenantId}:${draft}`) : null); }
     setGeneration(value => value + 1);
   }, [tenantId]);
   useEffect(() => { let cancelled = false; setLoading(true); void load().catch(error => { if (!cancelled) setError(error.message); }).finally(() => { if (!cancelled) setLoading(false); }); return () => { cancelled = true; }; }, [load]);
@@ -41,6 +49,42 @@ export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onDa
       setWorkspace(previous => previous ? { ...previous, proposals: [proposal, ...previous.proposals.filter(item => item.id !== proposal.id)] } : previous);
     }
   }, []);
+  const startSeparateConversation = () => {
+    const original = initial?.id ?? sessionStorage.getItem(`opening-night-draft-conversation:${tenantId}`), held = original ? sessionStorage.getItem(`opening-night-planning:${tenantId}:${original}`) : null;
+    if (held) { setHeldRequestId(held); setError("The original request outcome is still unresolved. Read that exact identity before starting separate work."); return; }
+    sessionStorage.setItem(`opening-night-draft-conversation:${tenantId}`, crypto.randomUUID());
+    setInitial(null); setRuns([]); setReceipts([]); setError(null); setGeneration(value => value + 1);
+  };
+  async function readOriginalRequest() {
+    if (!heldRequestId) return;
+    setBusy("original-request"); setError(null); setMissingInstruction(null);
+    try {
+      const response = await productionFetch(tenantId, `/api/intelligence?requestId=${heldRequestId}`, { cache: "no-store" }), value = await response.json();
+      if (!response.ok) {
+        if (response.status === 404) {
+          const conversationId = initial?.id ?? sessionStorage.getItem(`opening-night-draft-conversation:${tenantId}`);
+          const saved = conversationId ? readPlanningInstruction(planningRequestKey(tenantId, conversationId)) : null;
+          if (saved?.command.requestId === heldRequestId) setMissingInstruction(saved);
+          throw new Error("No original result was found for this access. The instruction remains held; no replacement was sent.");
+        }
+        throw new Error(value.error ?? "The original result is temporarily unavailable.");
+      }
+      if ((value as IntelligenceRunView).requestId !== heldRequestId) throw new Error("The returned result does not match the retained instruction.");
+      await load((value as IntelligenceRunView).conversationId);
+    } catch (error) { setError(error instanceof Error ? error.message : "The original result could not be read."); }
+    finally { setBusy(null); }
+  }
+  async function retryOriginalInstruction() {
+    if (!missingInstruction) return;
+    setBusy("original-retry"); setError(null);
+    try {
+      const response = await productionFetch(tenantId, "/api/intelligence", { cache: "no-store" }), current = await response.json() as IntelligenceWorkspace & { error?: string };
+      if (!response.ok || !current.sessionExpiresAt || !current.sessionAccessId) throw new Error(current.error ?? "The original current access could not be verified.");
+      const run = await retryPlanningInstruction({ tenantId, sessionExpiresAt: current.sessionExpiresAt, sessionAccessId: current.sessionAccessId }, missingInstruction);
+      await load(run.conversationId);
+    } catch (error) { setError(error instanceof Error ? error.message : "The original instruction remains held."); }
+    finally { setBusy(null); }
+  }
   async function recover(run: IntelligenceRunView) {
     setBusy(run.id); setError(null);
     try {
@@ -53,7 +97,7 @@ export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onDa
       await load(run.conversationId);
     } catch (error) { setError(error instanceof Error ? error.message : "The saved response could not be recovered."); } finally { setBusy(null); }
   }
-  const pending = runs.some(run => ["running", "dispatching", "indeterminate"].includes(run.state));
+  const pending = Boolean(heldRequestId) || runs.some(run => ["running", "dispatching", "indeterminate"].includes(run.state));
   const last = runs.at(-1), lastCheck = [...receipts].reverse().find(receipt => receipt.name === "checkAssignment" && receipt.ok);
   const lastNeedsRecovery = last && (["dispatching", "running"].includes(last.state) || (last.state === "completed" && Boolean(last.result?.choices[0].message.tool_calls?.length)));
   const checked = lastCheck?.data as { taskName: string; allowedByQualification: boolean; issues: { message: string; sourceId: string }[]; qualifiedAlternatives: { name: string }[] } | undefined;
@@ -61,7 +105,11 @@ export function PlanningDesk({ data, onData, canvas }: { data: ConsoleData; onDa
     <div className="intelligence-heading"><div className="intelligence-mark"><Sparkles size={22} /></div><div><span className="eyebrow">THE PRODUCTION DESK</span><h2>Find the next safe move.</h2><p>Ask about a crew assignment. Compare the alternatives. Review the exact change.</p></div><Badge tone={workspace?.providerAvailable ? "blue" : "muted"}>{workspace?.providerMode === "controlled_fixture" ? "CONTROLLED AI INPUTS" : workspace?.providerAvailable ? "AI PLANNING" : "SAVED PLANNING"}</Badge></div>
     {loading ? <div className="intelligence-status" role="status">Restoring your private planning record…</div> : error && !workspace ? <div className="intelligence-status"><p role="alert">{error}</p><Button onClick={() => { setError(null); void load().catch(error => setError(error.message)); }}>Restore planning record</Button></div> : <div className="intelligence-guidance"><ShieldCheck size={16} /><span>The plan moves only after your review. Crew sign-offs, commercial approvals and cues stay with their assigned people.</span></div>}
     {workspace?.providerMode === "controlled_fixture" && <p className="intelligence-status">Controlled response fixtures exercise the native planning flow. No model or payment provider is called.</p>}
-    <ProductionCanvas key={`${generation}:${data.show.revision}`} {...canvas} {...(!loading && workspace ? { assistant: { tenantId, initial, onRun, onTool, onVoiceSaved } } : {})} />
+    {workspace && <div className="intelligence-conversation-controls"><label>Saved conversation<select aria-label="Saved planning conversation" disabled={loading || Boolean(busy)} value={initial?.id ?? ""} onChange={event => { const id = event.target.value; if (!id) return; setBusy("history"); setError(null); void load(id).catch(error => setError(error.message)).finally(() => setBusy(null)); }}><option value="" disabled>New conversation</option>{workspace.conversations.map(conversation => <option key={conversation.id} value={conversation.id}>{new Date(conversation.createdAt).toLocaleString()} · {conversation.id.slice(0, 8)}</option>)}</select></label><Button disabled={loading || Boolean(busy) || pending} onClick={startSeparateConversation}>Start a separate conversation</Button></div>}
+    {initial?.canContinue === false && <p className="intelligence-status" role="status">{initial.continuationMessage}</p>}
+    {heldRequestId && <div className="intelligence-status" role="status"><span>An original request still needs its saved result. Its identity is retained.</span><Button disabled={Boolean(busy)} busy={busy === "original-request"} onClick={() => void readOriginalRequest()}>Read original request</Button></div>}
+    {missingInstruction && <div className="intelligence-retry-review"><h3>Review the original instruction.</h3><p className="intelligence-retained-prompt">{missingInstruction.command.prompt ?? "Continue from the exact saved tool outcome in this conversation."}</p><p>The original lookup found no saved request. A retry checks again and uses the same identity, content and original access. Current production sources will be checked when this instruction reaches the server.</p><small>Original access ends {new Date(missingInstruction.sessionExpiresAt).toLocaleString()}.</small><Button disabled={Boolean(busy) || !workspace?.sessionExpiresAt || workspace.sessionExpiresAt !== missingInstruction.sessionExpiresAt || workspace.sessionAccessId !== missingInstruction.sessionAccessId} busy={busy === "original-retry"} onClick={() => void retryOriginalInstruction()}>Retry this exact instruction</Button></div>}
+    <ProductionCanvas key={`${generation}:${data.show.revision}`} {...canvas} {...(!loading && workspace?.sessionExpiresAt && workspace?.sessionAccessId && initial?.canContinue !== false ? { assistant: { tenantId, initial, sessionExpiresAt: workspace.sessionExpiresAt, sessionAccessId: workspace.sessionAccessId, onRun, onTool, onVoiceSaved, onInstructionHeld } } : {})} />
     <VoiceRecord tenantId={tenantId} refresh={voiceRefresh} />
     <section className="intelligence-record" aria-label="Saved planning decisions">
       <div className="intelligence-record-heading"><div><span className="eyebrow">DECISION RECORD</span><h3>{checked && !checked.allowedByQualification ? "A fast fix still needs the right skills." : "Every proposal keeps its evidence."}</h3></div><Button disabled={Boolean(busy) || pending} onClick={() => { setBusy("restore"); setError(null); void load(last?.conversationId).catch(error => setError(error.message)).finally(() => setBusy(null)); }}><RefreshCw size={14} />Restore saved conversation</Button></div>

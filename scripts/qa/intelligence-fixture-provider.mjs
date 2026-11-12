@@ -44,6 +44,6 @@ globalThis.openingNightPlanningQa = {
     else text = "This controlled response cannot continue that step. Review the saved decision record.";
     if (toolOutput?.ok === false) { name = undefined; text = toolOutput.message; }
     const output = name ? [{ type: "function_call", call_id: "call_qa_" + randomUUID(), name, arguments: JSON.stringify(args) }] : [{ type: "message", content: [{ type: "output_text", text }] }];
-    return Response.json({ id: "resp_qa_" + randomUUID().replaceAll("-", ""), status: "completed", output, controlledFixture: true });
+    return Response.json({ id: "resp_qa_" + randomUUID().replaceAll("-", ""), status: "completed", model: body.model, store: false, metadata: body.metadata, output, controlledFixture: true });
   },
 };
