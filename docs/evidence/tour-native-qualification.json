@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-12",
+  "candidate": "75144e32c355e0fc373207250c77becc2309e29e",
+  "build": "grOTmjdY59yQs-0wQRKNa",
+  "scope": "Controlled local native touring acceptance; no real people, booking, supplier, payment or physical signoff",
+  "sourceQualification": {
+    "focusedTouringChecks": 95,
+    "isolatedHttpChecks": 16,
+    "typecheck": true,
+    "productionBuild": true,
+    "privacyScan": true,
+    "inheritedEarlierCandidateChecks": 600,
+    "inheritedChecksRerun": false
+  },
+  "native": {
+    "realWheelZoomBothWidgets": true,
+    "horizontalPanBothWidgets": true,
+    "visibleClockRangesMatched": true,
+    "denverAndChicago": true,
+    "calendarRemountThenZoom": true,
+    "priorRefusalClearedAtNewReview": true,
+    "priorSuccessClearedAtNewReview": true,
+    "blockedRequestExact404ThenSameInstructionRetry": true,
+    "committedResponseLostThenOriginalReceiptRecovered": true,
+    "oldNoticesAbsentBesideUnknown": true,
+    "mobileWidth": 390,
+    "mobileOverflow": false,
+    "browserConsoleWarningsOrErrors": 0
+  },
+  "preservation": {
+    "sourceFiles": 469,
+    "dependencyEntries": 46958,
+    "buildEntries": 1102,
+    "allFrozenEntriesMatched": true,
+    "originalSessions": 5,
+    "exactSessionExpiriesPreserved": true,
+    "originalTableSnapshots": 11,
+    "allOriginalRowsHashIdentical": true,
+    "originalFixtureAndCanonicalRootUnchanged": true,
+    "attributedSyntheticProductionsAdded": 3,
+    "attributedSyntheticEditionsAdded": 3,
+    "attributedSyntheticCommandsAdded": 3,
+    "lostResponseCommandRecordedOnce": true
+  },
+  "testLimits": [
+    "The server-only one-shot socket drop did not produce an unknown browser outcome: the UI returned a committed receipt. The successful synthetic record remains retained. A lower-level retry is possible but unproven.",
+    "Deterministic recovery checks used temporary tab-scoped request blocking and Fetch response-stage failure of an inspected real committed response. All interception was cleared.",
+    "Earlier stage12 late-session/source-race/stale-edition/crew/mobile matrix and stage11 reversal checks were retained, not unnecessarily repeated for the scoped repair.",
+    "No physical-phone or independent human participation is claimed."
+  ],
+  "remaining": [
+    "Hosted migration and release qualification",
+    "Actual model/provider and supplier interruption work",
+    "Dependency advisory remediation and clean install",
+    "Broader evaluations, research or disclosed absence, and demo film"
+  ],
+  "deploymentCompleted": false
+}
