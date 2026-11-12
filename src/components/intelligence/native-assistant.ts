@@ -133,7 +133,7 @@ export function nativeProductionAssistant(options: NativePlanningOptions) {
       showRecordButton: true, showReadAloud: true,
       title: "The next safe move", cls: "opening-native-planner", ...planningPopupBounds({ width: window.visualViewport?.width || window.innerWidth, height: window.visualViewport?.height || window.innerHeight }),
       showAnimation: false, hideAnimation: false, animateTyping: false, formatText: safePlanningMessageHtml,
-      messages: savedNativeMessages(options.initial).map(message => ({ ...message, text: safePlanningMessageHtml(message.text) })), tools: { settingsTool: false, clearChat: false },
+      messages: savedNativeMessages(options.initial).map(message => ({ ...message, text: safePlanningMessageHtml(message.text) })), tools: { settingsTool: false, clearChat: false, close: { width: 44, height: 44, minWidth: 44, minHeight: 44 } },
       items: {
         messageField: { maxHeight: 112, triggers: { mic: nativeAudioTrigger("Record a planning draft"), send: nativeAudioTrigger("Send planning request"), stop: nativeAudioTrigger("Stop audio or planning response") } },
         openingVoiceStatus: { type: "widget", weight: 190, cls: "opening-native-voice-status", html: '<details class="opening-native-voice-help"><summary>Voice & draft help</summary><p>Record when ready. Review the editable transcript, then Send. Playback is an AI-generated voice. Microphone permission remains optional; typing uses the same planning path.</p></details>' },

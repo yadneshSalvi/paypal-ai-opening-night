@@ -7,7 +7,7 @@ import { finishVoicePlayback, transcriptDraft, voiceLimits, voicePlaybackText, t
 
 /** Preserve the installed trigger handler, with a real keyboard-operable button. */
 export function nativeAudioTrigger(label: string) {
-  return { tag: "button", ariaLabel: label, compose(this: { ariaLabel?: string; disabled?: boolean }, config: { tag?: string; type?: string; title?: string; tabIndex?: number; disabled?: boolean | null; listeners: Record<string, unknown>; "aria-hidden"?: boolean; "aria-label"?: string }) {
+  return { tag: "button", width: 44, height: 44, minWidth: 44, minHeight: 44, ariaLabel: label, compose(this: { ariaLabel?: string; disabled?: boolean }, config: { tag?: string; type?: string; title?: string; tabIndex?: number; disabled?: boolean | null; listeners: Record<string, unknown>; "aria-hidden"?: boolean; "aria-label"?: string }) {
     delete config["aria-hidden"]; delete config.listeners.keypress;
     config.tag = "button"; config.type = "button"; config.tabIndex = 0;
     // DomSync serializes attributes, so disabled=false still disables an HTML button.
@@ -83,6 +83,7 @@ export class ReviewedNativeChatPopup extends AIChatPopup {
   private declare visibilityChanged: (() => void) | undefined;
   private declare receiveDraft: ((event: Event) => void) | undefined;
   private declare discardTranscript: boolean | undefined;
+  private declare recordingActive: boolean | undefined;
   private declare playbackState: VoicePlaybackState | undefined;
   override updateAudioController(controller: NonNullable<AIChatPopup["audioController"]>) {
     if (controller && !(controller.$audioManager instanceof ReviewedAudioManager)) { controller.$audioManager.destroy(); controller.$audioManager = new ReviewedAudioManager({ debugMode: false }); }
@@ -118,11 +119,13 @@ export class ReviewedNativeChatPopup extends AIChatPopup {
     this.notice("Transcript added to your editable draft. Review the words and choose Send when ready. Nothing has been sent to the planning assistant.");
   }
   override onControllerRecordingStart() {
+    this.recordingActive = true;
     this.discardTranscript = false;
     super.onControllerRecordingStart(); this.widgetMap.openingCancelRecording.hidden = false; this.micButton.ariaLabel = "Finish recording and review transcript";
     this.notice("Recording · up to one minute. Choose the microphone again to finish, or Cancel recording to discard it.");
   }
   override onControllerRecordingStop() {
+    this.recordingActive = false;
     super.onControllerRecordingStop(); this.widgetMap.openingCancelRecording.hidden = true; this.micButton.ariaLabel = "Record a planning draft";
   }
   override async toggleRecording() {
@@ -132,12 +135,17 @@ export class ReviewedNativeChatPopup extends AIChatPopup {
     try { await this.audioController.startRecording(); }
     catch (error) { this.notice(error instanceof DOMException && ["NotAllowedError", "PermissionDeniedError"].includes(error.name) ? "Microphone access was not granted. You can type the same planning request." : "The microphone could not open. Your typed draft is still available."); }
   }
-  cancelVoice() {
+  private hasVoiceActivity() {
+    const controller = this.audioController;
+    return Boolean(this.recordingActive || controller?.isRecording || controller?.isSpeaking || controller?.isWaitingForAudio || ["preparing", "playing"].includes(this.playbackState ?? "idle"));
+  }
+  cancelVoice(announce = this.hasVoiceActivity()) {
     this.discardTranscript = true;
+    this.recordingActive = false;
     if (["preparing", "playing"].includes(this.playbackState ?? "idle")) this.playbackState = "stopped";
     this.audioController?.stopAll(true); (this.audioController?.$audioManager as ReviewedAudioManager | undefined)?.cancelAll();
     if (this.widgetMap.openingStopReadAloud) this.widgetMap.openingStopReadAloud.hidden = true;
-    this.notice("Audio stopped. Your editable text remains available; no transcript was automatically sent.");
+    if (announce) this.notice("Audio stopped. Your editable text remains available; no transcript was automatically sent.");
   }
   clearVoiceDraft() { this.discardTranscript = true; this.messageField.clear(); this.onTextFieldInput({ source: this.messageField }); this.notice("Draft cleared. Type a request or choose Record when ready."); }
   stopReadAloud() { this.showPlayback("stopped"); (this.audioController?.$audioManager as ReviewedAudioManager | undefined)?.cancelPlayback(); this.audioController?.stopSpeaking(); }
@@ -145,7 +153,11 @@ export class ReviewedNativeChatPopup extends AIChatPopup {
   override onControllerSpeakEnd() { super.onControllerSpeakEnd(); this.showPlayback(finishVoicePlayback(this.playbackState ?? "idle")); }
   override onStopClick() { if (this.audioController?.isSpeaking || this.audioController?.isWaitingForAudio) this.stopReadAloud(); else super.onStopClick(); }
   override onMessageEnter(...args: unknown[]) { super.onMessageEnter(...args); if (!this.messageField.value) this.notice("Request sent for planning. Any resulting proposal still needs its separate review."); }
-  override afterHide(...args: unknown[]) { super.afterHide(...args); this.cancelVoice(); }
+  override afterHide(...args: unknown[]) {
+    // Native afterHide may clear controller flags synchronously. Preserve the
+    // actual pre-hide activity, while an untouched dialog keeps its guidance.
+    const active = this.hasVoiceActivity(); super.afterHide(...args); this.cancelVoice(active);
+  }
   override doDestroy() { if (this.visibilityChanged) document.removeEventListener("visibilitychange", this.visibilityChanged); if (this.receiveDraft) window.removeEventListener("opening-night-voice-draft", this.receiveDraft); this.audioController?.stopAll(true); super.doDestroy(); }
 }
 ReviewedNativeChatPopup.initClass();
