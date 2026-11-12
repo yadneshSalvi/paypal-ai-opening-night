@@ -7,7 +7,7 @@ declare module "@bryntum/gantt-enterprise/lib/Gantt/feature/ai/agents/DefaultGan
     static $name: string;
     get agentTools(): Record<string, NativeTool>;
     beforePost?: (body: Record<string, unknown>) => void;
-    client: { features: { ai: { chatPanel?: { widgetMap: { openingPlan?: { html: string; hidden: boolean } } } } } };
+    client: { features: { ai: { chatPanel?: { widgetMap: { openingPlan?: { html: string; hidden: boolean; element?: HTMLElement } } } } } };
     $plan?: { goal?: string; steps: { id: number; description: string; completed: boolean }[] };
     processResponse(response: unknown, context: Record<string, unknown>): Promise<unknown>;
   }
@@ -48,12 +48,16 @@ declare module "@bryntum/core-enterprise/lib/Core/widget/chat/AIChatPopup.js" {
     startRecording(): Promise<string | null>; stopRecording(cancel?: boolean): void; stopAll(cancel?: boolean): void; stopSpeaking(): void;
     ion(config: Record<string, unknown>): void;
   }
-  interface NativeMessageField { value: string; clear(): void; focus(): void }
+  interface NativeMessageField { value: string | null; maxHeight: number | string; element: HTMLElement; clear(): void; focus(): void }
   export default class AIChatPopup {
     constructor(config?: Record<string, unknown>);
     static $name: string; static type: string; static configurable: Record<string, unknown>; static initClass(): void;
-    isDestroyed: boolean; isVisible: boolean; audioController: NativeAudioController | null;
-    widgetMap: Record<string, { hidden: boolean; html: string }>;
+    isDestroyed: boolean; isVisible: boolean; type: string; drawer: unknown; showAnimation: boolean | object; x: number; y: number; audioController: NativeAudioController | null;
+    element: HTMLElement; width: number | string; height: number | string; minHeight: number | string; maxHeight: number | string;
+    setConfig(config: Record<string, unknown>): void; setXY(x?: number, y?: number): void; alignTo(spec?: unknown): void;
+    showBy(alignment: unknown): Promise<unknown>; hide(): Promise<void>;
+    widgetMap: Record<string, { hidden: boolean; html: string; element: HTMLElement }>;
+    addMessage(message: Record<string, unknown> | Promise<Record<string, unknown>>): Promise<void>;
     messageField: NativeMessageField;
     micButton: { ariaLabel: string };
     updateAudioController(controller: NativeAudioController): void;
@@ -64,5 +68,13 @@ declare module "@bryntum/core-enterprise/lib/Core/widget/chat/AIChatPopup.js" {
     onMessageEnter(...args: unknown[]): void; onTextFieldInput(event: { source: NativeMessageField }): void;
     onStopClick(): void; toggleRecording(): void; show(): Promise<void>;
     afterHide(...args: unknown[]): void; doDestroy(): void;
+  }
+}
+declare module "@bryntum/core-enterprise/lib/Core/widget/chat/ChatButton.js" {
+  import { Button } from "@bryntum/core-enterprise";
+  export default class ChatButton extends Button {
+    constructor(config?: Record<string, unknown>);
+    static $name: string; static type: string; static initClass(): void;
+    changeChatPanel(config: Record<string, unknown> | null, old: unknown): unknown;
   }
 }

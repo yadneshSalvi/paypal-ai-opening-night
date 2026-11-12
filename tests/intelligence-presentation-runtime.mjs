@@ -1,0 +1,25 @@
+/** Local display qualification only: no network, database, provider, microphone or model calls. */
+import net from "node:net";
+import tls from "node:tls";
+import http from "node:http";
+import https from "node:https";
+import dgram from "node:dgram";
+import dns from "node:dns";
+import dnsPromises from "node:dns/promises";
+import os from "node:os";
+import path from "node:path";
+import { register, syncBuiltinESMExports } from "node:module";
+if (process.env.VERCEL) throw new Error("Native presentation qualification is local and nonexecuting");
+process.env.OPENING_NIGHT_AI_QA = "1"; process.env.OPENING_NIGHT_QA_FIXTURE = "1";
+for (const name of Object.keys(process.env)) if (/OPENAI|GEMINI|PAYPAL|ANTHROPIC|CHANNEL3|GOOGLE_API|DATABASE_URL|POSTGRES|JUDGE_SESSION|CRON_SECRET/.test(name)) delete process.env[name];
+const counts = { blocked: 0, toolingIpcSuppressed: 0 }, events = [];
+const blocked = () => { counts.blocked++; const error = new Error("Model presentation qualification blocks all network/database/provider transport"); events.push(error.stack); throw error; };
+const pipe = path.join(os.tmpdir(), "tsx-" + (process.geteuid ? process.geteuid() : os.userInfo().username), process.ppid + ".pipe"), connect = net.Socket.prototype.connect;
+net.Socket.prototype.connect = function (...args) { const input = Array.isArray(args[0]) ? args[0][0] : args[0], target = input && typeof input === "object" ? input.path : input; if (target === pipe && /\/node_modules\/tsx\/dist\/client-(?:BQVF1NaW\.mjs|D6NvIMSC\.cjs):/.test(new Error().stack ?? "")) { counts.toolingIpcSuppressed++; queueMicrotask(() => this.emit("error", Object.assign(new Error("Pinned optional tsx parent IPC suppressed"), { code: "ECONNREFUSED" }))); return this; } return blocked(); };
+net.Server.prototype.listen = blocked; tls.connect = blocked;
+http.request = http.get = https.request = https.get = blocked; dgram.createSocket = blocked;
+for (const module of [dns, dnsPromises, dns.Resolver.prototype, dnsPromises.Resolver.prototype]) for (const name of Object.getOwnPropertyNames(module)) if (/^(?:lookup|resolve|reverse)/.test(name) && typeof module[name] === "function") module[name] = blocked;
+globalThis.fetch = blocked;
+globalThis.openingModelPresentationGuard = { version: 1, counts, events };
+syncBuiltinESMExports();
+register(new URL("../scripts/qa/bryntum-react-esm-loader.mjs", import.meta.url), import.meta.url);

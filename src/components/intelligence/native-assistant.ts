@@ -1,12 +1,15 @@
 "use client";
-import { OpenAIPlugin, StringHelper } from "@bryntum/core-enterprise";
+import { OpenAIPlugin } from "@bryntum/core-enterprise";
 import type { Gantt } from "@bryntum/gantt-enterprise";
 import DefaultGanttAgent, { type NativeTool, type NativeToolInput } from "@bryntum/gantt-enterprise/lib/Gantt/feature/ai/agents/DefaultGanttAgent.js";
 import GanttToolHost from "@bryntum/gantt-enterprise/lib/Gantt/feature/ai/toolhosts/GanttToolHost.js";
 import { intelligenceToolDefinitions, intelligenceTools, type IntelligenceConversation, type IntelligenceRunView, type IntelligenceTool, type IntelligenceToolResult } from "@/domain/intelligence";
 import { productionFetch } from "../production-fetch";
-import { nativeAudioTrigger, ReviewedNativeChatPopup } from "./native-voice";
+import { nativeAudioTrigger } from "./native-voice";
 import { clearExactPlanningRequest, dispatchPlanningInstruction } from "./planning-dispatch";
+import { ReadablePlanningChatButton, ReadablePlanningChatPopup } from "./planning-chat";
+import { planningChecklistHtml, planningPopupBounds } from "./chat-layout";
+import { safePlanningMessageHtml } from "./safe-message";
 
 export interface NativePlanningOptions {
   tenantId: string; initial: IntelligenceConversation | null; sessionExpiresAt: string; sessionAccessId: string;
@@ -66,7 +69,7 @@ export function nativeProductionAssistant(options: NativePlanningOptions) {
     static $name = "OpeningNightProductionAgent";
     showPlan(plan: NonNullable<IntelligenceConversation["plan"]>) {
       const widget = this.client.features.ai.chatPanel?.widgetMap.openingPlan; if (!widget) return;
-      widget.html = `<section aria-label="Production planning checklist"><div><strong>${StringHelper.encodeHtml(plan.goal)}</strong><span role="status">${plan.steps.filter(step => step.completed).length}/${plan.steps.length}</span></div><ol>${plan.steps.map(step => `<li data-complete="${step.completed}"><b aria-hidden="true">${step.completed ? "✓" : step.id}</b><span>${StringHelper.encodeHtml(step.description === "Prepare a reviewed alternative" ? "Prepare an alternative for review" : step.description)}<small>${step.completed ? "Saved tool evidence" : "Pending"}</small></span></li>`).join("")}</ol></section>`;
+      widget.html = planningChecklistHtml(plan, widget.element?.querySelector("details")?.open ?? false);
       widget.hidden = false;
     }
     override get agentTools() {
@@ -112,7 +115,7 @@ export function nativeProductionAssistant(options: NativePlanningOptions) {
         }
         if (!["dispatching", "running", "indeterminate"].includes(run.state)) clearExactPlanningRequest(storageKey, requestId);
         if (run.state !== "completed" || !run.result) throw new Error(run.message);
-        return { ok: true, parsedJson: run.result };
+        return { ok: true, parsedJson: structuredClone(run.result) };
       })();
       return Object.assign(promise, { abort: () => controller.abort() });
     }
@@ -125,20 +128,20 @@ export function nativeProductionAssistant(options: NativePlanningOptions) {
     timeout: 15 * 60_000, debugMode: false, showNoConnectionIcon: false, undo: false, redo: false, mentions: false,
     autoReadAloud: false, autoRecord: false, stopAudioOnHide: true, voiceOnly: false, availableApis: [],
     transcribeUrl: `${base}/voice/transcribe?${voiceQuery}`, textToSpeechUrl: `${base}/voice/speak?${voiceQuery}`,
-    chatButton: { text: "Plan the next move", cls: "opening-native-assistant", tooltip: "Open the production planning desk", chatPanel: {
-      type: ReviewedNativeChatPopup.type, voiceProduction: options.tenantId, onVoiceSaved: options.onVoiceSaved,
+    chatButton: { type: ReadablePlanningChatButton.type, text: "Plan the next move", cls: "opening-native-assistant", tooltip: "Open the production planning desk", chatPanel: {
+      type: ReadablePlanningChatPopup.type, voiceProduction: options.tenantId, onVoiceSaved: options.onVoiceSaved,
       showRecordButton: true, showReadAloud: true,
-      title: "The next safe move", cls: "opening-native-planner", width: "min(470px, calc(100vw - 24px))", height: "min(680px, calc(100dvh - 24px))",
-      animateTyping: !matchMedia("(prefers-reduced-motion: reduce)").matches, formatText: (text: string) => StringHelper.encodeHtml(text).replaceAll("\n", "<br>"),
-      messages: savedNativeMessages(options.initial), tools: { settingsTool: false, clearChat: false },
+      title: "The next safe move", cls: "opening-native-planner", ...planningPopupBounds({ width: window.visualViewport?.width || window.innerWidth, height: window.visualViewport?.height || window.innerHeight }),
+      showAnimation: false, hideAnimation: false, animateTyping: false, formatText: safePlanningMessageHtml,
+      messages: savedNativeMessages(options.initial).map(message => ({ ...message, text: safePlanningMessageHtml(message.text) })), tools: { settingsTool: false, clearChat: false },
       items: {
-        messageField: { triggers: { mic: nativeAudioTrigger("Record a planning draft"), send: nativeAudioTrigger("Send planning request"), stop: nativeAudioTrigger("Stop audio or planning response") } },
-        openingVoiceStatus: { type: "widget", weight: 190, cls: "opening-native-voice-status", html: '<p role="status" aria-live="polite">Record when ready. Review the editable transcript, then Send. Playback is an AI-generated voice.</p>' },
+        messageField: { maxHeight: 112, triggers: { mic: nativeAudioTrigger("Record a planning draft"), send: nativeAudioTrigger("Send planning request"), stop: nativeAudioTrigger("Stop audio or planning response") } },
+        openingVoiceStatus: { type: "widget", weight: 190, cls: "opening-native-voice-status", html: '<details class="opening-native-voice-help"><summary>Voice & draft help</summary><p>Record when ready. Review the editable transcript, then Send. Playback is an AI-generated voice. Microphone permission remains optional; typing uses the same planning path.</p></details>' },
         openingStopReadAloud: { type: "button", weight: 191, text: "Stop AI read-aloud", cls: "opening-native-voice-stop", hidden: true, onAction: "up.stopReadAloud" },
         openingCancelRecording: { type: "button", weight: 192, text: "Cancel recording", cls: "opening-native-voice-cancel", hidden: true, onAction: "up.cancelVoice" },
-        openingClearDraft: { type: "button", weight: 193, text: "Clear draft", cls: "opening-native-voice-clear", onAction: "up.clearVoiceDraft" },
+        openingClearDraft: { type: "button", weight: 193, text: "Clear draft", cls: "opening-native-voice-clear", hidden: true, onAction: "up.clearVoiceDraft" },
         openingPlan: { type: "widget", weight: -100, cls: "opening-native-plan", hidden: !plan,
-        html: plan ? `<section aria-label="Production planning checklist"><div><strong>${StringHelper.encodeHtml(plan.goal)}</strong><span>${plan.steps.filter(step => step.completed).length}/${plan.steps.length}</span></div><ol>${plan.steps.map(step => `<li data-complete="${step.completed}"><b>${step.completed ? "✓" : step.id}</b><span>${StringHelper.encodeHtml(step.description === "Prepare a reviewed alternative" ? "Prepare an alternative for review" : step.description)}<small>${step.completed ? "Saved tool evidence" : "Pending"}</small></span></li>`).join("")}</ol></section>` : "" } },
+        html: plan ? planningChecklistHtml(plan) : "" } },
     } },
     delayStatusTexts: ["Reading the current production…", "Checking the constraints…", "The original response is still working…"],
   };
