@@ -1,6 +1,7 @@
 import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
+import pg from "pg";
 import { digest } from "../src/domain/hash";
 import { voiceModels } from "../src/domain/voice";
 import { withRun } from "./helpers";
@@ -90,5 +91,35 @@ test("crew capability cannot transcribe and the default provider remains disable
   const { authority } = await workspace(), fake = wire();
   await assert.rejects(voice.transcribeVoice({ ...authority, actor: { ...authority.actor, roles: ["crew"], personId: "sam" } }, randomUUID(), voice.pcmWave(Buffer.alloc(240)), fake.provider), code("PLANNING_ROLE_REQUIRED"));
   process.env.OPENAI_API_KEY = "never-dispatch"; assert.equal(voice.voiceProvider().configured, false); await assert.rejects(async () => voice.voiceProvider().fetch("https://api.openai.com/v1/audio/transcriptions"), /disabled/); process.env.OPENAI_API_KEY = "";
+  assert.equal(fake.requests.length, 0);
+});
+test("empty and completed voice history stays readable when all voice writes are denied", async () => {
+  const empty = await workspace(), completed = await workspace(), fake = wire();
+  const saved = await voice.speakVoice(completed.authority, randomUUID(), "The original saved recording.", fake.provider);
+  const original = pg.Client.prototype.query;
+  let denied = 0;
+  pg.Client.prototype.query = function (this: pg.Client, ...args: unknown[]) {
+    const first = args[0], text = typeof first === "string" ? first : (first as { text?: string } | undefined)?.text ?? "";
+    if (/^\s*(UPDATE|INSERT|DELETE|CREATE|ALTER|DROP|TRUNCATE)\b/i.test(text)) { denied++; throw new Error("Read-only history cannot write"); }
+    return Reflect.apply(original, this, args);
+  } as typeof original;
+  try {
+    assert.deepEqual((await voice.voiceWorkspace(empty.authority, fake.provider)).runs, []);
+    const result = await voice.voiceWorkspace(completed.authority, fake.provider);
+    assert.equal(result.runs.length, 1); assert.equal(result.runs[0]!.id, saved.run.id); assert.equal(result.runs[0]!.state, "completed");
+    assert.equal(denied, 0); assert.equal(fake.requests.length, 1);
+  } finally { pg.Client.prototype.query = original; }
+});
+test("a controlled abandoned original voice instruction still becomes indeterminate without dispatch", async () => {
+  const { authority } = await workspace(), fake = wire(), id = randomUUID(), scope = randomUUID();
+  const { sealIntelligence } = await import("../src/server/intelligence/private-payload");
+  // Explicit negative fixture: an original instruction saved four minutes ago,
+  // with no provider identity or response. Its immutable creation time is never changed.
+  await fixture.pool.query("INSERT INTO on_voice_runs(id,tenant_id,actor_id,session_hash,client_scope,kind,input_hash,request_cipher,requested_model,state,provider_source,created_at) VALUES($1,$2,$3,$4,$5,'transcribe',$6,$7,$8,'connecting','controlled_fixture',now()-interval '4 minutes')", [id, authority.actor.tenantId, authority.actor.id, authority.sessionHash, scope, digest({ negativeFixture: "abandoned before dispatch" }), sealIntelligence(authority.actor.tenantId, `voice:${id}:request`, { negativeFixture: "abandoned before dispatch" }), voiceModels.transcribe]);
+  const record = await voice.voiceWorkspace(authority, fake.provider);
+  assert.equal(record.runs[0]!.id, id); assert.equal(record.runs[0]!.state, "indeterminate");
+  const again = await voice.voiceWorkspace(authority, fake.provider); assert.deepEqual(again, record);
+  const row = (await fixture.pool.query("SELECT provider_response_id,dispatched_at,failure_code FROM on_voice_runs WHERE id=$1", [id])).rows[0];
+  assert.equal(row.provider_response_id, null); assert.equal(row.dispatched_at, null); assert.equal(row.failure_code, "VOICE_PROCESS_ENDED");
   assert.equal(fake.requests.length, 0);
 });

@@ -170,7 +170,10 @@ export async function readVoiceAudio(authority: IntelligenceAuthority, id: strin
 export async function voiceWorkspace(authority: IntelligenceAuthority, provider = voiceProvider()): Promise<VoiceWorkspace> {
   return withPlanningTransaction(async db => {
     await requirePlanningAuthority(db, authority);
-    await db.query("UPDATE on_voice_runs SET state='indeterminate',failure_code='VOICE_PROCESS_ENDED',updated_at=now() WHERE tenant_id=$1 AND actor_id=$2 AND session_hash=$3 AND state IN ('connecting','dispatching','streaming') AND created_at<now()-interval '3 minutes'", [authority.actor.tenantId, authority.actor.id, authority.sessionHash]);
+    const stale = (await db.query("SELECT id FROM on_voice_runs WHERE tenant_id=$1 AND actor_id=$2 AND session_hash=$3 AND state IN ('connecting','dispatching','streaming') AND created_at<now()-interval '3 minutes' LIMIT 1", [authority.actor.tenantId, authority.actor.id, authority.sessionHash])).rowCount;
+    // Completed or empty history is a read. Only an actually abandoned request
+    // needs a durable transition; do not require write access to replay saved audio.
+    if (stale) await db.query("UPDATE on_voice_runs SET state='indeterminate',failure_code='VOICE_PROCESS_ENDED',updated_at=now() WHERE tenant_id=$1 AND actor_id=$2 AND session_hash=$3 AND state IN ('connecting','dispatching','streaming') AND created_at<now()-interval '3 minutes'", [authority.actor.tenantId, authority.actor.id, authority.sessionHash]);
     const rows = (await db.query<VoiceRow>("SELECT * FROM on_voice_runs WHERE tenant_id=$1 AND actor_id=$2 AND session_hash=$3 ORDER BY created_at DESC LIMIT 40", [authority.actor.tenantId, authority.actor.id, authority.sessionHash])).rows;
     return { available: provider.configured, mode: provider.mode, runs: rows.map(view) };
   });
