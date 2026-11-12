@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-12T13:47:22.488018+00:00",
+  "kind": "accepted-source-integration",
+  "primaryBase": "bdafc2a08d1decef645e8a61e434a5d6de53e3fd",
+  "acceptedProductSource": "0e47fd0c35f82985d93f4ea5b804f0f3b1098c5f",
+  "units": {
+    "audience": {
+      "source": "1b5dfbb7774b8bcbbd6ec042d57ead288623b674",
+      "reviewWrapper": "a5ff7d3692eed135ebd04887e13e6cb705bc3c09",
+      "native": "accepted",
+      "closureSha256": "847da6699d00c7a21e2175ab8793a4baedafc17ca95ec02d1d58d7f6458f0800",
+      "originalTablesPreserved": 84,
+      "controlledRecipientsMeasured": 400,
+      "externalOutreach": false
+    },
+    "actualModel": {
+      "source": "d2092540554273005284d49e688e3552e242d8fc",
+      "recordsReviewed": 5,
+      "fullyCompletedEpisodes": 4,
+      "retainedRoleRefusal": "P02 required separately authorized artist consent; the original refusal remains unchanged.",
+      "actualProvider": "OpenAI",
+      "actualFinancialMutationsInModelQualification": 0,
+      "humanParticipationOrManualBaselineClaimed": false
+    },
+    "separateArtistConsent": {
+      "source": "02d6b76ebb1ebb3ded1f17234ffdff1aa4d04fb1",
+      "native": "accepted",
+      "postNativeSha256": "20db2e71ae61dc5394e9cb92b57374064de5eba643b8583a2274a4cb7709baf0",
+      "controlledDeclaredRepresentative": true,
+      "actualHumanIdentityVerified": false,
+      "nativeLostResponseRecoveryVerified": false,
+      "nativeFaultLimitation": "A private fault trigger was recorded, but the browser observed HTTP200 and immediate confirmation. No native dropped-response recovery is claimed; distinct compiled HTTP recovery evidence remains separate."
+    },
+    "nativeAiControls": {
+      "source": "cdd2da39c4fae39429e855d6c2e08258754870bf",
+      "qualifiedBuild": "VEeAeRyY3KZix0kh3hbed",
+      "native": "accepted",
+      "postNativeSha256": "b78f963c97f53fcfd86526b4d78c2ffacd18ab4f4ffdecdafd22d5bb65813b59",
+      "viewports": [
+        [
+          1280,
+          720
+        ],
+        [
+          390,
+          844
+        ],
+        [
+          320,
+          780
+        ]
+      ],
+      "closeSendMicHitArea": [
+        44,
+        44
+      ],
+      "inactiveClosePreservesGuidance": true,
+      "originalModelRowsPreserved": 234,
+      "fixedOriginalAuthoritiesPreserved": 5,
+      "newModelVoiceOperationalActions": 0
+    }
+  },
+  "combinedChecks": {
+    "pass": 12,
+    "fail": 0,
+    "skipped": 0,
+    "combinedServices": {
+      "pass": 2,
+      "logSha256": "6e3439076d8cf697c1d556a2b1c2c00c0ad3d0eb1c37963e1bfacd955ff4c685"
+    },
+    "orderedRegistryAndRetainedSettlement": {
+      "pass": 10,
+      "logSha256": "211bf00aa63a7edb4e0817af03ea362f327cdeba59987d026d20e83b9acbf484"
+    },
+    "migrations": [
+      17,
+      18,
+      19
+    ],
+    "newFeatureTables": 19,
+    "allPriorRowsAndOriginalExpiryPreserved": true,
+    "repeatedMigrationIdempotent": true,
+    "controlledFlow": "Original SDK capture and inbox approval; distinct attributed late supplier source and reviewed signed RFQ; actual engine; separate declared artist consent; producer approval; refusal until controlled rental authorization and supplier confirmation; explicit publication; old immutable message cannot deliver; separately reviewed current message receives one private inbox receipt.",
+    "actualProviderRequests": 0,
+    "actualModelRequests": 0,
+    "blockedExternalPaths": 0,
+    "blockedDatabaseIdentities": 0,
+    "suppressedOptionalToolingIpc": 6,
+    "preservedSetupFailures": [
+      "Missing separate commercial/publication prerequisites",
+      "Early supplier source did not require artist consent",
+      "Legacy supplier portal helper correctly required an approved selected supplier",
+      "Replacement hold omitted exact producer session/expiry binding"
+    ]
+  },
+  "limits": [
+    "Controlled commercial receipts are not actual PayPal payments.",
+    "Separate declared controlled reviewer does not prove a real artist representative.",
+    "No new physical work, human participation or outward messaging is claimed.",
+    "Earlier deterministic evaluation remains bound to its original corpus and application source.",
+    "Combined build, hosted migration and promotion have separate root-owned receipts."
+  ]
+}
