@@ -11,6 +11,7 @@ import { supplierIsConfirmed } from "./supplier-contracts";
 import { crewDutyKinds, type CrewVerifier } from "./crew/contracts";
 import { fixtureNextCalls, requireCrewPerson } from "./crew/policy";
 import { hasCurrentSupportOnlyPlan, operatingDigest, selectedInterruption } from "./disruptions";
+import { strategyScopeDigest } from "./planning-workbench/strategies";
 import { inputPlanCurrent } from "./production-inputs/constraints";
 
 export const commandSchema = z.discriminatedUnion("type", [
@@ -62,6 +63,7 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       requireRole(actor, "producer");
       const candidate = show.runs.at(-1)?.candidates.find(c => c.id === command.candidateId);
       if (!candidate || candidate.digest !== command.candidateDigest || candidate.sourceDigest !== planningDigest(show)) throw new DomainError("STALE_CANDIDATE", "The proposal no longer matches the current production graph. Recompute alternatives.");
+      if (candidate.strategy && (candidate.strategy.sourceDigest !== strategyScopeDigest(show) || !["feasible", "feasible_with_approval"].includes(candidate.report.status))) throw new DomainError("STRATEGY_REVIEW_BLOCKED", "The typed strategy has current source constraints, hard failures or unknown cue policy that require a new review.");
       const offer = show.offers.find(o => o.id === candidate.patch.offerId)!;
       const checked = validatePatch(show, candidate.patch, offer);
       if (!["feasible", "feasible_with_approval"].includes(checked.status) || candidate.report.engine?.status !== "passed") throw new DomainError("PLAN_NOT_FEASIBLE", "A successful engine run and all deterministic constraints are required.");
@@ -93,15 +95,16 @@ export function applyCommand(input: ShowSnapshot, actor: Actor, command: Command
       const secured = currentActual(show).some(e => e.planVersion === show.planVersion && e.kind === "authorization" && e.purpose === "rental" && e.amountMinor === show.approvedPlan!.commercialCapMinor);
       const confirmed = supplierIsConfirmed(show);
       if (!secured || !confirmed) throw new DomainError("COMMERCIAL_PENDING", "Publication waits for verified rental authorization and supplier confirmation.");
-      if (show.sheets.at(-1)?.candidateId === show.approvedPlan.candidateId && (!(show.supplierDisruptions?.length || show.productionInputs) || show.sheets.at(-1)?.operatingDigest === operatingDigest(show))) throw new DomainError("ALREADY_PUBLISHED", "This approved plan is already published.");
+      if (show.sheets.at(-1)?.candidateId === show.approvedPlan.candidateId && (!(show.supplierDisruptions?.length || show.productionInputs || show.tourAssignments) || show.sheets.at(-1)?.operatingDigest === operatingDigest(show))) throw new DomainError("ALREADY_PUBLISHED", "This approved plan is already published.");
       const previous = show.sheets.at(-1)!;
       const changes = show.tasks.flatMap(t => { const old = previous.tasks.find(v => v.id === t.id); return !old || old.start !== t.start || old.end !== t.end ? [{ taskId: t.id, name: t.name, before: old ? `${localTime(old.start)}–${localTime(old.end)}` : "New call", after: `${localTime(t.start)}–${localTime(t.end)}`, reason: "Approved recovery plan", resourceIds: t.resources }] : []; });
       for (const old of previous.tasks.filter(t => !show.tasks.some(current => current.id === t.id))) changes.push({ taskId: old.id, name: old.name, before: `${localTime(old.start)}–${localTime(old.end)}`, after: "Canceled", reason: "Approved recovery plan", resourceIds: old.resources });
+      if (show.tourAssignments) changes.push({ taskId: "tour-assignment-review", name: "Tour assignments reviewed", before: "Previous operating assignments", after: "Current source-bound tour assignments", reason: "Read the exact current assignments and changed colleagues before acting.", resourceIds: [...new Set(show.tourAssignments.assignments.flatMap(row => row.personIds))] });
       const version = previous.version + 1;
-      const operating = show.supplierDisruptions?.length || show.productionInputs ? operatingDigest(show) : undefined;
+      const operating = show.supplierDisruptions?.length || show.productionInputs || show.tourAssignments ? operatingDigest(show) : undefined;
       if (show.supplierDisruptions?.length) changes.push({ taskId: "supplier-review", name: "Supplier recovery reviewed", before: "Previous supplier facts", after: "Current recovery plan", reason: "Review the new supplier evidence before signing any current duty.", resourceIds: show.resources.filter(person => person.kind === "person" && person.critical && !person.reserve).map(person => person.id) });
       if (show.productionInputs) changes.push({ taskId: "production-input-review", name: "Roster & venue inputs reviewed", before: "Previous planning inputs", after: `Input edition ${show.productionInputs.revision}`, reason: "Review the current sourced assignments, availability and venue policy before acting or signing current work.", resourceIds: show.resources.filter(person => person.kind === "person" && person.critical && !person.reserve).map(person => person.id) });
-      show.sheets.push({ id: randomUUID(), version, planRevision: show.planVersion, candidateId: show.approvedPlan.candidateId, digest: digest({ tasks: show.tasks, version, candidate: show.approvedPlan.digest, ...(operating ? { operating } : {}) }), publishedAt: now, tasks: structuredClone(show.tasks), changes, ...(operating ? { operatingDigest: operating } : {}), ...(show.productionInputs ? { productionInputDigest: show.productionInputs.digest } : {}) });
+      show.sheets.push({ id: randomUUID(), version, planRevision: show.planVersion, candidateId: show.approvedPlan.candidateId, digest: digest({ tasks: show.tasks, version, candidate: show.approvedPlan.digest, ...(operating ? { operating } : {}) }), publishedAt: now, tasks: structuredClone(show.tasks), changes, ...(operating ? { operatingDigest: operating } : {}), ...(show.productionInputs ? { productionInputDigest: show.productionInputs.digest } : {}), ...(show.tourAssignments ? { tourAssignmentDigest: show.tourAssignments.digest } : {}) });
       appendEvent(show, actor, "run_sheet.published", `Published run sheet v${version}; ${changes.length} changes require current acknowledgments.`, now); break;
     }
     case "acknowledge": {

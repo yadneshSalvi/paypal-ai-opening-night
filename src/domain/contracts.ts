@@ -59,6 +59,7 @@ export interface PlanPatch {
   crewFinishAt: string; overtimeMinor: number; canceledPerk: boolean; changedPeople: string[];
 }
 export interface Candidate {
+  strategy?: import("./planning-workbench/strategies").StrategyProvenance;
   id: string; family: "doors" | "budget" | "artist" | "direct"; name: string; summary: string;
   digest: string; sourceDigest: string; generatedAt: string; patch: PlanPatch; approvals: ApprovalRequirement[];
   report: ConstraintReport; cost: { rentalMinor: number; overtimeMinor: number; remedyMinor: number; totalMinor: number };
@@ -69,6 +70,7 @@ export interface PublishedRunSheet {
   publishedAt: string; tasks: Task[]; changes: { taskId: string; name: string; before: string; after: string; reason: string; resourceIds: string[] }[];
   operatingDigest?: string;
   productionInputDigest?: string;
+  tourAssignmentDigest?: string;
 }
 export interface Acknowledgment { id: string; personId: string; sheetVersion: number; sheetDigest: string; receivedAt: string; source: "controlled_client"; offline: boolean; actorId?: string; commandId?: string; seenTaskIds?: string[] }
 export interface FinancialEvidence {
@@ -137,6 +139,7 @@ export interface ShowSnapshot {
   disruptionAssessments?: DisruptionAssessment[];
   cancellationDecision?: CancellationDecision;
   productionInputs?: ProductionInputState;
+  tourAssignments?: import("./planning-workbench/tour-admission").TourAssignmentState;
   goReportId: string | null;
 }
 export interface Actor { id: string; tenantId: string; roles: Role[]; personId: string | null; supplierId?: SupplierId; executionId?: string }

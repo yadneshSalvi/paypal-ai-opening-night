@@ -6,7 +6,7 @@ import { deliveryIsAccepted, supplierIsConfirmed } from "./supplier-contracts";
 import { currentAttestation, currentCrewReview, currentCue, currentRentalClearance, dutyEarliest } from "./crew/policy";
 import { crewDutyKinds, type CrewVerifier } from "./crew/contracts";
 import { cancellationBlocksCue, cancellationRemedies, operatingDigest, selectedInterruption } from "./disruptions";
-import { inputPublicationCurrent, inputReadiness } from "./production-inputs/constraints";
+import { inputPlanCurrent, inputPublicationCurrent, inputReadiness } from "./production-inputs/constraints";
 
 export function currentAcknowledgments(show: ShowSnapshot) {
   if (!inputPublicationCurrent(show)) return [];
@@ -30,6 +30,7 @@ export function readiness(show: ShowSnapshot, scope: CueScope, now = new Date().
   const gate = (id: string, label: string, complete: boolean, value: string, reason: string, evidenceIds: string[], href = "/execution") => gates.push({ id, label, complete, value, reason, evidenceIds, href });
   const inputs = inputReadiness(show);
   if (inputs) gate("production-inputs", "Current roster & venue inputs", inputs.complete, inputs.value, inputs.reason, inputs.evidenceIds, "/inputs");
+  if (show.tourAssignments) gate("tour-assignments", "Current operating tour assignments", inputPublicationCurrent(show), !inputPlanCurrent(show) ? "Fresh plan review required" : !inputPublicationCurrent(show) ? "Current crew publication required" : "Reviewed assignments published", "The exact planning edition establishes assignments only. A new approved plan, publication and personal readbacks are required; no work or cue is inherited.", [show.tourAssignments.reviewId, show.tourAssignments.production.id], "/planning-workbench");
   if (show.supplierDisruptions?.length || show.cancellationDecision) {
     const interruption = selectedInterruption(show);
     const cancelled = cancellationBlocksCue(show, scope);

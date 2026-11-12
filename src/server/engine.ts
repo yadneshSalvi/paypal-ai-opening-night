@@ -37,6 +37,9 @@ export async function commitGraphEngine(tasks: Task[], dependencies: Dependency[
 }
 export async function generateCandidates(show: ShowSnapshot) {
   const candidates = enumerateCandidates(show);
+  return evaluateCandidates(candidates);
+}
+export async function evaluateCandidates(candidates: Candidate[]) {
   // Independent cloned projects; bounded to avoid a burst of CPU and no write access to the live plan.
   for (let i = 0; i < candidates.length; i += 3) await Promise.all(candidates.slice(i, i + 3).map(async candidate => {
     candidate.report.engine = await commitEngine(candidate);

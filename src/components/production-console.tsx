@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowUpRight, AudioLines, CalendarDays, Check, ChevronDown, CircleDot, Clock3, Clapperboard, FileCheck2, LayoutGrid, Layers3, ListTree, Menu, PackageCheck, Radio, Search, ShieldAlert, ShieldCheck, Sparkles, Ticket, Users, WalletCards, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, AudioLines, CalendarDays, Check, ChevronDown, CircleDot, Clock3, Clapperboard, FileCheck2, GitBranch, LayoutGrid, Layers3, ListTree, Menu, PackageCheck, Radio, Search, ShieldAlert, ShieldCheck, Sparkles, Ticket, Users, WalletCards, X } from "lucide-react";
 import type { ConsoleData } from "@/domain/contracts";
 import type { Command } from "@/domain/commands";
 import { countdown, formatMoney, localTime } from "@/domain/time";
@@ -33,6 +33,7 @@ const navigation = [
   { id: "resources", label: "Crew & equipment", icon: Users, href: "/resources" },
   { id: "calendar", label: "Calendar", icon: CalendarDays, href: "/calendar" },
   { id: "recovery", label: "Recovery studio", icon: Sparkles, href: "/recovery" },
+  { id: "planning-workbench", label: "Planning workbench", icon: GitBranch, href: "/planning-workbench" },
   { id: "disruptions", label: "Disruption desk", icon: ShieldAlert, href: "/disruptions" },
   { id: "execution", label: "Execution", icon: Clapperboard, href: "/execution" },
   { id: "crew", label: "Crew readback", icon: AudioLines, href: "/crew" },

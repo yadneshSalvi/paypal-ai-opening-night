@@ -1,10 +1,11 @@
 import type { ConstraintIssue, ShowSnapshot, Task } from "../contracts";
 
 export function inputPlanCurrent(show: ShowSnapshot): boolean {
-  return !show.productionInputs || Boolean(show.approvedPlan && show.approvedPlan.baseRevision >= show.productionInputs.admittedAtRevision);
+  const admission = Math.max(show.productionInputs?.admittedAtRevision ?? 0, show.tourAssignments?.admittedAtRevision ?? 0);
+  return admission === 0 || Boolean(show.approvedPlan && show.approvedPlan.baseRevision >= admission);
 }
 export function inputPublicationCurrent(show: ShowSnapshot): boolean {
-  return !show.productionInputs || Boolean(inputPlanCurrent(show) && show.sheets.at(-1)?.productionInputDigest === show.productionInputs.digest && show.sheets.at(-1)?.planRevision === show.planVersion && show.sheets.at(-1)?.candidateId === show.approvedPlan?.candidateId);
+  return !(show.productionInputs || show.tourAssignments) || Boolean(inputPlanCurrent(show) && (!show.productionInputs || show.sheets.at(-1)?.productionInputDigest === show.productionInputs.digest) && (!show.tourAssignments || show.sheets.at(-1)?.tourAssignmentDigest === show.tourAssignments.digest) && show.sheets.at(-1)?.planRevision === show.planVersion && show.sheets.at(-1)?.candidateId === show.approvedPlan?.candidateId);
 }
 
 /** Engine dates and domain availability/qualification rules are separate evidence. */

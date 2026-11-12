@@ -5,7 +5,7 @@ import { effectiveDelivery, latestSupplierDisruption, supplierInterruption } fro
 import { productionInputIssues } from "./production-inputs/constraints";
 
 export function planningDigest(show: ShowSnapshot): string {
-  return digest({ tasks: show.tasks, dependencies: show.dependencies, resources: show.resources, offers: show.offers, policy: show.policy, incidents: show.incidents, doorsAt: show.doorsAt, ...(show.supplierDisruptions?.length ? { supplierDisruptions: show.supplierDisruptions } : {}), ...(show.supplierTermRevisions?.length ? { supplierTermRevisions: show.supplierTermRevisions } : {}), ...(show.productionInputs ? { productionInputs: show.productionInputs.digest, curfewAt: show.curfewAt, accessUntil: show.accessUntil } : {}) });
+  return digest({ tasks: show.tasks, dependencies: show.dependencies, resources: show.resources, offers: show.offers, policy: show.policy, incidents: show.incidents, doorsAt: show.doorsAt, ...(show.supplierDisruptions?.length ? { supplierDisruptions: show.supplierDisruptions } : {}), ...(show.supplierTermRevisions?.length ? { supplierTermRevisions: show.supplierTermRevisions } : {}), ...(show.productionInputs ? { productionInputs: show.productionInputs.digest, curfewAt: show.curfewAt, accessUntil: show.accessUntil } : {}), ...(show.tourAssignments ? { tourAssignments: show.tourAssignments.digest } : {}) });
 }
 export function topologicalOrder(tasks: Task[], dependencies: Dependency[]): { order: string[]; invalid: string[] } {
   const ids = new Set(tasks.map(t => t.id)); const degree = new Map(tasks.map(t => [t.id, 0]));
@@ -106,7 +106,7 @@ export function buildCandidate(show: ShowSnapshot, offer: SupplierOffer, family:
   const overtimeMinor = family === "artist" ? 36000 : late ? 24000 : 18000;
   const tasks = structuredClone(show.tasks).filter(t => !["headliner-check", "vip", "rental-authorized", "rental-delivery", "rental-captured", "quiet-prep"].includes(t.id) && !(supportOnly && show.cancellationDecision!.cancelledTaskIds.includes(t.id)));
   const update = (id: string, start: string, duration: number, resources?: string[]) => { const t = tasks.find(t => t.id === id); if (t) Object.assign(t, { start, end: plusMinutes(start, duration), durationMinutes: duration, state: "planned", affected: start !== t.baselineStart, ...(resources ? { resources } : {}) }); };
-  update("headliner-arrival", atVenue("19:35"), 0); update("lx-focus", focusStart, 45); update("lx-program", cueStart, 20, family === "direct" ? ["tom"] : show.productionInputs ? show.tasks.find(task => task.id === "lx-program")?.resources ?? [] : ["priya"]);
+  update("headliner-arrival", atVenue("19:35"), 0); update("lx-focus", focusStart, 45); update("lx-program", cueStart, 20, family === "direct" ? ["tom"] : show.productionInputs || show.tourAssignments ? show.tasks.find(task => task.id === "lx-program")?.resources ?? [] : ["priya"]);
   const readinessAt = compareInstants(plusMinutes(doorsAt, -15), cueEnd) >= 0 ? plusMinutes(doorsAt, -15) : cueEnd;
   update("readiness", readinessAt, 0); update("doors", doorsAt, 0); update("support", supportAt, 25); update("changeover", plusMinutes(supportAt, 25), late && family !== "artist" ? 20 : 15); update("headliner", headlinerAt, headlinerDuration);
   const supportEnd = plusMinutes(supportAt, 25), retainedStrikeStart = show.tasks.find(task => task.id === "strike")?.start ?? supportEnd;
